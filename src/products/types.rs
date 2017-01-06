@@ -3,8 +3,10 @@
 mod default {
   //! [default.xsd](http://g-ecx.images-amazon.com/images/G/01/mwsportal/doc/en_US/products/default.xsd)
 
+  use xmlhelper::decode;
+
   /// DecimalWithUnits
-  #[derive(Debug)]
+  #[derive(Debug, Default)]
   pub struct DecimalWithUnits {
     pub value: f64,
     pub units: String,
@@ -62,6 +64,7 @@ pub mod product {
   //! [ProductsAPI_Response.xsd](http://g-ecx.images-amazon.com/images/G/01/mwsportal/doc/en_US/products/ProductsAPI_Response.xsd)
   
   pub use super::default::*;
+  //use xml::decode::{XmlDecode, XmlDecoderContext, XmlDecodeEvent, Result as XmlDecodeResult};
 
   str_enum! {
     pub enum Id {
@@ -96,6 +99,8 @@ pub mod product {
     MarketplaceASIN(MarketplaceASIN),
     SellerSKU(SellerSKUIdentifier),
   }
+
+  
 
   /// BaseRelationshipType
   #[derive(Debug)]

@@ -4,10 +4,10 @@ version = "0.1.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 
 [dependencies]
-xml-rs = "0.3"
 base64 = "0.2.1"
 rust-crypto = "0.2.36"
 reqwest = "0.2.0"
 url = "1.2.4"
 chrono = "0.2.25"
 error-chain = "0.7.1"
+xmlhelper = { path = "../xmlhelper" }
