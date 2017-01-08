@@ -14,7 +14,7 @@ macro_rules! str_enum {
   (
     $name:ident, $($item:tt)*
   ) => {
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub enum $name {
       $(
         $item,
@@ -41,6 +41,19 @@ macro_rules! str_enum {
           )*
           _ => $name::Unknown(v.to_owned()),
         }
+      }
+    }
+
+    impl Default for $name {
+      fn default() -> Self {
+        $name::Unknown("".to_string())
+      }
+    }
+
+    impl ::std::str::FromStr for $name {
+      type Err = ::std::io::Error;
+      fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok($name::from(s))
       }
     }
   };

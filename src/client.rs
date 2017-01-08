@@ -1,6 +1,6 @@
 use sign::{SignatureV2};
 pub use reqwest::{Method, Response};
-use xmlhelper::decode::{FromXMLStream, XmlEventStream};
+use xmlhelper::decode::{FromXMLStream, Stream};
 
 error_chain! {
 }
@@ -39,8 +39,8 @@ impl Client {
     }
   }
 
-  pub fn request<P, S, T>(&self, method: Method, path: &str, parameters: P) -> Result<T>
-    where P: Into<Vec<(String, String)>>, S: XmlEventStream, T: FromXMLStream<S>
+  pub fn request<P, T>(&self, method: Method, path: &str, parameters: P) -> Result<T>
+    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<Response>>
   {
     Ok(T::default())
   } 

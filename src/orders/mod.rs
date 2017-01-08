@@ -5,11 +5,13 @@
 use chrono::{DateTime, UTC};
 use client::{Client, Method};
 mod types;
-pub use self::types::{Order};
+pub use self::types::{Order, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
+use xmlhelper::decode;
 
 error_chain! {
   links {
     Client(super::client::Error, super::client::ErrorKind);
+    Decode(decode::Error, decode::ErrorKind);
   }
 }
 
@@ -26,21 +28,74 @@ pub struct ListOrdersParameters {
   pub created_before: Option<DateTime<UTC>>,
   pub last_updated_after: Option<DateTime<UTC>>,
   pub last_updated_before: Option<DateTime<UTC>>,
-  pub order_status_list: Option<Vec<String>>,
-  pub fulfillment_channel_list: Option<Vec<String>>,
+  pub order_status_list: Option<Vec<OrderStatus>>,
+  pub fulfillment_channel_list: Option<Vec<FulfillmentChannel>>,
   pub seller_order_id: Option<String>,
   pub buyer_email: Option<String>,
-  pub payment_method_list: Option<Vec<String>>,
-  pub tfm_shipment_status: Option<Vec<String>>,
+  pub payment_method_list: Option<Vec<PaymentMethod>>,
+  pub tfm_shipment_status: Option<Vec<TFMShipmentStatus>>,
   pub max_results_per_page: Option<i32>,
 }
 
 impl Into<Vec<(String, String)>> for ListOrdersParameters {
   fn into(self) -> Vec<(String, String)> {
     let mut result = vec![];
-    for (i, id) in self.marketplace_id_list.iter().enumerate() {
-
+    for (i, id) in self.marketplace_id_list.into_iter().enumerate() {
+      result.push((format!("MarketplaceId.Id.{}", i + 1), id));
     }
+
+    if let Some(date) = self.created_after {
+      result.push(("CreatedAfter".to_string(), date.to_string()));
+    }
+
+    if let Some(date) = self.created_before {
+      result.push(("CreatedBefore".to_string(), date.to_string()));
+    }
+
+    if let Some(date) = self.last_updated_after {
+      result.push(("LastUpdatedAfter".to_string(), date.to_string()));
+    }
+
+    if let Some(date) = self.last_updated_before {
+      result.push(("LastUpdatedBefore".to_string(), date.to_string()));
+    }
+
+    if let Some(list) = self.order_status_list {
+      for (i, status) in list.iter().enumerate() {
+        result.push((format!("OrderStatus.Status.{}", i + 1), status.as_ref().to_string()));
+      }
+    }
+
+    if let Some(list) = self.fulfillment_channel_list {
+      for (i, channel) in list.iter().enumerate() {
+        result.push((format!("FulfillmentChannel.Channel.{}", i + 1), channel.as_ref().to_string()));
+      }
+    }
+
+    if let Some(id) = self.seller_order_id {
+      result.push(("SellerOrderId".to_string(), id));
+    }
+
+    if let Some(email) = self.buyer_email {
+      result.push(("BuyerEmail".to_string(), email));
+    }
+
+    if let Some(list) = self.payment_method_list {
+      for (i, v) in list.iter().enumerate() {
+        result.push((format!("PaymentMethod.Method.{}", i + 1), v.as_ref().to_string()));
+      }
+    }
+
+    if let Some(list) = self.tfm_shipment_status {
+      for (i, v) in list.iter().enumerate() {
+        result.push((format!("TFMShipmentStatus.Status.{}", i + 1), v.as_ref().to_string()));
+      }
+    }
+
+    if let Some(v) = self.max_results_per_page {
+      result.push(("MaxResultsPerPage".to_string(), v.to_string()));
+    }
+
     result
   }
 }
@@ -49,8 +104,52 @@ impl Into<Vec<(String, String)>> for ListOrdersParameters {
 pub struct ListOrdersResponse {
   pub request_id: String,
   pub orders: Vec<Order>,
+  pub last_updated_before: Option<DateTime<UTC>>,
   pub created_before: Option<DateTime<UTC>>,
   pub next_token: Option<String>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse {
+  fn from_xml(s: &mut S) -> decode::Result<ListOrdersResponse> {
+    use self::decode::{start_document, element, fold_elements, characters};
+    start_document(s)?;
+    element(s, "ListOrdersResponse", |s| {
+      fold_elements(s, ListOrdersResponse::default(), |s, response| {
+        match s.local_name() {
+          "ListOrdersResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "Orders" => {
+                  response.orders = fold_elements(s, vec![], |s, v| {
+                    v.push(Order::from_xml(s)?);
+                    Ok(())
+                  })?;
+                },
+                "CreatedBefore" => {
+                  response.created_before = Some(characters(s)?);
+                },
+                "LastUpdatedBefore" => {
+                  response.last_updated_before = Some(characters(s)?);
+                },
+                "NextToken" => {
+                  response.next_token = Some(characters(s)?);
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.request_id = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
 }
 
 /// Returns orders created or updated during a time frame that you specify.
