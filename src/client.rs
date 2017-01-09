@@ -94,7 +94,6 @@ impl FromXMLStream<Stream<reqwest::Response>> for ErrorResponseInfo {
   }
 }
 
-#[cfg(test)]
 impl FromXMLStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
   fn from_xml(s: &mut Stream<::std::io::Cursor<String>>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
@@ -138,10 +137,30 @@ impl Client {
       sign.add(&k, v);
     }
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
-    let resp = self.http_client.request(method, &url).send()?;
-    let mut stream = Stream::new(resp);
-    let v = T::from_xml(&mut stream)?;
-    Ok(Response::Success(v))
+    let mut resp = self.http_client.request(method, &url).send()?;
+    if resp.status().is_success() {
+      let mut stream = Stream::new(resp);
+      let v = T::from_xml(&mut stream)?;
+      Ok(Response::Success(v))
+    } else {
+      use std::io::{Read, Cursor};
+
+      let mut body = String::new();
+      resp.read_to_string(&mut body)?;
+      let mut s = Stream::new(Cursor::new(body.clone()));
+      match ErrorResponseInfo::from_xml(&mut s) {
+        Ok(info) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: Some(info),
+        })),
+        Err(_) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: None,
+        })),
+      }
+    }
   }
 
   #[cfg(test)]
