@@ -1,15 +1,104 @@
 use sign::{SignatureV2};
-pub use reqwest::{Method, Response};
+pub use reqwest::{Method, StatusCode};
+use reqwest;
 use xmlhelper::decode::{FromXMLStream, Stream};
 
 error_chain! {
+  foreign_links {
+    Io(::std::io::Error);
+    Request(reqwest::Error);
+  }
+
+  links {
+    XmlDecode(::xmlhelper::decode::Error, ::xmlhelper::decode::ErrorKind);
+    Sign(super::sign::Error, super::sign::ErrorKind);
+  }
+
+  errors {
+    ErrorResponse(resp: ErrorResponse) {
+      description("MWS request is unsuccessful")
+      display("MWS request is unsuccessful: {:?}", resp)
+    }
+  }
 }
 
+#[derive(Debug)]
+pub enum Response<T> where T: FromXMLStream<Stream<reqwest::Response>> {
+  Success(T),
+  Error(ErrorResponse),
+}
+
+#[derive(Debug)]
 pub struct ErrorResponse {
+  pub status: StatusCode,
+  pub info: Option<ErrorResponseInfo>,
+  pub raw: String
+}
+
+#[derive(Debug, Default)]
+pub struct ErrorResponseInfo {
+  pub errors: Vec<ErrorResponseError>,
+  pub request_id: String
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct ErrorResponseError {
   pub error_type: String,
-  pub error_code: String,
-  pub error_message: String,
-  pub request_id: String,
+  pub code: String,
+  pub message: String,
+  pub detail: String
+}
+
+impl ErrorResponseInfo {
+  fn from_xml_stream<R: ::std::io::Read>(s: &mut Stream<R>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+    use xmlhelper::decode::{start_document, element, fold_elements, characters};
+    start_document(s)?;
+    element(s, "ErrorResponse", |s| {
+      fold_elements(s, ErrorResponseInfo::default(), |s, resp| {
+        match s.local_name() {
+          "Error" => {
+            let err = fold_elements(s, ErrorResponseError::default(), |s, err| {
+              match s.local_name() {
+                "Type" => {
+                  err.error_type = characters(s)?;
+                },
+                "Code" => {
+                  err.code = characters(s)?;
+                },
+                "Message" => {
+                  err.message = characters(s)?;
+                },
+                "Detail" => {
+                  err.detail = characters(s)?;
+                },
+                _ => {}
+              }
+              Ok(())
+            })?;
+            resp.errors.push(err);
+          },
+          "RequestID" => {
+            resp.request_id = characters(s)?;
+          },
+          _ => {}
+        }
+        Ok(())
+      })
+    }).into()
+  }
+}
+
+impl FromXMLStream<Stream<reqwest::Response>> for ErrorResponseInfo {
+  fn from_xml(s: &mut Stream<reqwest::Response>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+    ErrorResponseInfo::from_xml_stream(s)
+  }
+}
+
+#[cfg(test)]
+impl FromXMLStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
+  fn from_xml(s: &mut Stream<::std::io::Cursor<String>>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+    ErrorResponseInfo::from_xml_stream(s)
+  }
 }
 
 /// [Reference](http://docs.developer.amazonservices.com/en_CA/dev_guide/DG_Endpoints.html)
@@ -29,19 +118,84 @@ pub struct ClientOptions {
 }
 
 pub struct Client {
-  sign: SignatureV2,
+  options: ClientOptions,
+  http_client: reqwest::Client,
 }
 
 impl Client {
-  pub fn new(options: ClientOptions) -> Client {
-    Client {
-      sign: SignatureV2::new(options.endpoint, options.aws_access_key_id, options.secret_key),
-    }
+  pub fn new(options: ClientOptions) -> Result<Client> {
+    Ok(Client {
+      options: options,
+      http_client: reqwest::Client::new()?,
+    })
   }
 
-  pub fn request<P, T>(&self, method: Method, path: &str, parameters: P) -> Result<T>
-    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<Response>>
+  pub fn request<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
+    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>
   {
-    Ok(T::default())
-  } 
+    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    for (k, v) in parameters.into() {
+      sign.add(&k, v);
+    }
+    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    let resp = self.http_client.request(method, &url).send()?;
+    let mut stream = Stream::new(resp);
+    let v = T::from_xml(&mut stream)?;
+    Ok(Response::Success(v))
+  }
+
+  #[cfg(test)]
+  pub fn request_raw<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<(StatusCode, String)>
+    where P: Into<Vec<(String, String)>>
+  {
+    use std::io::Read;
+
+    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    for (k, v) in parameters.into() {
+      sign.add(&k, v);
+    }
+    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    let mut resp = self.http_client.request(method, &url).send()?;
+    let mut s = String::new();
+    resp.read_to_string(&mut s)?;
+    Ok((resp.status().clone(), s))
+  }
+}
+
+#[cfg(test)]
+pub fn get_test_client() -> Client {
+  use std::env;
+  Client::new(ClientOptions {
+    endpoint: env::var("Endpoint").expect("get Endpoint"),
+    seller_id: env::var("SellerId").expect("get SellerId"),
+    mws_auth_token: None,
+    aws_access_key_id : env::var("AWSAccessKeyId").expect("get AWSAccessKeyId"),
+    secret_key: env::var("SecretKey").expect("get SecretKey"),
+  }).expect("create client")
+}
+
+#[cfg(test)]
+mod tests {
+  use dotenv::dotenv;
+  use super::*;
+
+  #[test]
+  fn it_works() {
+    dotenv().ok();
+    let client = get_test_client();
+    let (status, body) = client.request_raw(Method::Post, "/Orders/2013-09-01", "2013-09-01", "GetServiceStatus", vec![]).expect("send request");
+    assert!(status.is_success());
+    assert!(body.starts_with("<?xml"));
+
+    use std::io::Cursor;
+    let (status, body) = client.request_raw(Method::Post, "/Fake/2013-09-01", "2013-09-01", "GetServiceStatus", vec![]).expect("send request");
+    assert!(!status.is_success());
+    let source = Cursor::new(body);
+    let mut s = Stream::new(source);
+    let err_info = ErrorResponseInfo::from_xml(&mut s).expect("decode error response");
+    assert_eq!(err_info.errors.len(), 1);
+    assert_eq!(err_info.errors[0], ErrorResponseError {
+      error_type: "Sender".to_string(), code: "InvalidAddress".to_string(), message: "Section Fake/2013-09-01 is invalid".to_string(), detail: "".to_string()
+    });
+  }
 }

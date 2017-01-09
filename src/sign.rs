@@ -124,7 +124,6 @@ impl SignatureV2 {
 
   /// Generates a SignedUrl which contains all parameters and signed by HMAC-SHA256
   pub fn generate_url<'a, T: AsRef<str>, P: AsRef<Path>>(&'a self, method: Method, path: P, version: T, action: T) -> Result<SignedUrl<'a>> {
-    use chrono::UTC;
     use crypto::hmac::Hmac;
     use crypto::sha2::Sha256;
     use crypto::mac::Mac;
@@ -140,7 +139,7 @@ impl SignatureV2 {
     SignatureV2::set_param(&mut params, "Action", action.as_ref());
 
     #[cfg(not(test))]
-    SignatureV2::set_param(&mut params, "Timestamp", UTC::now().format("%+").to_string());
+    SignatureV2::set_param(&mut params, "Timestamp", ::chrono::UTC::now().format("%+").to_string());
 
     params.sort();
     for Param(ref key, ref value) in params {
@@ -165,7 +164,7 @@ impl SignatureV2 {
     })?;
     let signature = {
       let canonical_qs = format!("{method}\n{host}\n{path}/{version}\n{qs}", method = &method, host = &self.host, path = path_str, version = version.as_ref(), qs = qs);
-      println!("string to sign: {}", canonical_qs);
+      // println!("string to sign: {}", canonical_qs);
       let mut hmac = Hmac::new(Sha256::new(), self.secret_key.as_bytes());
       hmac.input(canonical_qs.as_bytes());
       base64::encode(&hmac.result().code())

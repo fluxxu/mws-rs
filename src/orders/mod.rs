@@ -3,7 +3,7 @@
 //! [Documentation](http://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_Overview.html)
 
 use chrono::{DateTime, UTC};
-use client::{Client, Method};
+use client::{Client, Method, Response};
 mod types;
 pub use self::types::{Order, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
 use xmlhelper::decode;
@@ -16,6 +16,7 @@ error_chain! {
 }
 
 static PATH: &'static str = "/Orders/2013-09-01";
+static VERSION: &'static str = "2013-09-01";
 
 /// Parameters for `list_orders`
 #[derive(Debug)]
@@ -160,8 +161,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse 
 /// The ListOrders operation includes order information for each order returned, including AmazonOrderId, OrderStatus, FulfillmentChannel, and LastUpdateDate.
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_ListOrders.html)
-pub fn list_orders(client: &Client, parameters: ListOrdersParameters) -> Result<ListOrdersResponse> {
-  client.request(Method::Get, PATH, parameters).map_err(|err| err.into())
+pub fn list_orders(client: &Client, parameters: ListOrdersParameters) -> Result<Response<ListOrdersResponse>> {
+  client.request(Method::Get, PATH, VERSION, "ListOrders", parameters).map_err(|err| err.into())
 }
 
 /// Returns the next page of orders using the NextToken parameter.
