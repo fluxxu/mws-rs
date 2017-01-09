@@ -7,6 +7,7 @@ use client::{Client, Method, Response};
 mod types;
 pub use self::types::{Order, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
 use xmlhelper::decode;
+use super::types::ToIso8601;
 
 error_chain! {
   links {
@@ -15,11 +16,11 @@ error_chain! {
   }
 }
 
-static PATH: &'static str = "/Orders/2013-09-01";
+static PATH: &'static str = "/Orders";
 static VERSION: &'static str = "2013-09-01";
 
 /// Parameters for `list_orders`
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ListOrdersParameters {
   // Required API Parameters
   pub marketplace_id_list: Vec<String>,
@@ -46,19 +47,19 @@ impl Into<Vec<(String, String)>> for ListOrdersParameters {
     }
 
     if let Some(date) = self.created_after {
-      result.push(("CreatedAfter".to_string(), date.to_string()));
+      result.push(("CreatedAfter".to_string(), date.to_iso8601()));
     }
 
     if let Some(date) = self.created_before {
-      result.push(("CreatedBefore".to_string(), date.to_string()));
+      result.push(("CreatedBefore".to_string(), date.to_iso8601()));
     }
 
     if let Some(date) = self.last_updated_after {
-      result.push(("LastUpdatedAfter".to_string(), date.to_string()));
+      result.push(("LastUpdatedAfter".to_string(), date.to_iso8601()));
     }
 
     if let Some(date) = self.last_updated_before {
-      result.push(("LastUpdatedBefore".to_string(), date.to_string()));
+      result.push(("LastUpdatedBefore".to_string(), date.to_iso8601()));
     }
 
     if let Some(list) = self.order_status_list {
@@ -112,7 +113,7 @@ pub struct ListOrdersResponse {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListOrdersResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{start_document, element, fold_elements, all, characters};
     start_document(s)?;
     element(s, "ListOrdersResponse", |s| {
       fold_elements(s, ListOrdersResponse::default(), |s, response| {
@@ -121,10 +122,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse 
             fold_elements(s, (), |s, _| {
               match s.local_name() {
                 "Orders" => {
-                  response.orders = fold_elements(s, vec![], |s, v| {
-                    v.push(Order::from_xml(s)?);
-                    Ok(())
-                  })?;
+                  response.orders = all(s, |s| Order::from_xml(s))?;
                 },
                 "CreatedBefore" => {
                   response.created_before = Some(characters(s)?);
@@ -162,8 +160,9 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse 
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_ListOrders.html)
 pub fn list_orders(client: &Client, parameters: ListOrdersParameters) -> Result<Response<ListOrdersResponse>> {
-  client.request(Method::Get, PATH, VERSION, "ListOrders", parameters).map_err(|err| err.into())
+  client.request(Method::Post, PATH, VERSION, "ListOrders", parameters).map_err(|err| err.into())
 }
+
 
 /// Returns the next page of orders using the NextToken parameter.
 ///
@@ -173,3 +172,25 @@ pub fn list_orders(client: &Client, parameters: ListOrdersParameters) -> Result<
 pub fn list_orders_by_next_token() { unimplemented!() }
 
 pub fn get_order() { unimplemented!() }
+
+#[cfg(test)]
+mod tests {
+  use dotenv::dotenv;
+  use super::*;
+  use super::super::client::get_test_client;
+
+  #[test]
+  fn test_list_orders() {
+    dotenv().ok();
+    let c = get_test_client();
+    let mut params = ListOrdersParameters::default();
+    params.marketplace_id_list.push("ATVPDKIKX0DER".to_string());
+    params.created_after = Some("2016-11-01T04:00:00Z".parse().expect("parse created_after"));
+    params.max_results_per_page = Some(1);
+    let res = list_orders(&c, params).expect("list_orders");
+    match res {
+      Response::Error(e) => panic!("request error: {:?}", e),
+      _ => {},
+    }
+  }
+}

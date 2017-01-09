@@ -10,6 +10,7 @@ extern crate xmlhelper;
 
 #[cfg(test)] extern crate dotenv;
 
+mod types;
 #[macro_use] mod macros;
 pub mod client;
 mod sign;

@@ -136,7 +136,9 @@ impl Client {
     for (k, v) in parameters.into() {
       sign.add(&k, v);
     }
+    sign.add("SellerId", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    // println!("request: {}", url);
     let mut resp = self.http_client.request(method, &url).send()?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);

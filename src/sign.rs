@@ -8,6 +8,7 @@ use std::cmp::{Ord, Ordering};
 pub use reqwest::Method;
 use std::path::Path;
 use url::percent_encoding::{percent_encode, EncodeSet};
+use types::ToIso8601;
 
 error_chain! {
   errors {
@@ -138,8 +139,9 @@ impl SignatureV2 {
     SignatureV2::set_param(&mut params, "Version", version.as_ref());
     SignatureV2::set_param(&mut params, "Action", action.as_ref());
 
-    #[cfg(not(test))]
-    SignatureV2::set_param(&mut params, "Timestamp", ::chrono::UTC::now().format("%+").to_string());
+    if !params.iter().any(|pair| pair.0 == "Timestamp") {
+      SignatureV2::set_param(&mut params, "Timestamp", ::chrono::UTC::now().to_iso8601());
+    }
 
     params.sort();
     for Param(ref key, ref value) in params {
@@ -173,7 +175,7 @@ impl SignatureV2 {
     Ok(SignedUrl {
       host: &self.host,
       method: method,
-      path: path_str.to_string(),
+      path: format!("{}/{}", path_str, version.as_ref()),
       query_string: qs,
       signature: signature,
     })
@@ -183,12 +185,14 @@ impl SignatureV2 {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use chrono::{DateTime, UTC};
 
   #[test]
-  fn it_works() {
+  fn test_signature() {
     let mut s = SignatureV2::new("mws.amazonservices.ca", "3333", "0000");
+    let date: DateTime<UTC> = "2016-12-20T18:42:04Z".parse().expect("parse date");
     let url = s
-      .add("Timestamp", "2016-12-20T18:42:04Z")
+      .add("Timestamp", date.to_iso8601())
       .add("MarketplaceId", "5555")
       .add("ASINList.ASIN.1", "6666")
       .add("SellerId", "1111")
