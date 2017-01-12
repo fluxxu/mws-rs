@@ -14,6 +14,7 @@ macro_rules! str_enum {
   (
     $name:ident, $($item:tt)*
   ) => {
+    #[allow(non_camel_case_types)]
     #[derive(Debug, PartialEq)]
     pub enum $name {
       $(
@@ -54,6 +55,17 @@ macro_rules! str_enum {
       type Err = ::std::io::Error;
       fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok($name::from(s))
+      }
+    }
+
+    impl Into<String> for $name {
+      fn into(self) -> String {
+        match self {
+          $(
+            $name::$item => stringify!($item).to_string(),
+          )*
+          $name::Unknown(v) => v,
+        }
       }
     }
   };

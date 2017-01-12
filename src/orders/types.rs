@@ -15,7 +15,7 @@ pub struct ShippingAddress {
 
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq)]
-pub struct OrderTotal {
+pub struct CurrencyAmount {
   pub CurrencyCode: String,
   pub Amount: f64,
 }
@@ -44,7 +44,7 @@ pub struct Order {
   pub SellerOrderId: String,
   pub BuyerEmail: String,
   pub BuyerName: String,
-  pub OrderTotal: Option<OrderTotal>,
+  pub OrderTotal: Option<CurrencyAmount>,
   pub ShippingAddress: Option<ShippingAddress>,
 }
 
@@ -75,7 +75,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Order {
           "SellerOrderId" => order.SellerOrderId = characters(s)?,
           "BuyerEmail" => order.BuyerEmail = characters(s)?,
           "BuyerName" => order.BuyerName = characters(s)?,
-          "OrderTotal" => order.OrderTotal = fold_elements(s, OrderTotal::default(), |s, total| {
+          "OrderTotal" => order.OrderTotal = fold_elements(s, CurrencyAmount::default(), |s, total| {
             match s.local_name() {
               "CurrencyCode" => total.CurrencyCode = characters(s)?,
               "Amount" => total.Amount = characters(s)?,
@@ -165,6 +165,109 @@ str_enum! {
   }
 }
 
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct OrderItem {
+  OrderItemId: String,
+  QuantityOrdered: i32,
+  Title: String,
+  ASIN: String,
+  SellerSKU: String,
+  QuantityShipped: i32,
+  ItemPrice: Option<CurrencyAmount>,
+  ItemTax: Option<CurrencyAmount>,
+  GiftWrapPrice: Option<CurrencyAmount>,
+  GiftWrapTax: Option<CurrencyAmount>,
+  PromotionDiscount: Option<CurrencyAmount>,
+  ShippingPrice: Option<CurrencyAmount>,
+  ShippingDiscount: Option<CurrencyAmount>,
+  ShippingTax: Option<CurrencyAmount>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for OrderItem {
+  fn from_xml(s: &mut S) -> decode::Result<OrderItem> {
+    use xmlhelper::decode::{element, fold_elements, characters};
+    element(s, "OrderItem", |s| {
+      fold_elements(s, OrderItem::default(), |s, item| {
+        match s.local_name() {
+          "OrderItemId" => item.OrderItemId = characters(s)?,
+          "QuantityOrdered" => item.QuantityOrdered = characters(s)?,
+          "Title" => item.Title = characters(s)?,
+          "ASIN" => item.ASIN = characters(s)?,
+          "SellerSKU" => item.SellerSKU = characters(s)?,
+          "QuantityShipped" => item.QuantityShipped = characters(s)?,
+          "ItemPrice" => item.ItemPrice = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "ItemTax" => item.ItemTax = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "GiftWrapPrice" => item.GiftWrapPrice = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "GiftWrapTax" => item.GiftWrapTax = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "PromotionDiscount" => item.PromotionDiscount = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "ShippingPrice" => item.ShippingPrice = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "ShippingDiscount" => item.ShippingDiscount = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          "ShippingTax" => item.ShippingTax = fold_elements(s, CurrencyAmount::default(), |s, amount| {
+            match s.local_name() {
+              "CurrencyCode" => amount.CurrencyCode = characters(s)?,
+              "Amount" => amount.Amount = characters(s)?,
+              _ => {},
+            }
+            Ok(())
+          }).map(Some)?,
+          _ => {},
+        }
+        Ok(())
+      })
+    })
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -234,7 +337,7 @@ mod tests {
         SellerOrderId: "104-8343004-0000000".to_string(),
         BuyerEmail: "test@marketplace.amazon.com".to_string(),
         BuyerName: "First Last".to_string(),
-        OrderTotal: Some(OrderTotal {
+        OrderTotal: Some(CurrencyAmount {
           CurrencyCode: "USD".to_string(),
           Amount: 249.99,
         }),
@@ -248,5 +351,47 @@ mod tests {
           AddressLine2: "".to_string(),
         }),
       });
+  }
+
+  fn test_decode_orderitem() {
+    let mut s = decode::Stream::new(Cursor::new(r#"<OrderItem>
+        <QuantityOrdered>1</QuantityOrdered>
+        <Title>Edifier R1280T Powered Bookshelf Speakers - 2.0 Active Near Field Monitors - Studio Monitor Speaker - Wooden Enclosure - 42 Watts RMS</Title>
+        <PromotionDiscount>
+          <CurrencyCode>USD</CurrencyCode>
+          <Amount>0.00</Amount>
+        </PromotionDiscount>
+        <ASIN>B016P9HJIA</ASIN>
+        <SellerSKU>edifier-r1280t-fba</SellerSKU>
+        <OrderItemId>46510268396154</OrderItemId>
+        <QuantityShipped>1</QuantityShipped>
+        <ItemPrice>
+          <CurrencyCode>USD</CurrencyCode>
+          <Amount>99.99</Amount>
+        </ItemPrice>
+        <ItemTax>
+          <CurrencyCode>USD</CurrencyCode>
+          <Amount>0.00</Amount>
+        </ItemTax>
+      </OrderItem>"#));
+
+    decode::start_document(&mut s).expect("start element");
+    let item = OrderItem::from_xml(&mut s).expect("decode order item");
+    assert_eq!(item, OrderItem {
+      OrderItemId: "46510268396154".to_string(),
+      QuantityOrdered: 1,
+      Title: "Edifier R1280T Powered Bookshelf Speakers - 2.0 Active Near Field Monitors - Studio Monitor Speaker - Wooden Enclosure - 42 Watts RMS".to_string(),
+      ASIN: "B016P9HJIA".to_string(),
+      SellerSKU: "edifier-r1280t-fba".to_string(),
+      QuantityShipped: 1,
+      ItemPrice: Some(CurrencyAmount { CurrencyCode: "USD".to_string(), Amount: 99.99 }),
+      ItemTax: Some(CurrencyAmount { CurrencyCode: "USD".to_string(), Amount: 0.00 }),
+      GiftWrapPrice: None,
+      GiftWrapTax: None,
+      PromotionDiscount: None,
+      ShippingPrice: None,
+      ShippingDiscount: None,
+      ShippingTax: None,
+    });
   }
 }

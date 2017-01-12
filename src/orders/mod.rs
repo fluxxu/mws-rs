@@ -5,7 +5,7 @@
 use chrono::{DateTime, UTC};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{Order, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
+pub use self::types::{Order, OrderItem, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
 use xmlhelper::decode;
 use super::types::ToIso8601;
 
@@ -16,10 +16,10 @@ error_chain! {
   }
 }
 
-static PATH: &'static str = "/Orders";
+static PATH: &'static str = "/Orders/2013-09-01";
 static VERSION: &'static str = "2013-09-01";
 
-/// Parameters for `list_orders`
+/// Parameters for `ListOrders`
 #[derive(Debug, Default)]
 pub struct ListOrdersParameters {
   // Required API Parameters
@@ -159,38 +159,211 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse 
 /// The ListOrders operation includes order information for each order returned, including AmazonOrderId, OrderStatus, FulfillmentChannel, and LastUpdateDate.
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_ListOrders.html)
-pub fn list_orders(client: &Client, parameters: ListOrdersParameters) -> Result<Response<ListOrdersResponse>> {
-  client.request(Method::Post, PATH, VERSION, "ListOrders", parameters).map_err(|err| err.into())
+#[allow(non_snake_case)]
+pub fn ListOrders(client: &Client, parameters: ListOrdersParameters) -> Result<Response<ListOrdersResponse>> {
+  client.request_xml(Method::Post, PATH, VERSION, "ListOrders", parameters).map_err(|err| err.into())
 }
 
+
+#[derive(Debug, Default)]
+pub struct ListOrdersByNextTokenResponse {
+  pub request_id: String,
+  pub orders: Vec<Order>,
+  pub last_updated_before: Option<DateTime<UTC>>,
+  pub next_token: Option<String>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersByNextTokenResponse {
+  fn from_xml(s: &mut S) -> decode::Result<ListOrdersByNextTokenResponse> {
+    use self::decode::{start_document, element, fold_elements, all, characters};
+    start_document(s)?;
+    element(s, "ListOrdersByNextTokenResponse", |s| {
+      fold_elements(s, ListOrdersByNextTokenResponse::default(), |s, response| {
+        match s.local_name() {
+          "ListOrdersByNextTokenResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "Orders" => {
+                  response.orders = all(s, |s| Order::from_xml(s))?;
+                },
+                "LastUpdatedBefore" => {
+                  response.last_updated_before = Some(characters(s)?);
+                },
+                "NextToken" => {
+                  response.next_token = Some(characters(s)?);
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.request_id = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
+}
 
 /// Returns the next page of orders using the NextToken parameter.
 ///
 /// The ListOrdersByNextToken operation returns the next page of orders using the NextToken value that was returned
 /// by your previous request to either ListOrders or ListOrdersByNextToken. 
 /// If NextToken is not returned, there are no more pages to return.
-pub fn list_orders_by_next_token() { unimplemented!() }
+#[allow(non_snake_case)]
+pub fn ListOrdersByNextToken(client: &Client, next_token: String) -> Result<Response<ListOrdersByNextTokenResponse>> {
+  let params = vec![
+    ("NextToken".to_string(), next_token)
+  ]; 
+  client.request_xml(Method::Post, PATH, VERSION, "ListOrdersByNextToken", params).map_err(|err| err.into())
+}
 
-pub fn get_order() { unimplemented!() }
+#[derive(Debug, Default)]
+pub struct ListOrderItemsResponse {
+  pub request_id: String,
+  pub items: Vec<OrderItem>,
+  pub amazon_order_id: String,
+  pub next_token: Option<String>,
+}
 
-#[cfg(test)]
-mod tests {
-  use dotenv::dotenv;
-  use super::*;
-  use super::super::client::get_test_client;
-
-  #[test]
-  fn test_list_orders() {
-    dotenv().ok();
-    let c = get_test_client();
-    let mut params = ListOrdersParameters::default();
-    params.marketplace_id_list.push("ATVPDKIKX0DER".to_string());
-    params.created_after = Some("2016-11-01T04:00:00Z".parse().expect("parse created_after"));
-    params.max_results_per_page = Some(1);
-    let res = list_orders(&c, params).expect("list_orders");
-    match res {
-      Response::Error(e) => panic!("request error: {:?}", e),
-      _ => {},
-    }
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrderItemsResponse {
+  fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsResponse> {
+    use self::decode::{start_document, element, fold_elements, all, characters};
+    start_document(s)?;
+    element(s, "ListOrderItemsResponse", |s| {
+      fold_elements(s, ListOrderItemsResponse::default(), |s, response| {
+        match s.local_name() {
+          "ListOrderItemsResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "OrderItems" => {
+                  response.items = all(s, |s| OrderItem::from_xml(s))?;
+                },
+                "AmazonOrderId" => {
+                  response.amazon_order_id = characters(s)?;
+                },
+                "NextToken" => {
+                  response.next_token = Some(characters(s)?);
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.request_id = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
   }
 }
+
+/// Returns order items based on the AmazonOrderId that you specify.
+#[allow(non_snake_case)]
+pub fn ListOrderItems(client: &Client, amazon_order_id: String) -> Result<Response<ListOrderItemsResponse>> {
+  let params = vec![
+    ("AmazonOrderId".to_string(), amazon_order_id)
+  ]; 
+  client.request_xml(Method::Post, PATH, VERSION, "ListOrderItems", params).map_err(|err| err.into())
+}
+
+#[derive(Debug, Default)]
+pub struct ListOrderItemsByNextTokenResponse {
+  pub request_id: String,
+  pub items: Vec<OrderItem>,
+  pub amazon_order_id: String,
+  pub next_token: Option<String>,
+}
+
+/// Returns the next page of order items using the NextToken parameter.
+#[allow(non_snake_case)]
+pub fn ListOrderItemsByNextToken(client: &Client, next_token: String) -> Result<Response<ListOrderItemsByNextTokenResponse>> {
+  let params = vec![
+    ("NextToken".to_string(), next_token)
+  ]; 
+  client.request_xml(Method::Post, PATH, VERSION, "ListOrderItemsByNextToken", params).map_err(|err| err.into())
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrderItemsByNextTokenResponse {
+  fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsByNextTokenResponse> {
+    use self::decode::{start_document, element, fold_elements, all, characters};
+    start_document(s)?;
+    element(s, "ListOrderItemsByNextTokenResponse", |s| {
+      fold_elements(s, ListOrderItemsByNextTokenResponse::default(), |s, response| {
+        match s.local_name() {
+          "ListOrderItemsByNextTokenResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "OrderItems" => {
+                  response.items = all(s, |s| OrderItem::from_xml(s))?;
+                },
+                "AmazonOrderId" => {
+                  response.amazon_order_id = characters(s)?;
+                },
+                "NextToken" => {
+                  response.next_token = Some(characters(s)?);
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.request_id = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
+}
+
+// #[cfg(test)]
+// mod tests {
+//   use dotenv::dotenv;
+//   use super::*;
+//   use super::super::client::get_test_client;
+
+//   #[test]
+//   fn test_list_orders() {
+//     dotenv().ok();
+//     let c = get_test_client();
+//     let mut params = ListOrdersParameters::default();
+//     params.marketplace_id_list.push("ATVPDKIKX0DER".to_string());
+//     params.created_after = Some("2016-11-01T04:00:00Z".parse().expect("parse created_after"));
+//     params.max_results_per_page = Some(1);
+//     let res = ListOrders(&c, params).expect("ListOrders");
+//     match res {
+//       Response::Error(e) => panic!("request error: {:?}", e),
+//       _ => {},
+//     }
+//   }
+
+//   #[test]
+//   fn test_list_order_items() {
+//     dotenv().ok();
+//     let c = get_test_client();
+//     let res = ListOrderItems(&c, "112-8095165-5463447".to_string()).expect("ListOrderItems");
+//     match res {
+//       Response::Error(e) => panic!("request error: {:?}", e),
+//       Response::Success(ListOrderItemsResponse { amazon_order_id, items, .. }) => {
+//         assert_eq!(items.len(), 1);
+//         assert_eq!(amazon_order_id, "112-8095165-5463447");
+//         println!("{:?}", items[0]);
+//       },
+//     }
+//   }
+// }

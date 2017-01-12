@@ -2,6 +2,7 @@ use sign::{SignatureV2};
 pub use reqwest::{Method, StatusCode};
 use reqwest;
 use xmlhelper::decode::{FromXMLStream, Stream};
+use tdff::FromTdff;
 
 error_chain! {
   foreign_links {
@@ -11,6 +12,7 @@ error_chain! {
 
   links {
     XmlDecode(::xmlhelper::decode::Error, ::xmlhelper::decode::ErrorKind);
+    TdffDecode(::tdff::Error, ::tdff::ErrorKind);
     Sign(super::sign::Error, super::sign::ErrorKind);
   }
 
@@ -23,7 +25,7 @@ error_chain! {
 }
 
 #[derive(Debug)]
-pub enum Response<T> where T: FromXMLStream<Stream<reqwest::Response>> {
+pub enum Response<T> {
   Success(T),
   Error(ErrorResponse),
 }
@@ -129,20 +131,56 @@ impl Client {
     })
   }
 
-  pub fn request<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
-    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>
+  fn request<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<reqwest::Response> 
+    where P: Into<Vec<(String, String)>>
   {
     let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
     for (k, v) in parameters.into() {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
+    //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
-    // println!("request: {}", url);
-    let mut resp = self.http_client.request(method, &url).send()?;
+    //println!("request: {}", url);
+    self.http_client.request(method, &url).send()
+      .map_err(|err| err.into())
+  }
+
+  pub fn request_xml<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
+    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>
+  {
+    let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;
+      Ok(Response::Success(v))
+    } else {
+      use std::io::{Read, Cursor};
+
+      let mut body = String::new();
+      resp.read_to_string(&mut body)?;
+      let mut s = Stream::new(Cursor::new(body.clone()));
+      match ErrorResponseInfo::from_xml(&mut s) {
+        Ok(info) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: Some(info),
+        })),
+        Err(_) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: None,
+        })),
+      }
+    }
+  }
+
+  pub fn request_tdff<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
+    where P: Into<Vec<(String, String)>>, T: FromTdff<reqwest::Response>
+  {
+    let mut resp = self.request(method, path, version, action, parameters)?;
+    if resp.status().is_success() {
+      let v = T::from_tdff(resp)?;
       Ok(Response::Success(v))
     } else {
       use std::io::{Read, Cursor};

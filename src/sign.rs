@@ -165,7 +165,7 @@ impl SignatureV2 {
       ErrorKind::InvalidPath(format!("{}", display))
     })?;
     let signature = {
-      let canonical_qs = format!("{method}\n{host}\n{path}/{version}\n{qs}", method = &method, host = &self.host, path = path_str, version = version.as_ref(), qs = qs);
+      let canonical_qs = format!("{method}\n{host}\n{path}\n{qs}", method = &method, host = &self.host, path = path_str, qs = qs);
       // println!("string to sign: {}", canonical_qs);
       let mut hmac = Hmac::new(Sha256::new(), self.secret_key.as_bytes());
       hmac.input(canonical_qs.as_bytes());
@@ -175,7 +175,7 @@ impl SignatureV2 {
     Ok(SignedUrl {
       host: &self.host,
       method: method,
-      path: format!("{}/{}", path_str, version.as_ref()),
+      path: path_str.to_string(),
       query_string: qs,
       signature: signature,
     })
@@ -196,7 +196,7 @@ mod tests {
       .add("MarketplaceId", "5555")
       .add("ASINList.ASIN.1", "6666")
       .add("SellerId", "1111")
-      .generate_url(Method::Post, "/Products", "2011-10-01", "GetMatchingProduct").expect("generate url");
+      .generate_url(Method::Post, "/Products/2011-10-01", "2011-10-01", "GetMatchingProduct").expect("generate url");
 
     assert_eq!(url.signature, "e7NJFMRLOOpRUp0IP42irtpKzq404KDbjZpKZ/OWRLI=");
   }
