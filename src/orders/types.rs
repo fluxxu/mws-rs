@@ -168,20 +168,20 @@ str_enum! {
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq)]
 pub struct OrderItem {
-  OrderItemId: String,
-  QuantityOrdered: i32,
-  Title: String,
-  ASIN: String,
-  SellerSKU: String,
-  QuantityShipped: i32,
-  ItemPrice: Option<CurrencyAmount>,
-  ItemTax: Option<CurrencyAmount>,
-  GiftWrapPrice: Option<CurrencyAmount>,
-  GiftWrapTax: Option<CurrencyAmount>,
-  PromotionDiscount: Option<CurrencyAmount>,
-  ShippingPrice: Option<CurrencyAmount>,
-  ShippingDiscount: Option<CurrencyAmount>,
-  ShippingTax: Option<CurrencyAmount>,
+  pub OrderItemId: String,
+  pub QuantityOrdered: i32,
+  pub Title: String,
+  pub ASIN: String,
+  pub SellerSKU: String,
+  pub QuantityShipped: i32,
+  pub ItemPrice: Option<CurrencyAmount>,
+  pub ItemTax: Option<CurrencyAmount>,
+  pub GiftWrapPrice: Option<CurrencyAmount>,
+  pub GiftWrapTax: Option<CurrencyAmount>,
+  pub PromotionDiscount: Option<CurrencyAmount>,
+  pub ShippingPrice: Option<CurrencyAmount>,
+  pub ShippingDiscount: Option<CurrencyAmount>,
+  pub ShippingTax: Option<CurrencyAmount>,
 }
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for OrderItem {
