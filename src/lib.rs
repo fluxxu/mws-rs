@@ -21,3 +21,4 @@ pub mod client;
 // pub mod products;
 pub mod orders;
 pub mod reports;
+pub mod fulfillment_inventory;

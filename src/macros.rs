@@ -20,7 +20,7 @@ macro_rules! str_enum {
       $(
         $item,
       )*
-      Unknown(String)
+      UnknownValue(String)
     }
 
     impl AsRef<str> for $name {
@@ -29,7 +29,7 @@ macro_rules! str_enum {
           $(
             $name::$item => stringify!($item),
           )*
-          $name::Unknown(ref v) => v.as_ref(),
+          $name::UnknownValue(ref v) => v.as_ref(),
         }
       }
     }
@@ -40,14 +40,14 @@ macro_rules! str_enum {
           $(
             stringify!($item) => $name::$item,
           )*
-          _ => $name::Unknown(v.to_owned()),
+          _ => $name::UnknownValue(v.to_owned()),
         }
       }
     }
 
     impl Default for $name {
       fn default() -> Self {
-        $name::Unknown("".to_string())
+        $name::UnknownValue("".to_string())
       }
     }
 
@@ -64,7 +64,7 @@ macro_rules! str_enum {
           $(
             $name::$item => stringify!($item).to_string(),
           )*
-          $name::Unknown(v) => v,
+          $name::UnknownValue(v) => v,
         }
       }
     }
