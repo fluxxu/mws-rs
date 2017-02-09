@@ -5,7 +5,7 @@
 use chrono::{DateTime, UTC};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{InventorySupply};
+pub use self::types::{InventorySupply, InventorySupplyDetail, Condition, Timepoint};
 use xmlhelper::decode;
 use super::types::ToIso8601;
 
