@@ -15,7 +15,7 @@ macro_rules! str_enum {
     $name:ident, $($item:tt)*
   ) => {
     #[allow(non_camel_case_types)]
-    #[derive(Debug, PartialEq)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum $name {
       $(
         $item,
@@ -42,6 +42,14 @@ macro_rules! str_enum {
           )*
           _ => $name::UnknownValue(v.to_owned()),
         }
+      }
+    }
+
+    impl ::std::ops::Deref for $name {
+      type Target = str;
+
+      fn deref(&self) -> &str {
+        self.as_ref()
       }
     }
 
