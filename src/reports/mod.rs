@@ -227,9 +227,9 @@ pub fn GetFlatFileSettlementReport(client: &Client, report_id: String) -> Result
 
 #[cfg(test)]
 mod tests {
-  use dotenv::dotenv;
-  use super::*;
-  use super::super::client::get_test_client;
+  // use dotenv::dotenv;
+  // use super::*;
+  // use super::super::client::get_test_client;
 
   // #[test]
   // fn test_get_report_list() {

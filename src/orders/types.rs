@@ -353,6 +353,7 @@ mod tests {
       });
   }
 
+  #[test]
   fn test_decode_orderitem() {
     let mut s = decode::Stream::new(Cursor::new(r#"<OrderItem>
         <QuantityOrdered>1</QuantityOrdered>
@@ -388,7 +389,7 @@ mod tests {
       ItemTax: Some(CurrencyAmount { CurrencyCode: "USD".to_string(), Amount: 0.00 }),
       GiftWrapPrice: None,
       GiftWrapTax: None,
-      PromotionDiscount: None,
+      PromotionDiscount: Some(CurrencyAmount { CurrencyCode: "USD".to_string(), Amount: 0.00 }),
       ShippingPrice: None,
       ShippingDiscount: None,
       ShippingTax: None,
