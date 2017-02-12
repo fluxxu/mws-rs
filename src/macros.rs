@@ -15,12 +15,18 @@ macro_rules! str_enum {
     $name:ident, $($item:tt)*
   ) => {
     #[allow(non_camel_case_types)]
-    #[derive(Clone, Debug, PartialEq)]
+    #[derive(Clone, Debug)]
     pub enum $name {
       $(
         $item,
       )*
       UnknownValue(String)
+    }
+
+    impl $name {
+      pub fn to_string(&self) -> String {
+        self.as_ref().to_owned()
+      }
     }
 
     impl AsRef<str> for $name {
@@ -50,6 +56,12 @@ macro_rules! str_enum {
 
       fn deref(&self) -> &str {
         self.as_ref()
+      }
+    }
+
+    impl<T:AsRef<str>> PartialEq<T> for $name {
+      fn eq(&self, other: &T) -> bool {
+        self.as_ref() == other.as_ref()
       }
     }
 

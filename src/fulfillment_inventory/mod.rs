@@ -5,7 +5,7 @@
 use chrono::{DateTime, UTC};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{InventorySupply, InventorySupplyDetail, Condition, Timepoint};
+pub use self::types::{InventorySupply, InventorySupplyDetail, Condition, Timepoint, TimepointType};
 use xmlhelper::decode;
 use super::types::ToIso8601;
 
@@ -84,10 +84,10 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInventorySupply
   fn from_xml(s: &mut S) -> decode::Result<ListInventorySupplyResponse> {
     use self::decode::{start_document, element, fold_elements, characters};
     start_document(s)?;
-    element(s, "ListInventorySupplyResponse", |s| {
+    element(s, vec!["ListInventorySupplyResponse", "ListInventorySupplyByNextTokenResponse"], |s| {
       fold_elements(s, ListInventorySupplyResponse::default(), |s, response| {
         match s.local_name() {
-          "ListInventorySupplyResult" => {
+          "ListInventorySupplyResult" | "ListInventorySupplyByNextTokenResult" => {
             fold_elements(s, (), |s, _| {
               match s.local_name() {
                 "InventorySupplyList" => {
@@ -135,68 +135,9 @@ pub fn ListInventorySupply(client: &Client, parameters: ListInventorySupplyParam
   client.request_xml(Method::Post, PATH, VERSION, "ListInventorySupply", parameters).map_err(|err| err.into())
 }
 
-#[derive(Debug, Default)]
-pub struct ListInventorySupplyByNextTokenResponse {
-  pub request_id: String,
-  /// Indicates the specific marketplace to which the Inventory details apply. 
-  /// The element will only be included in the response if the corresponding 
-  /// request included a MarketplaceId. The value of the response MarketplaceId 
-  /// should match the corresponding request MarketplaceId.
-  pub marketplace_id: String,
-  /// A structured list of items that are or soon will be available for fulfillment
-  /// by the Amazon Fulfillment Network. Each item is either currently in the Amazon
-  /// Fulfillment Network or is in an inbound shipment to an Amazon fulfillment center. 
-  /// SKU, ASIN, condition, quantity, and availability information is included with each item.
-  pub inventory_supply_list: Vec<InventorySupply>,
-  /// A generated string used to pass information to your next request. If NextToken is returned,
-  /// pass the value of NextToken to ListInventorySupplyByNextToken. If NextToken is not returned, 
-  /// there is no more inventory availability information to return.
-  pub next_token: Option<String>,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInventorySupplyByNextTokenResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListInventorySupplyByNextTokenResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
-    start_document(s)?;
-    element(s, "ListInventorySupplyByNextTokenResponse", |s| {
-      fold_elements(s, ListInventorySupplyByNextTokenResponse::default(), |s, response| {
-        match s.local_name() {
-          "ListInventorySupplyByNextTokenResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "InventorySupplyList" => {
-                  response.inventory_supply_list = fold_elements(s, vec![], |s, list| {
-                    list.push(InventorySupply::from_xml(s)?);
-                    Ok(())
-                  })?;
-                },
-                "MarketplaceId" => {
-                  response.marketplace_id = characters(s)?;
-                },
-                "NextToken" => {
-                  response.next_token = Some(characters(s)?);
-                },
-                _ => {},
-              }
-              Ok(())
-            })
-          },
-          "ResponseMetadata" => {
-            response.request_id = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
-            Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
-    })
-  }
-}
-
 /// Returns the next page of information about the availability of a seller's inventory using the NextToken parameter.
 #[allow(non_snake_case)]
-pub fn ListInventorySupplyByNextToken(client: &Client, next_token: String) -> Result<Response<ListInventorySupplyByNextTokenResponse>> {
+pub fn ListInventorySupplyByNextToken(client: &Client, next_token: String) -> Result<Response<ListInventorySupplyResponse>> {
   let params = vec![
     ("NextToken".to_string(), next_token)
   ]; 

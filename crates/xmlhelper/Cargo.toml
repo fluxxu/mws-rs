@@ -1,0 +1,8 @@
+[package]
+name = "xmlhelper"
+version = "0.1.0"
+authors = ["Flux Xu <fluxxu@gmail.com>"]
+
+[dependencies]
+xml-rs = "0.3"
+error-chain = "0.7.1"
