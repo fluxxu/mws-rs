@@ -1,6 +1,6 @@
 [package]
 name = "mws"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 
 [dependencies]
