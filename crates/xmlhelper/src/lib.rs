@@ -2,3 +2,4 @@
 extern crate xml;
 
 pub mod decode;
+pub mod encode;
