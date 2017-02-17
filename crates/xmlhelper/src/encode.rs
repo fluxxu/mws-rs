@@ -1,4 +1,5 @@
-use xml::writer::{XmlEvent, EventWriter, Result};
+pub use xml::writer::{XmlEvent, EventWriter, Result};
+pub use xml::EmitterConfig;
 use std::io::Write;
 
 pub trait XmlEventWriter {
@@ -23,31 +24,50 @@ macro_rules! write_xml {
     $b.and_then(|_| write_xml!($w, $($rest)*))
   );
 
-  ($w:expr, $e:tt) => (
-    $w.write($e)
-  );
+  ($w:expr, $e:tt) => ({
+    let v: $crate::encode::XmlCharactersRef = $e.into();
+    let event: $crate::encode::XmlEvent = v.into();
+    $w.write(event)
+  });
 
   ($w:expr, 
     $tag_name:ident[$($attr_name:ident=$attr_value:expr),*][
       $($inner:tt)*
     ] $($rest:tt)*
   ) => ({
-    let event = ::xml::writer::XmlEvent::start_element(stringify!($tag_name));
+    let event = $crate::encode::XmlEvent::start_element(stringify!($tag_name));
     $(
       let event = event.attr(stringify!($attr_name), $attr_value);
     )*
-    let event: ::xml::writer::XmlEvent = event.into();
+    let event: $crate::encode::XmlEvent = event.into();
     $w.write(event)
       .and_then(|_| {
         write_xml!($w, $($inner)*)
       })
       .and_then(|_| {
-        $w.write(::xml::writer::XmlEvent::EndElement { name: None })
+        $w.write($crate::encode::XmlEvent::EndElement { name: None })
       })
       .and_then(|_| {
         write_xml!($w, $($rest)*)
       })
   });
+}
+
+pub struct XmlCharactersRef<'a> (&'a str);
+impl<'a> From<&'a str> for XmlCharactersRef<'a> {
+  fn from(v: &str) -> XmlCharactersRef {
+    XmlCharactersRef(v)
+  }
+}
+impl<'a> From<&'a String> for XmlCharactersRef<'a> {
+  fn from(v: &String) -> XmlCharactersRef {
+    XmlCharactersRef(v.as_ref())
+  }
+}
+impl<'a> From<XmlCharactersRef<'a>> for XmlEvent<'a> {
+  fn from(v: XmlCharactersRef) -> XmlEvent {
+    XmlEvent::characters(v.0)
+  }
 }
 
 #[cfg(test)]

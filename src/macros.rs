@@ -10,7 +10,7 @@ macro_rules! str_enum {
   ) => {
     str_enum!($name, $($item)*);
   };
-
+  
   (
     $name:ident, $($item:tt)*
   ) => {
@@ -89,4 +89,55 @@ macro_rules! str_enum {
       }
     }
   };
+}
+
+macro_rules! string_map_enum {
+  (
+    pub enum $name:ident { 
+      $($variant:ident = $value:expr),+
+      $(,)*
+    }
+  ) => (
+    pub enum $name {
+      $($variant,)*
+      UnknownValue(String)
+    }
+
+    impl ::std::str::FromStr for $name {
+      type Err = ();
+      fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+          $(
+            $value => $name::$variant,
+          )*
+          _ => $name::UnknownValue(s.to_owned()),
+        })
+      }
+    }
+
+    impl ::std::ops::Deref for $name {
+      type Target = str;
+
+      fn deref(&self) -> &str {
+        match *self {
+          $(
+            $name::$variant => $value,
+          )*
+          $name::UnknownValue(ref value) => value,
+        }
+      }
+    }
+
+    impl<T: ::std::ops::Deref<Target = str>> PartialEq<T> for $name {
+      fn eq(&self, other: &T) -> bool {
+        self == other
+      }
+    }
+
+    impl Default for $name {
+      fn default() -> Self {
+        $name::UnknownValue("".to_owned())
+      }
+    }
+  )
 }

@@ -1,12 +1,10 @@
-#![feature(log_syntax)]
-
 extern crate url;
 extern crate chrono;
 extern crate crypto;
 extern crate reqwest;
 extern crate base64;
 #[macro_use] extern crate error_chain;
-extern crate xmlhelper;
+#[macro_use] extern crate xmlhelper;
 extern crate csv;
 
 #[cfg(test)] extern crate dotenv;
@@ -22,3 +20,4 @@ pub mod client;
 pub mod orders;
 pub mod reports;
 pub mod fulfillment_inventory;
+pub mod feeds;
