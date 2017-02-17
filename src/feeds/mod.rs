@@ -19,7 +19,7 @@ string_map_enum! {
     FlatFileListings = "_POST_FLAT_FILE_LISTINGS_DATA_",
     FlatFileBookLoader = "_POST_FLAT_FILE_BOOKLOADER_DATA_",
     FlatFileMusicLoader = "_POST_FLAT_FILE_CONVERGENCE_LISTINGS_DATA_",
-    FlatFileVideoLoader = "_POST_FLAT_FILE_LISTINGS_DATA_",
+    // FlatFileVideoLoader = "_POST_FLAT_FILE_LISTINGS_DATA_",
     FlatFilePriceAndQuantityUpdate = "_POST_FLAT_FILE_PRICEANDQUANTITYONLY_UPDATE_DATA_",
     UIEEInventory = "_POST_UIEE_BOOKLOADER_DATA_",
     AutomotivePartFinder = "_POST_STD_ACES_DATA_",
@@ -138,25 +138,43 @@ mod tests {
   #[test]
   fn test_envelope_write_xml() {
     let mut writer = EventWriter::new_with_config(vec![], EmitterConfig::new().perform_indent(true));
-    let context = vec!["context-value-0", "context-value-1"];
 
     {
       let w = &mut writer;
-      let e = Envelope::<inventory::InventoryMessage>::new("1234567890".to_owned());
+      let mut e = Envelope::<inventory::InventoryMessage>::new("1234567890".to_owned());
+      e.add_message(inventory::InventoryMessage {
+        SKU: "p1".to_owned(),
+        Quantity: 100,
+        FulfillmentLatency: 0,
+      }, Some(OperationType::PartialUpdate))
+      .add_message(inventory::InventoryMessage {
+        SKU: "p2".to_owned(),
+        Quantity: 200,
+        FulfillmentLatency: 0,
+      }, Some(OperationType::PartialUpdate));
       e.write_xml(w).unwrap();
     }
 
     let xml = String::from_utf8(writer.into_inner()).unwrap();
-    println!("{}", xml);
-//     assert_eq!(xml, r#"<?xml version="1.0" encoding="utf-8"?>
-// <Enevolop Static="static-value" FromContext="context-value-0">
-//   <Header FirstAttr="1" SecondAttr="2" />
-//   <Body>Body Content</Body>
-//   <ContextItems>
-//     <Item Index="0">context-value-0</Item>
-//     <Item Index="1">context-value-1</Item>
-//   </ContextItems>
-//   <Footer>context-value-1</Footer>
-// </Enevolop>"#);
+    assert_eq!(xml, r#"<?xml version="1.0" encoding="utf-8"?>
+<AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amznenvelope.xsd">
+  <Header>
+    <DocumentVersion>1.01</DocumentVersion>
+    <MerchantIdentifier>1234567890</MerchantIdentifier>
+  </Header>
+  <MessageType>Inventory</MessageType>
+  <Messages>
+    <Message>
+      <SKU>p1</SKU>
+      <Quantity>100</Quantity>
+      <FulfillmentLatency>0</FulfillmentLatency>
+    </Message>
+    <Message>
+      <SKU>p2</SKU>
+      <Quantity>200</Quantity>
+      <FulfillmentLatency>0</FulfillmentLatency>
+    </Message>
+  </Messages>
+</AmazonEnvelope>"#);
   }
 }
