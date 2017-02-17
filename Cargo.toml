@@ -8,7 +8,7 @@ base64 = "0.2.1"
 rust-crypto = "0.2.36"
 reqwest = "0.4.0"
 url = "1.2.4"
-chrono = "0.2.25"
+chrono = "0.3"
 error-chain = "0.7.1"
 xmlhelper = { path = "./crates/xmlhelper" }
 csv = "0.14"
