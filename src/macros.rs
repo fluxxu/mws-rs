@@ -98,13 +98,15 @@ macro_rules! string_map_enum {
       $(,)*
     }
   ) => (
+    #[allow(non_camel_case_types)]
+    #[derive(Clone, Debug)]
     pub enum $name {
       $($variant,)*
       UnknownValue(String)
     }
 
     impl ::std::str::FromStr for $name {
-      type Err = ();
+      type Err = ::std::io::Error;
       fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
           $(
@@ -119,18 +121,24 @@ macro_rules! string_map_enum {
       type Target = str;
 
       fn deref(&self) -> &str {
+        self.as_ref()
+      }
+    }
+
+    impl AsRef<str> for $name {
+      fn as_ref(&self) -> &str {
         match *self {
           $(
             $name::$variant => $value,
           )*
-          $name::UnknownValue(ref value) => value,
+          $name::UnknownValue(ref v) => v.as_ref(),
         }
       }
     }
 
-    impl<T: ::std::ops::Deref<Target = str>> PartialEq<T> for $name {
+    impl<T:AsRef<str>> PartialEq<T> for $name {
       fn eq(&self, other: &T) -> bool {
-        self == other
+        self.as_ref() == other.as_ref()
       }
     }
 

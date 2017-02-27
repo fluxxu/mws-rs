@@ -20,4 +20,5 @@ pub mod client;
 pub mod orders;
 pub mod reports;
 pub mod fulfillment_inventory;
+pub mod fulfillment_inbound_shipment;
 pub mod feeds;

@@ -406,6 +406,19 @@ pub fn fold_elements<S: XmlEventStream, State, F>(stream: &mut S, state: State, 
   Ok(state)
 }
 
+#[macro_export]
+macro_rules! test_decode {
+    (
+      $decoder:ident, $xml:expr, $result:expr
+    ) => {
+      {
+        let mut s = $crate::decode::Stream::new(::std::io::Cursor::new($xml));
+        let result = <$decoder as $crate::decode::FromXMLStream<_>>::from_xml(&mut s).expect("decode");
+        assert_eq!(result, $result);
+      }
+    };
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
