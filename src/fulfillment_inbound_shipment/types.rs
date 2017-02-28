@@ -144,7 +144,7 @@ pub struct InboundShipmentInfo {
   ///	Date that the shipment must arrive at an Amazon fulfillment center to avoid
   /// delivery promise breaks for pre-ordered items. For more information, see 
   /// GetPreorderInfo. Pre-orders are only available in India and Japan.
-  pub ConfirmedNeedByDate: String,
+  pub ConfirmedNeedByDate: Option<String>,
   ///	Where the seller provided box contents information for a shipment. This is 
   /// only returned for shipments to US fulfillment centers.
   pub BoxContentsSource: Option<BoxContentsSource>,
@@ -165,7 +165,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentInfo
         "LabelPrepType" => record.LabelPrepType = characters(s).map(Some)?,
         "ShipmentStatus" => record.ShipmentStatus = characters(s)?,
         "AreCasesRequired" => record.AreCasesRequired = characters(s)?,
-        "ConfirmedNeedByDate" => record.ConfirmedNeedByDate = characters(s)?,
+        "ConfirmedNeedByDate" => record.ConfirmedNeedByDate = characters(s).map(Some)?,
         "BoxContentsSource" => record.BoxContentsSource = characters(s).map(Some)?,
         "EstimatedBoxContentsFee" => record.EstimatedBoxContentsFee = BoxContentsFeeDetails::from_xml(s).map(Some)?,
         _ => {},
