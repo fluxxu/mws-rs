@@ -185,6 +185,25 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInboundShipment
   }
 }
 
+/// Returns a list of items in a specified inbound shipment, or a list of items that were updated within a specified time frame.
+/// 
+/// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipmentItems.html)
+#[allow(non_snake_case)]
+pub fn ListInboundShipmentItems(client: &Client, parameters: ListInboundShipmentItemsParameters) -> Result<Response<ListInboundShipmentItemsResponse>> {
+  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipmentItems", parameters).map_err(|err| err.into())
+}
+
+/// Returns the next page of inbound shipment items using the NextToken parameter.
+///
+/// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipmentItemsByNextToken.html)
+#[allow(non_snake_case)]
+pub fn ListInboundShipmentItemsByNextToken(client: &Client, next_token: String) -> Result<Response<ListInboundShipmentItemsResponse>> {
+  let params = vec![
+    ("NextToken".to_string(), next_token)
+  ]; 
+  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipmentItemsByNextToken", params).map_err(|err| err.into())
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
