@@ -17,7 +17,7 @@ error_chain! {
   }
 }
 
-static PATH: &'static str = "FulfillmentInboundShipment/2010-10-01";
+static PATH: &'static str = "/FulfillmentInboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
 /// Parameters for `ListInboundShipments`
