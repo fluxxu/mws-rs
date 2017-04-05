@@ -3,6 +3,7 @@ pub use reqwest::{Method, StatusCode};
 use reqwest;
 use xmlhelper::decode::{FromXMLStream, Stream};
 use tdff::FromTdff;
+use std::sync::{Arc, Mutex};
 
 error_chain! {
   foreign_links {
@@ -21,6 +22,7 @@ error_chain! {
       description("MWS request is unsuccessful")
       display("MWS request is unsuccessful: {:?}", resp)
     }
+    PoisonError
   }
 }
 
@@ -120,14 +122,25 @@ pub struct ClientOptions {
 
 pub struct Client {
   options: ClientOptions,
-  http_client: reqwest::Client,
+  http_client: Arc<Mutex<reqwest::Client>>,
+}
+
+macro_rules! get_http_client {
+  ($s:ident) => ($s.http_client.lock().map_err(|_| ErrorKind::PoisonError)?)
 }
 
 impl Client {
   pub fn new(options: ClientOptions) -> Result<Client> {
     Ok(Client {
       options: options,
-      http_client: reqwest::Client::new()?,
+      http_client: Arc::new(Mutex::new(reqwest::Client::new()?)),
+    })
+  }
+
+  pub fn new_with_http_client(options: ClientOptions, http_client: Arc<Mutex<reqwest::Client>>) -> Result<Client> {
+    Ok(Client {
+      options: options,
+      http_client: http_client,
     })
   }
 
@@ -142,8 +155,8 @@ impl Client {
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
     //println!("request: {}", url);
-    self.http_client.request(method, &url).send()
-      .map_err(|err| err.into())
+    get_http_client!(self).request(method, &url).send()
+      .map_err(Into::into)
   }
 
   pub fn request_xml<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
@@ -214,7 +227,7 @@ impl Client {
       sign.add(&k, v);
     }
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
-    let mut resp = self.http_client.request(method, &url).send()?;
+    let mut resp = get_http_client!(self).request(method, &url).send()?;
     let mut s = String::new();
     resp.read_to_string(&mut s)?;
     Ok((resp.status().clone(), s))
