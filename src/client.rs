@@ -137,11 +137,11 @@ impl Client {
     })
   }
 
-  pub fn new_with_http_client(options: ClientOptions, http_client: Arc<Mutex<reqwest::Client>>) -> Result<Client> {
-    Ok(Client {
+  pub fn new_with_http_client(options: ClientOptions, http_client: Arc<Mutex<reqwest::Client>>) -> Client {
+    Client {
       options: options,
       http_client: http_client,
-    })
+    }
   }
 
   fn request<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<reqwest::Response> 
