@@ -8,12 +8,17 @@ mod types;
 pub use self::types::{ReportInfo, ReportType, SettlementReport};
 use super::types::ToIso8601;
 use xmlhelper::decode;
+use std::io::{self, Write};
 
 error_chain! {
   links {
     Client(super::client::Error, super::client::ErrorKind);
     XmlDecode(decode::Error, decode::ErrorKind);
     TdffDecode(super::tdff::Error, super::tdff::ErrorKind);
+  }
+
+  foreign_links {
+    Io(io::Error);
   }
 }
 
@@ -219,6 +224,16 @@ pub fn GetReportListByNextToken(client: &Client, next_token: String) -> Result<R
   client.request_xml(Method::Post, PATH, VERSION, "GetReportListByNextToken", params).map_err(|err| err.into())
 }
 
+/// Returns the contents of a report and the Content-MD5 header for the returned report body.
+#[allow(non_snake_case)]
+pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> Result<u64> {
+  let params = vec![("ReportId".to_string(), report_id)];
+  let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
+  let size = io::copy(&mut resp, out)?;
+  Ok(size)
+} 
+
+#[deprecated]
 #[allow(non_snake_case)]
 pub fn GetFlatFileSettlementReport(client: &Client, report_id: String) -> Result<Response<SettlementReport>> {
   let params = vec![("ReportId".to_string(), report_id)];

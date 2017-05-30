@@ -144,7 +144,7 @@ impl Client {
     }
   }
 
-  fn request<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<reqwest::Response> 
+  pub fn request<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<reqwest::Response> 
     where P: Into<Vec<(String, String)>>
   {
     let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
