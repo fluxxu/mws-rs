@@ -8,6 +8,8 @@ use tdff;
 str_enum! {
   pub enum ReportType {
     _GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_,
+    _GET_AFN_INVENTORY_DATA_,
+    _GET_FBA_FULFILLMENT_CURRENT_INVENTORY_DATA_,
   }
 }
 
@@ -19,6 +21,30 @@ pub struct ReportInfo {
   pub report_id: String,
   pub available_date: Option<DateTime<UTC>>,
   pub report_request_id: String,
+}
+
+str_enum! {
+  pub enum ReportProcessingStatus {
+    _SUBMITTED_,
+    _IN_PROGRESS_,
+    _CANCELLED_,
+    _DONE_,
+    _DONE_NO_DATA_,
+  }
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct ReportRequestInfo {
+  pub report_request_id: String,
+  pub report_type: String,
+  pub start_date: Option<DateTime<UTC>>,
+  pub end_date: Option<DateTime<UTC>>,
+  pub scheduled: bool,
+  pub submitted_date: Option<DateTime<UTC>>,
+  pub report_processing_status: String,
+  pub generated_report_id: Option<String>,
+  pub started_processing_date: Option<DateTime<UTC>>,
+  pub completed_date: Option<DateTime<UTC>>,
 }
 
 /// FlatFileSettlementReport

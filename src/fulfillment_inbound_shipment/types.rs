@@ -278,7 +278,7 @@ mod tests {
         })
       }),
       AreCasesRequired: false,
-      ConfirmedNeedByDate: "".to_owned(),
+      ConfirmedNeedByDate: None,
     });
   }
 

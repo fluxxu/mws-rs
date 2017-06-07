@@ -5,7 +5,13 @@
 use chrono::{DateTime, UTC};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{ReportInfo, ReportType, SettlementReport};
+pub use self::types::{
+  ReportInfo,
+  ReportType,
+  SettlementReport,
+  ReportRequestInfo,
+  ReportProcessingStatus
+};
 use super::types::ToIso8601;
 use xmlhelper::decode;
 use std::io::{self, Write};
@@ -84,10 +90,10 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListRespon
   fn from_xml(s: &mut S) -> decode::Result<GetReportListResponse> {
     use self::decode::{start_document, element, fold_elements, characters};
     start_document(s)?;
-    element(s, "GetReportListResponse", |s| {
+    element(s, vec!["GetReportListResponse", "GetReportListByNextTokenResponse"], |s| {
       fold_elements(s, GetReportListResponse::default(), |s, response| {
         match s.local_name() {
-          "GetReportListResult" => {
+          "GetReportListResult" | "GetReportListByNextTokenResult" => {
             fold_elements(s, (), |s, _| {
               match s.local_name() {
                 "ReportInfo" => {
@@ -147,50 +153,128 @@ pub fn GetReportList(client: &Client, params: GetReportListParameters) -> Result
   client.request_xml(Method::Post, PATH, VERSION, "GetReportList", params).map_err(|err| err.into())
 }
 
+/// Returns a list of reports using the NextToken, which was supplied by a previous request to either 
+/// GetReportListByNextToken or GetReportList, where the value of HasNext was true in the previous call.
+#[allow(non_snake_case)]
+pub fn GetReportListByNextToken(client: &Client, next_token: String) -> Result<Response<GetReportListResponse>> {
+  let params = vec![("NextToken".to_string(), next_token)];  
+  client.request_xml(Method::Post, PATH, VERSION, "GetReportListByNextToken", params).map_err(|err| err.into())
+}
+
+/// Returns the contents of a report and the Content-MD5 header for the returned report body.
+#[allow(non_snake_case)]
+pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> Result<u64> {
+  let params = vec![("ReportId".to_string(), report_id)];
+  let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
+  let size = io::copy(&mut resp, out)?;
+  Ok(size)
+}
+
+/// Parameters for `GetReportRequestList`
 #[derive(Debug, Default)]
-pub struct GetReportListByNextTokenResponse {
+pub struct GetReportRequestListParameters {
+  pub max_count: Option<i32>,
+  pub report_type_list: Option<Vec<ReportType>>,
+  pub requested_from_date: Option<DateTime<UTC>>,
+  pub requested_to_date: Option<DateTime<UTC>>,
+  pub report_request_id_list: Option<Vec<String>>,
+  pub report_processing_status_list: Option<Vec<ReportProcessingStatus>>,
+}
+
+impl Into<Vec<(String, String)>> for GetReportRequestListParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![];
+
+    if let Some(v) = self.max_count {
+      result.push(("MaxCount".to_string(), v.to_string()));
+    }
+
+    if let Some(list) = self.report_type_list {
+      for (i, ty) in list.into_iter().enumerate() {
+        result.push((format!("ReportTypeList.Type.{}", i + 1), ty.into()));
+      }
+    }
+
+    if let Some(date) = self.requested_from_date {
+      result.push(("RequestedFromDate".to_string(), date.to_iso8601()));
+    }
+
+    if let Some(date) = self.requested_to_date {
+      result.push(("RequestedToDate".to_string(), date.to_iso8601()));
+    }
+
+    if let Some(list) = self.report_request_id_list {
+      for (i, id) in list.into_iter().enumerate() {
+        result.push((format!("ReportRequestIdList.Id.{}", i + 1), id));
+      }
+    }
+
+    if let Some(list) = self.report_processing_status_list {
+      for (i, id) in list.into_iter().enumerate() {
+        result.push((format!("ReportProcessingStatusList.Id.{}", i + 1), id.to_string()));
+      }
+    }
+
+    result
+  }
+}
+
+#[derive(Debug, Default)]
+pub struct GetReportRequestListResponse {
   pub request_id: String,
-  pub reports: Vec<ReportInfo>,
+  pub report_requests: Vec<ReportRequestInfo>,
   pub next_token: Option<String>,
   pub has_next: bool,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListByNextTokenResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetReportListByNextTokenResponse> {
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportRequestListResponse {
+  fn from_xml(s: &mut S) -> decode::Result<GetReportRequestListResponse> {
     use self::decode::{start_document, element, fold_elements, characters};
     start_document(s)?;
-    element(s, "GetReportListByNextTokenResponse", |s| {
-      fold_elements(s, GetReportListByNextTokenResponse::default(), |s, response| {
+    element(s, vec!["GetReportRequestListResponse", "GetReportRequestListByNextTokenResponse"], |s| {
+      fold_elements(s, GetReportRequestListResponse::default(), |s, response| {
         match s.local_name() {
-          "GetReportListByNextTokenResult" => {
+          "GetReportRequestListResult" | "GetReportRequestListByNextTokenResult" => {
             fold_elements(s, (), |s, _| {
               match s.local_name() {
-                "ReportInfo" => {
-                  let item = fold_elements(s, ReportInfo::default(), |s, info| {
+                "ReportRequestInfo" => {
+                  let item = fold_elements(s, ReportRequestInfo::default(), |s, info| {
                     match s.local_name() {
                       "ReportType" => {
                         info.report_type = characters(s)?;
                       },
-                      "Acknowledged" => {
-                        info.acknowledged = characters(s)?;
+                      "ReportProcessingStatus" => {
+                        info.report_processing_status = characters(s)?;
                       },
-                      "AcknowledgedDate" => {
-                        info.acknowledged_date = characters(s).map(Some)?;
+                      "StartDate" => {
+                        info.start_date = characters(s).map(Some)?;
                       },
-                      "ReportId" => {
-                        info.report_id = characters(s)?;
+                      "EndDate" => {
+                        info.end_date = characters(s).map(Some)?;
                       },
-                      "AvailableDate" => {
-                        info.available_date = characters(s).map(Some)?;                        
+                      "Scheduled" => {
+                        info.scheduled = characters(s)?;
                       },
                       "ReportRequestId" => {
                         info.report_request_id = characters(s)?;
+                      },
+                      "SubmittedDate" => {
+                        info.submitted_date = characters(s).map(Some)?;
+                      },
+                      "GeneratedReportId" => {
+                        info.generated_report_id = characters(s).map(Some)?;
+                      },
+                      "StartedProcessingDate" => {
+                        info.started_processing_date = characters(s).map(Some)?;
+                      },
+                      "CompletedDate" => {
+                        info.completed_date = characters(s).map(Some)?;
                       },
                       _ => {},
                     }
                     Ok(())
                   })?;
-                  response.reports.push(item);
+                  response.report_requests.push(item);
                 },
                 "HasNext" => {
                   response.has_next = characters(s)?;
@@ -216,22 +300,19 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListByNext
   }
 }
 
+/// Returns a list of report requests that you can use to get the ReportRequestId for a report.
+#[allow(non_snake_case)]
+pub fn GetReportRequestList(client: &Client, params: GetReportRequestListParameters) -> Result<Response<GetReportRequestListResponse>> {
+  client.request_xml(Method::Post, PATH, VERSION, "GetReportRequestList", params).map_err(|err| err.into())
+}
+
 /// Returns a list of reports using the NextToken, which was supplied by a previous request to either 
 /// GetReportListByNextToken or GetReportList, where the value of HasNext was true in the previous call.
 #[allow(non_snake_case)]
-pub fn GetReportListByNextToken(client: &Client, next_token: String) -> Result<Response<GetReportListByNextTokenResponse>> {
+pub fn GetReportRequestListByNextToken(client: &Client, next_token: String) -> Result<Response<GetReportRequestListResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];  
-  client.request_xml(Method::Post, PATH, VERSION, "GetReportListByNextToken", params).map_err(|err| err.into())
+  client.request_xml(Method::Post, PATH, VERSION, "GetReportRequestListByNextToken", params).map_err(|err| err.into())
 }
-
-/// Returns the contents of a report and the Content-MD5 header for the returned report body.
-#[allow(non_snake_case)]
-pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> Result<u64> {
-  let params = vec![("ReportId".to_string(), report_id)];
-  let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
-  let size = io::copy(&mut resp, out)?;
-  Ok(size)
-} 
 
 #[deprecated]
 #[allow(non_snake_case)]
@@ -266,6 +347,30 @@ mod tests {
   //   dotenv().ok();
   //   let c = get_test_client();
   //   let res = GetFlatFileSettlementReport(&c, "3915548544017177".to_string()).expect("GetFlatFileSettlementReport");
+  //   match res {
+  //     Response::Error(e) => panic!("request error: {:?}", e),
+  //     Response::Success(res) => {
+  //       println!("{:?}", res);
+  //     },
+  //   }
+  // }
+
+  // #[test]
+  // fn test_get_report_request_list() {
+  //   dotenv().ok();
+  //   let c = get_test_client();
+  //   let mut params = GetReportRequestListParameters::default();
+  //   params.report_type_list = Some(vec![ReportType::_GET_AFN_INVENTORY_DATA_]);
+  //   let res = GetReportRequestList(&c, params).expect("GetReportRequestList");
+  //   let next_token = match res {
+  //     Response::Error(e) => panic!("request error: {:?}", e),
+  //     Response::Success(res) => {
+  //       println!("{:?}", res);
+  //       res.next_token.unwrap()
+  //     },
+  //   };
+
+  //   let res = GetReportRequestListByNextToken(&c, next_token).expect("GetReportRequestListByNextToken");
   //   match res {
   //     Response::Error(e) => panic!("request error: {:?}", e),
   //     Response::Success(res) => {

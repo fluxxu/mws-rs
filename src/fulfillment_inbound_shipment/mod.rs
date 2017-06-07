@@ -259,7 +259,7 @@ mod tests {
           ShipmentName: "FBA (2/19/17 9:39 PM) - 1".to_owned(),
           BoxContentsSource: Some(BoxContentsSource::INTERACTIVE),
           ShipmentStatus: ShipmentStatus::CLOSED,
-          ConfirmedNeedByDate: "".to_owned(),
+          ConfirmedNeedByDate: None,
           EstimatedBoxContentsFee: None,
         }
       ],
