@@ -314,6 +314,122 @@ pub fn GetReportRequestListByNextToken(client: &Client, next_token: String) -> R
   client.request_xml(Method::Post, PATH, VERSION, "GetReportRequestListByNextToken", params).map_err(|err| err.into())
 }
 
+/// Parameters for `RequestReport`
+#[derive(Debug, Default)]
+pub struct RequestReportParameters {
+  pub report_type: ReportType,
+  pub start_date: Option<DateTime<UTC>>,
+  pub end_date: Option<DateTime<UTC>>,
+  pub report_options: Option<String>,
+  pub marketplace_id_list: Option<Vec<String>>,
+}
+
+impl Into<Vec<(String, String)>> for RequestReportParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![
+      ("ReportType".to_string(), self.report_type.to_string())
+    ];
+
+    if let Some(date) = self.start_date {
+      result.push(("StartDate".to_string(), date.to_iso8601()));
+    }
+
+    if let Some(date) = self.end_date {
+      result.push(("EndDate".to_string(), date.to_iso8601()));
+    }
+
+    if let Some(opts) = self.report_options {
+      result.push(("ReportOptions".to_string(), opts));
+    }
+
+    if let Some(list) = self.marketplace_id_list {
+      for (i, ty) in list.into_iter().enumerate() {
+        result.push((format!("MarketplaceIdList.Type.{}", i + 1), ty.into()));
+      }
+    }
+
+    result
+  }
+}
+
+#[derive(Debug, Default)]
+pub struct RequestReportResponse {
+  pub request_id: String,
+  pub request: ReportRequestInfo,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for RequestReportResponse {
+  fn from_xml(s: &mut S) -> decode::Result<RequestReportResponse> {
+    use self::decode::{start_document, element, fold_elements, characters};
+    start_document(s)?;
+    element(s, "RequestReportResponse", |s| {
+      fold_elements(s, RequestReportResponse::default(), |s, response| {
+        match s.local_name() {
+          "RequestReportResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "ReportRequestInfo" => {
+                  let item = fold_elements(s, ReportRequestInfo::default(), |s, info| {
+                    match s.local_name() {
+                      "ReportType" => {
+                        info.report_type = characters(s)?;
+                      },
+                      "ReportProcessingStatus" => {
+                        info.report_processing_status = characters(s)?;
+                      },
+                      "StartDate" => {
+                        info.start_date = characters(s).map(Some)?;
+                      },
+                      "EndDate" => {
+                        info.end_date = characters(s).map(Some)?;
+                      },
+                      "Scheduled" => {
+                        info.scheduled = characters(s)?;
+                      },
+                      "ReportRequestId" => {
+                        info.report_request_id = characters(s)?;
+                      },
+                      "SubmittedDate" => {
+                        info.submitted_date = characters(s).map(Some)?;
+                      },
+                      "GeneratedReportId" => {
+                        info.generated_report_id = characters(s).map(Some)?;
+                      },
+                      "StartedProcessingDate" => {
+                        info.started_processing_date = characters(s).map(Some)?;
+                      },
+                      "CompletedDate" => {
+                        info.completed_date = characters(s).map(Some)?;
+                      },
+                      _ => {},
+                    }
+                    Ok(())
+                  })?;
+                  response.request = item;
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.request_id = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
+}
+
+#[allow(non_snake_case)]
+pub fn RequestReport(client: &Client, params: RequestReportParameters) -> Result<Response<RequestReportResponse>> {
+  client.request_xml(Method::Post, PATH, VERSION, "RequestReport", params).map_err(|err| err.into())
+}
+
 #[deprecated]
 #[allow(non_snake_case)]
 pub fn GetFlatFileSettlementReport(client: &Client, report_id: String) -> Result<Response<SettlementReport>> {
