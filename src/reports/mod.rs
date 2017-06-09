@@ -7,7 +7,6 @@ use client::{Client, Method, Response};
 mod types;
 pub use self::types::{
   ReportInfo,
-  ReportType,
   SettlementReport,
   ReportRequestInfo,
   ReportProcessingStatus
@@ -38,16 +37,16 @@ static VERSION: &'static str = "2009-01-01";
 
 /// Parameters for `GetReportList`
 #[derive(Debug, Default)]
-pub struct GetReportListParameters {
+pub struct GetReportListParameters<'a> {
   pub max_count: Option<i32>,
-  pub report_type_list: Option<Vec<ReportType>>,
+  pub report_type_list: Option<Vec<&'a str>>,
   pub acknowledged: Option<bool>,
   pub available_from_date: Option<DateTime<UTC>>,
   pub available_to_date: Option<DateTime<UTC>>,
   pub report_request_id_list: Option<Vec<String>>,
 }
 
-impl Into<Vec<(String, String)>> for GetReportListParameters {
+impl<'a> Into<Vec<(String, String)>> for GetReportListParameters<'a> {
   fn into(self) -> Vec<(String, String)> {
     let mut result = vec![];
 
@@ -182,16 +181,16 @@ pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> R
 
 /// Parameters for `GetReportRequestList`
 #[derive(Debug, Default)]
-pub struct GetReportRequestListParameters {
+pub struct GetReportRequestListParameters<'a> {
   pub max_count: Option<i32>,
-  pub report_type_list: Option<Vec<ReportType>>,
+  pub report_type_list: Option<Vec<&'a str>>,
   pub requested_from_date: Option<DateTime<UTC>>,
   pub requested_to_date: Option<DateTime<UTC>>,
   pub report_request_id_list: Option<Vec<String>>,
   pub report_processing_status_list: Option<Vec<ReportProcessingStatus>>,
 }
 
-impl Into<Vec<(String, String)>> for GetReportRequestListParameters {
+impl<'a> Into<Vec<(String, String)>> for GetReportRequestListParameters<'a> {
   fn into(self) -> Vec<(String, String)> {
     let mut result = vec![];
 
@@ -326,15 +325,15 @@ pub fn GetReportRequestListByNextToken(client: &Client, next_token: String) -> R
 
 /// Parameters for `RequestReport`
 #[derive(Debug, Default)]
-pub struct RequestReportParameters {
-  pub report_type: ReportType,
+pub struct RequestReportParameters<'a> {
+  pub report_type: &'a str,
   pub start_date: Option<DateTime<UTC>>,
   pub end_date: Option<DateTime<UTC>>,
   pub report_options: Option<String>,
   pub marketplace_id_list: Option<Vec<String>>,
 }
 
-impl Into<Vec<(String, String)>> for RequestReportParameters {
+impl<'a> Into<Vec<(String, String)>> for RequestReportParameters<'a> {
   fn into(self) -> Vec<(String, String)> {
     let mut result = vec![
       ("ReportType".to_string(), self.report_type.to_string())

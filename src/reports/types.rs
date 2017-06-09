@@ -2,17 +2,6 @@ use std::io::Read;
 use chrono::{DateTime, UTC};
 use tdff;
 
-/// An enumeration of the types of reports that can be requested from Amazon MWS.
-/// 
-/// [Reference](http://docs.developer.amazonservices.com/en_CA/reports/Reports_ReportType.html)
-str_enum! {
-  pub enum ReportType {
-    _GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE_,
-    _GET_AFN_INVENTORY_DATA_,
-    _GET_FBA_FULFILLMENT_CURRENT_INVENTORY_DATA_,
-  }
-}
-
 #[derive(Debug, Default, PartialEq)]
 pub struct ReportInfo {
   pub report_type: String,
