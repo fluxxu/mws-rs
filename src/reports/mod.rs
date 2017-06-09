@@ -17,6 +17,10 @@ use xmlhelper::decode;
 use std::io::{self, Write};
 
 error_chain! {
+  errors {
+    ContentMD5HeaderMissing
+  }
+
   links {
     Client(super::client::Error, super::client::ErrorKind);
     XmlDecode(decode::Error, decode::ErrorKind);
@@ -25,6 +29,7 @@ error_chain! {
 
   foreign_links {
     Io(io::Error);
+    Utf8(::std::str::Utf8Error);
   }
 }
 
@@ -163,11 +168,16 @@ pub fn GetReportListByNextToken(client: &Client, next_token: String) -> Result<R
 
 /// Returns the contents of a report and the Content-MD5 header for the returned report body.
 #[allow(non_snake_case)]
-pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> Result<u64> {
+pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> Result<(u64, String)> {
   let params = vec![("ReportId".to_string(), report_id)];
   let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
+  let content_md5 = resp.headers()
+    .get_raw("Content-MD5")
+    .ok_or_else(|| -> Error { ErrorKind::ContentMD5HeaderMissing.into() })
+    .and_then(|data| ::std::str::from_utf8(&data[0]).map_err(Into::into))?
+    .to_owned();
   let size = io::copy(&mut resp, out)?;
-  Ok(size)
+  Ok((size, content_md5))
 }
 
 /// Parameters for `GetReportRequestList`
