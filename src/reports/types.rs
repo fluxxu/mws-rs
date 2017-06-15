@@ -30,7 +30,7 @@ pub struct ReportRequestInfo {
   pub end_date: Option<DateTime<UTC>>,
   pub scheduled: bool,
   pub submitted_date: Option<DateTime<UTC>>,
-  pub report_processing_status: String,
+  pub report_processing_status: ReportProcessingStatus,
   pub generated_report_id: Option<String>,
   pub started_processing_date: Option<DateTime<UTC>>,
   pub completed_date: Option<DateTime<UTC>>,
