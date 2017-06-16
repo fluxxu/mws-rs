@@ -11,7 +11,7 @@ extern crate csv;
 
 mod types;
 #[macro_use] mod macros;
-#[macro_use] mod tdff;
+#[macro_use] pub mod tdff;
 mod sign;
 pub mod client;
 
