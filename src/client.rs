@@ -155,7 +155,7 @@ impl Client {
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
     //println!("request: {}", url);
-    get_http_client!(self).request(method, &url).send()
+    get_http_client!(self).request(method, &url)?.send()
       .map_err(Into::into)
   }
 

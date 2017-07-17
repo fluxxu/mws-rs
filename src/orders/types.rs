@@ -1,4 +1,4 @@
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use xmlhelper::decode;
 
 #[allow(non_snake_case)]
@@ -23,11 +23,11 @@ pub struct CurrencyAmount {
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq)]
 pub struct Order {
-  pub LatestShipDate: Option<DateTime<UTC>>,
+  pub LatestShipDate: Option<DateTime<Utc>>,
   pub OrderType: String,
-  pub PurchaseDate: Option<DateTime<UTC>>,
+  pub PurchaseDate: Option<DateTime<Utc>>,
   pub AmazonOrderId: String,
-  pub LastUpdateDate: Option<DateTime<UTC>>,
+  pub LastUpdateDate: Option<DateTime<Utc>>,
   pub ShipServiceLevel: String,
   pub NumberOfItemsShipped: i32,
   pub OrderStatus: OrderStatus,
@@ -35,7 +35,7 @@ pub struct Order {
   pub IsBusinessOrder: bool,
   pub NumberOfItemsUnshipped: i32,
   pub IsPremiumOrder: bool,
-  pub EarliestShipDate: Option<DateTime<UTC>>,
+  pub EarliestShipDate: Option<DateTime<Utc>>,
   pub MarketplaceId: String,
   pub FulfillmentChannel: FulfillmentChannel,
   pub PaymentMethod: PaymentMethod,

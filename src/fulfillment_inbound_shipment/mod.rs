@@ -2,7 +2,7 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_Overview.html)
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 use xmlhelper::decode;
 use super::types::ToIso8601;
@@ -25,8 +25,8 @@ static VERSION: &'static str = "2010-10-01";
 pub struct ListInboundShipmentsParameters {
   pub shipment_status_list: Vec<ShipmentStatus>,
   pub shipment_id_list: Vec<String>,
-  pub last_updated_after: Option<DateTime<UTC>>,
-  pub last_updated_before: Option<DateTime<UTC>>,
+  pub last_updated_after: Option<DateTime<Utc>>,
+  pub last_updated_before: Option<DateTime<Utc>>,
 }
 
 impl Into<Vec<(String, String)>> for ListInboundShipmentsParameters {
@@ -119,8 +119,8 @@ pub fn ListInboundShipmentsByNextToken(client: &Client, next_token: String) -> R
 #[derive(Debug, Default)]
 pub struct ListInboundShipmentItemsParameters {
   pub shipment_id: String,
-  pub last_updated_after: Option<DateTime<UTC>>,
-  pub last_updated_before: Option<DateTime<UTC>>,
+  pub last_updated_after: Option<DateTime<Utc>>,
+  pub last_updated_before: Option<DateTime<Utc>>,
 }
 
 impl Into<Vec<(String, String)>> for ListInboundShipmentItemsParameters {

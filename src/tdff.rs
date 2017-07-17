@@ -59,14 +59,14 @@ impl<R: Read> TdffScanner<R> {
 }
 
 pub trait FromTdffField: Sized {
-  fn parse_tdff_field(key:&str, v: &str) -> Result<Self>;
+  fn parse_tdff_field(key: &str, v: &str) -> Result<Self>;
 }
 
 impl<T, Err> FromTdffField for T 
   where T: ::std::str::FromStr<Err = Err>,
         Err: ::std::error::Error
 {
-  fn parse_tdff_field(key:&str, v: &str) -> Result<Self> {
+  fn parse_tdff_field(key: &str, v: &str) -> Result<Self> {
     let trimmed = v.trim();
     if !trimmed.is_empty() {
       trimmed.parse()

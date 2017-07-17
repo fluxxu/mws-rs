@@ -2,7 +2,7 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inventory/FBAInventory_Overview.html)
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
 pub use self::types::{InventorySupply, InventorySupplyDetail, Condition, Timepoint, TimepointType};
@@ -30,7 +30,7 @@ pub enum ResponseGroup {
 pub struct ListInventorySupplyParameters {
   // Optional API Parameters
   pub seller_sku_list: Vec<String>,
-  pub query_start_datetime: Option<DateTime<UTC>>,
+  pub query_start_datetime: Option<DateTime<Utc>>,
   pub response_group: Option<ResponseGroup>,
   pub marketplace_id: Option<String>,  
 }

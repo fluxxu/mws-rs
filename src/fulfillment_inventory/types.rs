@@ -1,4 +1,4 @@
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use xmlhelper::decode;
 
 /// The condition of the item.
@@ -71,7 +71,7 @@ pub struct Timepoint {
   pub TimepointType: TimepointType,
   /// The date and time by which inventory is expected 
   /// to be available for picking, in ISO 8601 date time format.
-  pub DateTime: Option<DateTime<UTC>>,
+  pub DateTime: Option<DateTime<Utc>>,
 }
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Timepoint {

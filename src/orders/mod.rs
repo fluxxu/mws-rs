@@ -2,7 +2,7 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_Overview.html)
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
 pub use self::types::{Order, OrderItem, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
@@ -26,10 +26,10 @@ pub struct ListOrdersParameters {
   pub marketplace_id_list: Vec<String>,
 
   // Optional API Parameters
-  pub created_after: Option<DateTime<UTC>>,
-  pub created_before: Option<DateTime<UTC>>,
-  pub last_updated_after: Option<DateTime<UTC>>,
-  pub last_updated_before: Option<DateTime<UTC>>,
+  pub created_after: Option<DateTime<Utc>>,
+  pub created_before: Option<DateTime<Utc>>,
+  pub last_updated_after: Option<DateTime<Utc>>,
+  pub last_updated_before: Option<DateTime<Utc>>,
   pub order_status_list: Option<Vec<OrderStatus>>,
   pub fulfillment_channel_list: Option<Vec<FulfillmentChannel>>,
   pub seller_order_id: Option<String>,
@@ -106,8 +106,8 @@ impl Into<Vec<(String, String)>> for ListOrdersParameters {
 pub struct ListOrdersResponse {
   pub request_id: String,
   pub orders: Vec<Order>,
-  pub last_updated_before: Option<DateTime<UTC>>,
-  pub created_before: Option<DateTime<UTC>>,
+  pub last_updated_before: Option<DateTime<Utc>>,
+  pub created_before: Option<DateTime<Utc>>,
   pub next_token: Option<String>,
 }
 
@@ -169,7 +169,7 @@ pub fn ListOrders(client: &Client, parameters: ListOrdersParameters) -> Result<R
 pub struct ListOrdersByNextTokenResponse {
   pub request_id: String,
   pub orders: Vec<Order>,
-  pub last_updated_before: Option<DateTime<UTC>>,
+  pub last_updated_before: Option<DateTime<Utc>>,
   pub next_token: Option<String>,
 }
 

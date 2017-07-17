@@ -1,14 +1,14 @@
 use std::io::Read;
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use tdff;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ReportInfo {
   pub report_type: String,
   pub acknowledged: bool,
-  pub acknowledged_date: Option<DateTime<UTC>>,
+  pub acknowledged_date: Option<DateTime<Utc>>,
   pub report_id: String,
-  pub available_date: Option<DateTime<UTC>>,
+  pub available_date: Option<DateTime<Utc>>,
   pub report_request_id: String,
 }
 
@@ -26,14 +26,14 @@ str_enum! {
 pub struct ReportRequestInfo {
   pub report_request_id: String,
   pub report_type: String,
-  pub start_date: Option<DateTime<UTC>>,
-  pub end_date: Option<DateTime<UTC>>,
+  pub start_date: Option<DateTime<Utc>>,
+  pub end_date: Option<DateTime<Utc>>,
   pub scheduled: bool,
-  pub submitted_date: Option<DateTime<UTC>>,
+  pub submitted_date: Option<DateTime<Utc>>,
   pub report_processing_status: ReportProcessingStatus,
   pub generated_report_id: Option<String>,
-  pub started_processing_date: Option<DateTime<UTC>>,
-  pub completed_date: Option<DateTime<UTC>>,
+  pub started_processing_date: Option<DateTime<Utc>>,
+  pub completed_date: Option<DateTime<Utc>>,
 }
 
 /// FlatFileSettlementReport
@@ -41,9 +41,9 @@ pub struct ReportRequestInfo {
 #[derive(Debug, Default, PartialEq)]
 pub struct SettlementReport {
   pub SettlementId: String,
-  pub SettlementStartDate: Option<DateTime<UTC>>,
-  pub SettlementEndDate: Option<DateTime<UTC>>,
-  pub DepositDate: Option<DateTime<UTC>>,
+  pub SettlementStartDate: Option<DateTime<Utc>>,
+  pub SettlementEndDate: Option<DateTime<Utc>>,
+  pub DepositDate: Option<DateTime<Utc>>,
   pub TotalAmount: f64,
   pub Currency: String,
   pub Items: Vec<SettlementReportItem>,
@@ -146,7 +146,7 @@ pub struct SettlementReportItem {
   pub OrderFeeType: String,
   pub OrderFeeAmount: f64,
   pub FulfillmentId: String,
-  pub PostedDate: Option<DateTime<UTC>>,
+  pub PostedDate: Option<DateTime<Utc>>,
   pub OrderItemCode: String,
   pub MerchantOrderItemId: String,
   pub MerchantAdjustmentItemId: String,	

@@ -2,7 +2,7 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_US/reports/Reports_Overview.html)
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
 pub use self::types::{
@@ -41,8 +41,8 @@ pub struct GetReportListParameters<'a> {
   pub max_count: Option<i32>,
   pub report_type_list: Option<Vec<&'a str>>,
   pub acknowledged: Option<bool>,
-  pub available_from_date: Option<DateTime<UTC>>,
-  pub available_to_date: Option<DateTime<UTC>>,
+  pub available_from_date: Option<DateTime<Utc>>,
+  pub available_to_date: Option<DateTime<Utc>>,
   pub report_request_id_list: Option<Vec<String>>,
 }
 
@@ -184,8 +184,8 @@ pub fn GetReport<W: Write>(client: &Client, report_id: String, out: &mut W) -> R
 pub struct GetReportRequestListParameters<'a> {
   pub max_count: Option<i32>,
   pub report_type_list: Option<Vec<&'a str>>,
-  pub requested_from_date: Option<DateTime<UTC>>,
-  pub requested_to_date: Option<DateTime<UTC>>,
+  pub requested_from_date: Option<DateTime<Utc>>,
+  pub requested_to_date: Option<DateTime<Utc>>,
   pub report_request_id_list: Option<Vec<String>>,
   pub report_processing_status_list: Option<Vec<ReportProcessingStatus>>,
 }
@@ -327,8 +327,8 @@ pub fn GetReportRequestListByNextToken(client: &Client, next_token: String) -> R
 #[derive(Debug, Default)]
 pub struct RequestReportParameters<'a> {
   pub report_type: &'a str,
-  pub start_date: Option<DateTime<UTC>>,
-  pub end_date: Option<DateTime<UTC>>,
+  pub start_date: Option<DateTime<Utc>>,
+  pub end_date: Option<DateTime<Utc>>,
   pub report_options: Option<String>,
   pub marketplace_id_list: Option<Vec<String>>,
 }

@@ -140,7 +140,7 @@ impl SignatureV2 {
     SignatureV2::set_param(&mut params, "Action", action.as_ref());
 
     if !params.iter().any(|pair| pair.0 == "Timestamp") {
-      SignatureV2::set_param(&mut params, "Timestamp", ::chrono::UTC::now().to_iso8601());
+      SignatureV2::set_param(&mut params, "Timestamp", ::chrono::Utc::now().to_iso8601());
     }
 
     params.sort();
@@ -185,12 +185,12 @@ impl SignatureV2 {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use chrono::{DateTime, UTC};
+  use chrono::{DateTime, Utc};
 
   #[test]
   fn test_signature() {
     let mut s = SignatureV2::new("mws.amazonservices.ca", "3333", "0000");
-    let date: DateTime<UTC> = "2016-12-20T18:42:04Z".parse().expect("parse date");
+    let date: DateTime<Utc> = "2016-12-20T18:42:04Z".parse().expect("parse date");
     let url = s
       .add("Timestamp", date.to_iso8601())
       .add("MarketplaceId", "5555")
