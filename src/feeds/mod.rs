@@ -2,9 +2,26 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/feeds/Feeds_Overview.html)
 
-use xmlhelper::encode;
+use chrono::{DateTime, Utc};
+use client::{Client, Method, Response, ContentType};
+use xmlhelper::{encode, decode};
+use std::io::{Read, Write};
 
 mod inventory;
+
+error_chain! {
+  links {
+    Client(super::client::Error, super::client::ErrorKind);
+    Decode(decode::Error, decode::ErrorKind);
+  }
+
+  foreign_links {
+    Io(::std::io::Error);
+  }
+}
+
+static PATH: &'static str = "/";
+static VERSION: &'static str = "2009-01-01";
 
 /// Enumerates all the feed types that are available through the Feeds API section.
 string_map_enum! {
@@ -127,6 +144,101 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<inventory::Inve
       Ok(())
     })
   }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct SubmitFeedParameters {
+  pub FeedType: String,
+
+  pub MarketplaceIdList: Option<Vec<String>>,
+  pub PurgeAndReplace: Option<bool>,
+}
+
+impl Into<Vec<(String, String)>> for SubmitFeedParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![];
+
+    result.push(("FeedType".to_owned(), self.FeedType));
+
+    if let Some(list) = self.MarketplaceIdList {
+      for (i, id) in list.into_iter().enumerate() {
+        result.push((format!("MarketplaceIdList.Id.{}", i + 1), id));
+      }
+    }
+
+    if let Some(v) = self.PurgeAndReplace {
+      result.push(("PurgeAndReplace".to_owned(), if v { "true".to_owned() } else { "false".to_owned() }))
+    }
+
+    result
+  }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct SubmitFeedResponse {
+  pub RequestId: String,
+  pub FeedType: String,
+  pub FeedSubmissionId: String,
+  pub SubmittedDate: Option<DateTime<Utc>>,
+  pub FeedProcessingStatus: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse {
+  fn from_xml(s: &mut S) -> decode::Result<SubmitFeedResponse> {
+    use self::decode::{start_document, element, fold_elements, characters};
+    start_document(s)?;
+    element(s, "SubmitFeedResponse", |s| {
+      fold_elements(s, SubmitFeedResponse::default(), |s, response| {
+        match s.local_name() {
+          "FeedSubmissionInfo" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "FeedSubmissionId" => {
+                  response.FeedSubmissionId = characters(s)?;
+                },
+                "FeedType" => {
+                  response.FeedType = characters(s)?;
+                },
+                "SubmittedDate" => {
+                  response.SubmittedDate = Some(characters(s)?);
+                },
+                "FeedProcessingStatus" => {
+                  response.FeedProcessingStatus = characters(s)?;
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.RequestId = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
+}
+
+#[allow(non_snake_case)]
+pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, body: R, content_type: ContentType) -> Result<Response<SubmitFeedResponse>> 
+  where R: Read + Send + 'static
+{
+  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, body, content_type)
+    .map_err(Into::into)
+}
+
+#[allow(non_snake_case)]
+pub fn GetFeedSubmissionResult<W: Write>(client: &Client, FeedSubmissionId: String, out: &mut W) -> Result<u64> {
+  let params = vec![("FeedSubmissionId".to_string(), FeedSubmissionId)];
+  let mut resp = client.request(Method::Post, PATH, VERSION, "GetFeedSubmissionResult", params)?;
+  let size = ::std::io::copy(&mut resp, out)?;
+  Ok(size)
 }
 
 #[cfg(test)]

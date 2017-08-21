@@ -1,9 +1,11 @@
 use sign::{SignatureV2};
 pub use reqwest::{Method, StatusCode};
+pub use reqwest::header::ContentType;
 use reqwest;
 use xmlhelper::decode::{FromXMLStream, Stream};
 use tdff::FromTdff;
 use std::sync::{Arc, Mutex};
+use std::io::Read;
 
 error_chain! {
   foreign_links {
@@ -159,10 +161,60 @@ impl Client {
       .map_err(Into::into)
   }
 
+  pub fn request_with_body<P, R>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_type: ContentType) -> Result<reqwest::Response> 
+    where P: Into<Vec<(String, String)>>,
+          R: Read + Send + 'static
+  {
+    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    for (k, v) in parameters.into() {
+      sign.add(&k, v);
+    }
+    sign.add("SellerId", self.options.seller_id.as_ref());
+    //sign.add("Merchant", self.options.seller_id.as_ref());
+    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    //println!("request: {}", url);
+
+    get_http_client!(self).request(method, &url)?
+      .header(content_type)
+      .body(reqwest::Body::new(body))
+      .send()
+      .map_err(Into::into)
+  }
+
   pub fn request_xml<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
     where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
+    if resp.status().is_success() {
+      let mut stream = Stream::new(resp);
+      let v = T::from_xml(&mut stream)?;
+      Ok(Response::Success(v))
+    } else {
+      use std::io::{Read, Cursor};
+
+      let mut body = String::new();
+      resp.read_to_string(&mut body)?;
+      let mut s = Stream::new(Cursor::new(body.clone()));
+      match ErrorResponseInfo::from_xml(&mut s) {
+        Ok(info) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: Some(info),
+        })),
+        Err(_) => Ok(Response::Error(ErrorResponse {
+          status: resp.status().clone(),
+          raw: body,
+          info: None,
+        })),
+      }
+    }
+  }
+
+  pub fn request_xml_with_body<P, R, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_type: ContentType) -> Result<Response<T>>
+    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>,
+          R: Read + Send + 'static
+  {
+    let mut resp = self.request_with_body(method, path, version, action, parameters, body, content_type)?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;

@@ -73,7 +73,7 @@ macro_rules! str_enum {
 
     impl ::std::str::FromStr for $name {
       type Err = ::std::io::Error;
-      fn from_str(s: &str) -> Result<Self, Self::Err> {
+      fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         Ok($name::from(s))
       }
     }
@@ -107,7 +107,7 @@ macro_rules! string_map_enum {
 
     impl ::std::str::FromStr for $name {
       type Err = ::std::io::Error;
-      fn from_str(s: &str) -> Result<Self, Self::Err> {
+      fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         Ok(match s {
           $(
             $value => $name::$variant,
