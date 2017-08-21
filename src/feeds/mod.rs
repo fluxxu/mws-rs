@@ -227,10 +227,12 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse 
 }
 
 #[allow(non_snake_case)]
-pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, content: R, content_md5: String, content_type: ContentType) -> Result<Response<SubmitFeedResponse>> 
+pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, content: R, content_md5: String, content_type: String) -> Result<Response<SubmitFeedResponse>> 
   where R: Read + Send + 'static
 {
-  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, content, content_md5, content_type)
+  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, content, content_md5, ContentType(
+    content_type.parse().unwrap()
+  ))
     .map_err(Into::into)
 }
 
