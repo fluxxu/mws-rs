@@ -161,7 +161,7 @@ impl Client {
       .map_err(Into::into)
   }
 
-  pub fn request_with_body<P, R>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_type: ContentType) -> Result<reqwest::Response> 
+  pub fn request_with_body<P, R>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_md5: String, content_type: ContentType) -> Result<reqwest::Response> 
     where P: Into<Vec<(String, String)>>,
           R: Read + Send + 'static
   {
@@ -170,6 +170,7 @@ impl Client {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
+    sign.add("ContentMD5", content_md5);
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
     //println!("request: {}", url);
@@ -210,11 +211,11 @@ impl Client {
     }
   }
 
-  pub fn request_xml_with_body<P, R, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_type: ContentType) -> Result<Response<T>>
+  pub fn request_xml_with_body<P, R, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_md5: String, content_type: ContentType) -> Result<Response<T>>
     where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>,
           R: Read + Send + 'static
   {
-    let mut resp = self.request_with_body(method, path, version, action, parameters, body, content_type)?;
+    let mut resp = self.request_with_body(method, path, version, action, parameters, body, content_md5, content_type)?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;

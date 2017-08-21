@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use client::{Client, Method, Response, ContentType};
 use xmlhelper::{encode, decode};
 use std::io::{Read, Write};
+use super::types::ToIso8601;
 
 mod inventory;
 
@@ -226,10 +227,10 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse 
 }
 
 #[allow(non_snake_case)]
-pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, body: R, content_type: ContentType) -> Result<Response<SubmitFeedResponse>> 
+pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, content: R, content_md5: String, content_type: ContentType) -> Result<Response<SubmitFeedResponse>> 
   where R: Read + Send + 'static
 {
-  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, body, content_type)
+  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, content, content_md5, content_type)
     .map_err(Into::into)
 }
 
@@ -239,6 +240,144 @@ pub fn GetFeedSubmissionResult<W: Write>(client: &Client, FeedSubmissionId: Stri
   let mut resp = client.request(Method::Post, PATH, VERSION, "GetFeedSubmissionResult", params)?;
   let size = ::std::io::copy(&mut resp, out)?;
   Ok(size)
+}
+
+/// Parameters for `GetFeedSubmissionList`
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct GetFeedSubmissionListParameters {
+  pub FeedSubmissionIdList: Option<Vec<String>>,
+  pub MaxCount: Option<i32>,
+  pub FeedTypeList: Option<Vec<String>>,
+  pub FeedProcessingStatusList: Option<Vec<String>>,
+  pub SubmittedFromDate: Option<DateTime<Utc>>,
+  pub SubmittedToDate: Option<DateTime<Utc>>,
+}
+
+impl Into<Vec<(String, String)>> for GetFeedSubmissionListParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![];
+    if let Some(list) = self.FeedSubmissionIdList {
+      for (i, id) in list.into_iter().enumerate() {
+        result.push((format!("FeedSubmissionIdList.Id.{}", i + 1), id));
+      }
+    }
+
+    if let Some(v) = self.MaxCount {
+      result.push(("MaxCount".to_string(), v.to_string()));
+    }
+
+    if let Some(list) = self.FeedTypeList {
+      for (i, v) in list.into_iter().enumerate() {
+        result.push((format!("FeedTypeList.Type.{}", i + 1), v));
+      }
+    }
+
+    if let Some(list) = self.FeedProcessingStatusList {
+      for (i, v) in list.into_iter().enumerate() {
+        result.push((format!("FeedProcessingStatusList.Status.{}", i + 1), v));
+      }
+    }
+
+    if let Some(date) = self.SubmittedFromDate {
+      result.push(("SubmittedFromDate".to_string(), date.to_iso8601()));
+    }
+
+    if let Some(date) = self.SubmittedToDate {
+      result.push(("SubmittedToDate".to_string(), date.to_iso8601()));
+    }
+
+    result
+  }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct FeedSubmissionInfo {
+  pub FeedProcessingStatus: String,
+  pub FeedType: String,
+  pub FeedSubmissionId: String,
+  pub StartedProcessingDate: Option<DateTime<Utc>>,
+  pub SubmittedDate: Option<DateTime<Utc>>,
+  pub CompletedProcessingDate: Option<DateTime<Utc>>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct GetFeedSubmissionListResponse {
+  pub RequestId: String,
+  pub FeedSubmissionInfo: Vec<FeedSubmissionInfo>,
+  pub NextToken: Option<String>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFeedSubmissionListResponse {
+  fn from_xml(s: &mut S) -> decode::Result<GetFeedSubmissionListResponse> {
+    use self::decode::{start_document, element, fold_elements, characters};
+    start_document(s)?;
+    element(s, vec!["GetFeedSubmissionListResponse", "GetFeedSubmissionListByNextTokenResponse"], |s| {
+      fold_elements(s, GetFeedSubmissionListResponse::default(), |s, response| {
+        match s.local_name() {
+          "GetFeedSubmissionListResult" | "GetFeedSubmissionListByNextTokenResult" => {
+            fold_elements(s, (), |s, _| {
+              match s.local_name() {
+                "FeedSubmissionInfo" => {
+                  response.FeedSubmissionInfo.push(fold_elements(s, FeedSubmissionInfo::default(), |s, item| {
+                    match s.local_name() {
+                      "FeedProcessingStatus" => {
+                        item.FeedProcessingStatus = characters(s)?;
+                      },
+                      "FeedType" => {
+                        item.FeedType = characters(s)?;
+                      },
+                      "FeedSubmissionId" => {
+                        item.FeedSubmissionId = characters(s)?;
+                      },
+                      "StartedProcessingDate" => {
+                        item.StartedProcessingDate = Some(characters(s)?);
+                      },
+                      "SubmittedDate" => {
+                        item.SubmittedDate = Some(characters(s)?);
+                      },
+                      "CompletedProcessingDate" => {
+                        item.CompletedProcessingDate = Some(characters(s)?);
+                      },
+                      _ => {}
+                    }
+                    Ok(())
+                  })?);
+                },
+                "NextToken" => {
+                  response.NextToken = Some(characters(s)?);
+                },
+                _ => {},
+              }
+              Ok(())
+            })
+          },
+          "ResponseMetadata" => {
+            response.RequestId = element(s, "RequestId", |s| {
+              characters(s)
+            })?;
+            Ok(())
+          },
+          _ => { Ok(()) }
+        }
+      })
+    })
+  }
+}
+
+#[allow(non_snake_case)]
+pub fn GetFeedSubmissionList(client: &Client, parameters: GetFeedSubmissionListParameters) -> Result<Response<GetFeedSubmissionListResponse>> {
+  client.request_xml(Method::Post, PATH, VERSION, "GetFeedSubmissionList", parameters).map_err(|err| err.into())
+}
+
+#[allow(non_snake_case)]
+pub fn GetFeedSubmissionListByNextToken(client: &Client, next_token: String) -> Result<Response<GetFeedSubmissionListResponse>> {
+  let params = vec![
+    ("NextToken".to_string(), next_token)
+  ]; 
+  client.request_xml(Method::Post, PATH, VERSION, "GetFeedSubmissionListByNextToken", params).map_err(|err| err.into())
 }
 
 #[cfg(test)]
