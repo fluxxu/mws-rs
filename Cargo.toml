@@ -1,6 +1,6 @@
 [package]
 name = "mws"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 
 [dependencies]
@@ -9,7 +9,7 @@ rust-crypto = "0.2.36"
 reqwest = "0.7.0"
 url = "1.2.4"
 chrono = "0.4"
-error-chain = "0.7.1"
+error-chain = "0.10"
 xmlhelper = { path = "./crates/xmlhelper" }
 csv = "0.14"
 
