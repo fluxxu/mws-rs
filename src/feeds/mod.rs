@@ -193,25 +193,33 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse 
     element(s, "SubmitFeedResponse", |s| {
       fold_elements(s, SubmitFeedResponse::default(), |s, response| {
         match s.local_name() {
-          "FeedSubmissionInfo" => {
+          "SubmitFeedResult" => {
             fold_elements(s, (), |s, _| {
               match s.local_name() {
-                "FeedSubmissionId" => {
-                  response.FeedSubmissionId = characters(s)?;
+                "FeedSubmissionInfo" => {
+                  fold_elements(s, (), |s, _| {
+                    match s.local_name() {
+                      "FeedSubmissionId" => {
+                        response.FeedSubmissionId = characters(s)?;
+                      },
+                      "FeedType" => {
+                        response.FeedType = characters(s)?;
+                      },
+                      "SubmittedDate" => {
+                        response.SubmittedDate = Some(characters(s)?);
+                      },
+                      "FeedProcessingStatus" => {
+                        response.FeedProcessingStatus = characters(s)?;
+                      },
+                      _ => {}
+                    }
+                    Ok(())
+                  })
                 },
-                "FeedType" => {
-                  response.FeedType = characters(s)?;
-                },
-                "SubmittedDate" => {
-                  response.SubmittedDate = Some(characters(s)?);
-                },
-                "FeedProcessingStatus" => {
-                  response.FeedProcessingStatus = characters(s)?;
-                },
-                _ => {},
+                _ => { Ok(()) }
               }
-              Ok(())
-            })
+            })?;
+            Ok(())
           },
           "ResponseMetadata" => {
             response.RequestId = element(s, "RequestId", |s| {
