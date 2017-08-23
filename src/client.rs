@@ -170,7 +170,7 @@ impl Client {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
-    sign.add("ContentMD5", content_md5);
+    sign.add("Content-MD5", content_md5);
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
     //println!("request: {}", url);
