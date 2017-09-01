@@ -1,14 +1,18 @@
+//! Client library for Amazon Marketplace Web Service (Amazon MWS)
+//!
+
 extern crate url;
+extern crate xml;
 extern crate chrono;
 extern crate crypto;
 extern crate reqwest;
 extern crate base64;
 #[macro_use] extern crate error_chain;
-#[macro_use] extern crate xmlhelper;
 extern crate csv;
 
 #[cfg(test)] extern crate dotenv;
 
+#[macro_use] pub mod xmlhelper;
 mod types;
 #[macro_use] mod macros;
 #[macro_use] pub mod tdff;

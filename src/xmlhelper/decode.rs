@@ -1,4 +1,7 @@
-use xml::reader::{EventReader, Events, XmlEvent, Result as XmlReaderResult};
+//! Utilities to parse a XML event stream
+//!
+
+use xml::reader::{EventReader, Events, Result as XmlReaderResult, XmlEvent};
 pub use xml::name::OwnedName as Name;
 pub use xml::attribute::OwnedAttribute as Attribute;
 use std::iter::Peekable;
@@ -37,9 +40,15 @@ macro_rules! try_consume_event {
     ) => {{
       match $stream.next() {
         Some(Ok($pattern)) => (),
-        Some(Ok(event)) => return Err(ErrorKind::UnexpectedXmlEvent(stringify!($pattern).to_string(), format!("{:?}", event)).into()),
+        Some(Ok(event)) => {
+          return Err(ErrorKind::UnexpectedXmlEvent(
+            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+        },
         Some(Err(e)) => return Err(e.into()),
-        None => return Err(ErrorKind::UnexpectedEndOfXml(format!("expected event: {}", stringify!($pattern))).into()),
+        None => {
+          return Err(ErrorKind::UnexpectedEndOfXml(
+            format!("expected event: {}", stringify!($pattern))).into())
+        },
       }
     }};
 
@@ -49,9 +58,15 @@ macro_rules! try_consume_event {
     ) => {{
       match $stream.next() {
         Some(Ok($pattern)) => $expr,
-        Some(Ok(event)) => return Err(ErrorKind::UnexpectedXmlEvent(stringify!($pattern).to_string(), format!("{:?}", event)).into()),
+        Some(Ok(event)) => {
+          return Err(ErrorKind::UnexpectedXmlEvent(
+            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+        },
         Some(Err(e)) => return Err(e.into()),
-        None => return Err(ErrorKind::UnexpectedEndOfXml(format!("expected event: {}", stringify!($pattern))).into()),
+        None => {
+          return Err(ErrorKind::UnexpectedEndOfXml(
+            format!("expected event: {}", stringify!($pattern))).into())
+          },
       }
     }};
 
@@ -65,66 +80,17 @@ macro_rules! try_consume_event {
         $(
           Some(Ok($pattern)) => $expr,
         )*
-        Some(Ok(event)) => return Err(ErrorKind::UnexpectedXmlEvent(stringify!($pattern).to_string(), format!("{:?}", event)).into()),
+        Some(Ok(event)) => {
+          return Err(ErrorKind::UnexpectedXmlEvent(
+            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+        },
         Some(Err(e)) => return Err(e.into()),
-        None => return Err(ErrorKind::UnexpectedEndOfXml(format!("expected events: {}", stringify!($($pattern),*)).into())),
+        None => {
+          return Err(ErrorKind::UnexpectedEndOfXml(
+            format!("expected events: {}", stringify!($($pattern),*)).into()))
+        },
       }
     }};
-}
-
-/// Peek and compare next event from stream
-macro_rules! try_peek_event {
-    (
-      $stream:ident,
-      $pattern:pat
-    ) => {{
-      match $stream.peek() {
-        Some(result) => {
-          match result {
-            &Ok(ref event) => {
-              match *event {
-                $pattern => {
-                  true
-                },
-                _ => {
-                  false
-                }
-              }
-            },
-            &Err(ref e) => {
-              return Err(e.clone().into())
-            }
-          }
-        },
-        None => {
-          return Err(ErrorKind::UnexpectedEndOfXml.into())
-        }
-      }
-  }};
-
-  (
-    $stream:ident,
-    $pattern:pat => $expr:expr
-  ) => {{
-    match $stream.peek() {
-      Some(result) => {
-        match result {
-          &Ok(ref event) => {
-            match *event {
-              $pattern => $expr,
-              _ => {}
-            }
-          },
-          &Err(ref e) => {
-            return Err(e.clone().into())
-          }
-        }
-      },
-      None => {
-        return Err(ErrorKind::UnexpectedEndOfXml.into())
-      }
-    }
-  }};
 }
 
 pub trait FromXMLStream<S: XmlEventStream>: Sized + Default {
@@ -143,7 +109,7 @@ impl<R: Read> From<R> for Stream<R> {
 }
 
 /// Owned stream
-pub struct Stream<R: Read> (Peekable<Events<R>>);
+pub struct Stream<R: Read>(Peekable<Events<R>>);
 
 impl<R: Read> Stream<R> {
   /// Construct a stream
@@ -151,9 +117,10 @@ impl<R: Read> Stream<R> {
     let config = ::xml::ParserConfig::new()
       .trim_whitespace(true)
       .ignore_comments(true);
-    Stream(EventReader::new_with_config(read, config)
-      .into_iter()
-      .peekable()
+    Stream(
+      EventReader::new_with_config(read, config)
+        .into_iter()
+        .peekable(),
     )
   }
 }
@@ -162,7 +129,7 @@ impl<R: Read> XmlEventStream for Stream<R> {
   fn next(&mut self) -> Option<XmlReaderResult<XmlEvent>> {
     self.0.next()
   }
-  
+
   fn peek(&mut self) -> Option<&XmlReaderResult<XmlEvent>> {
     self.0.peek()
   }
@@ -177,17 +144,18 @@ pub struct ElementScopedStream<'a, S: XmlEventStream + 'a> {
 
 impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
   fn new(inner: &mut S) -> Result<ElementScopedStream<S>> {
-    let elem = try_consume_event!(inner, XmlEvent::StartElement { name, attributes, .. } => XmlElement {
-      name: name,
-      attributes: XmlAttributeList(attributes),
-    });
+    let elem = try_consume_event!(inner,
+      XmlEvent::StartElement { name, attributes, .. } => XmlElement {
+        name: name,
+        attributes: XmlAttributeList(attributes),
+      });
     Ok(ElementScopedStream {
       inner: inner,
       level: 1,
       elem: elem,
     })
   }
-  
+
   pub fn elem(&self) -> &XmlElement {
     &self.elem
   }
@@ -213,12 +181,12 @@ impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
           if self.level < 1 {
             return Ok(());
           }
-        },
-        Some(Ok(_)) => {},
+        }
+        Some(Ok(_)) => {}
         Some(Err(err)) => return Err(err.into()),
       }
     }
-  } 
+  }
 }
 
 impl<'a, S: XmlEventStream + 'a> XmlEventStream for ElementScopedStream<'a, S> {
@@ -231,19 +199,19 @@ impl<'a, S: XmlEventStream + 'a> XmlEventStream for ElementScopedStream<'a, S> {
     match event {
       Some(Ok(XmlEvent::StartElement { .. })) => {
         self.level = self.level + 1;
-      },
+      }
       Some(Ok(XmlEvent::EndElement { .. })) => {
         self.level = self.level - 1;
         if self.level < 1 {
           return None;
         }
-      },
+      }
       _ => {}
     }
 
     event
   }
-  
+
   fn peek(&mut self) -> Option<&XmlReaderResult<XmlEvent>> {
     if self.level < 1 {
       return None;
@@ -258,12 +226,11 @@ impl<'a, S: XmlEventStream + 'a> XmlEventStream for ElementScopedStream<'a, S> {
 }
 
 #[derive(Debug)]
-pub struct XmlAttributeList (Vec<Attribute>);
+pub struct XmlAttributeList(Vec<Attribute>);
 impl XmlAttributeList {
   pub fn find_name<K: AsRef<str>>(&self, name: K) -> Option<&Attribute> {
     let name = name.as_ref();
-    self.0.iter()
-      .find(|a| a.name.local_name == name)
+    self.0.iter().find(|a| a.name.local_name == name)
   }
 
   pub fn value<K: AsRef<str>>(&self, name: K) -> Option<String> {
@@ -271,7 +238,8 @@ impl XmlAttributeList {
   }
 
   pub fn value_or<K: AsRef<str>, V: Into<String>>(&self, name: K, default: V) -> String {
-    self.find_name(name.as_ref())
+    self
+      .find_name(name.as_ref())
       .map_or_else(|| default.into(), |a| a.value.clone())
   }
 }
@@ -293,31 +261,47 @@ pub fn end_document<S: XmlEventStream>(stream: &mut S) -> Result<()> {
 }
 
 /// Consume a `StartElement` event
-pub fn start_element<S: XmlEventStream, N: AsRef<str>>(stream: &mut S, expected_name: N) -> Result<XmlElement> {
-  Ok(try_consume_event!(stream, XmlEvent::StartElement { name, attributes, .. } => {
+pub fn start_element<S: XmlEventStream, N: AsRef<str>>(
+  stream: &mut S,
+  expected_name: N,
+) -> Result<XmlElement> {
+  Ok(
+    try_consume_event!(stream, XmlEvent::StartElement { name, attributes, .. } => {
     if name.local_name != expected_name.as_ref() {
-      return Err(format!("unexpected element: expected '{}', found: '{}'", expected_name.as_ref(), name.local_name).into())
+      return Err(format!("unexpected element: expected '{}', found: '{}'",
+        expected_name.as_ref(), name.local_name).into()
+      )
     }
     XmlElement {
       name: name,
       attributes: XmlAttributeList(attributes),
     }
-  }))
+  }),
+  )
 }
 
 /// Consume a `EndElement` event
 pub fn end_element<S: XmlEventStream>(stream: &mut S) -> Result<Name> {
-  Ok(try_consume_event!(stream, XmlEvent::EndElement { name } => name))
+  Ok(
+    try_consume_event!(stream, XmlEvent::EndElement { name } => name),
+  )
 }
 
 /// Consume a `Characters` event and parse it
-pub fn characters<S: XmlEventStream, E, T: FromStr<Err=E>>(stream: &mut S) -> Result<T> where E: ::std::error::Error + Display {
+pub fn characters<S: XmlEventStream, E, T: FromStr<Err = E>>(stream: &mut S) -> Result<T>
+where
+  E: ::std::error::Error + Display,
+{
   if let None = stream.peek() {
-    return "".parse().map_err(|err| ErrorKind::ParseString("".to_owned(), format!("{}", err)).into());
+    return "".parse().map_err(|err| {
+      ErrorKind::ParseString("".to_owned(), format!("{}", err)).into()
+    });
   }
 
   let content = try_consume_event!(stream, XmlEvent::Characters(value) => value);
-  content.parse().map_err(|err| ErrorKind::ParseString(content, format!("{}", err)).into())
+  content.parse().map_err(|err| {
+    ErrorKind::ParseString(content, format!("{}", err)).into()
+  })
 }
 
 /// Consume an element and its children
@@ -325,11 +309,15 @@ pub fn skip_element<S: XmlEventStream>(stream: &mut S) -> Result<()> {
   let mut depth = 0;
   loop {
     match stream.next() {
-      Some(Ok(XmlEvent::StartElement { .. })) => { depth = depth + 1 },
-      Some(Ok(XmlEvent::EndElement { .. })) => { depth = depth - 1 },
-      Some(Ok(_)) => {},
+      Some(Ok(XmlEvent::StartElement { .. })) => depth = depth + 1,
+      Some(Ok(XmlEvent::EndElement { .. })) => depth = depth - 1,
+      Some(Ok(_)) => {}
       Some(Err(err)) => return Err(err.into()),
-      None => return Err(ErrorKind::UnexpectedEndOfXml("expected end of element".to_string()).into())
+      None => {
+        return Err(
+          ErrorKind::UnexpectedEndOfXml("expected end of element".to_string()).into(),
+        )
+      }
     }
 
     if depth < 1 {
@@ -357,10 +345,20 @@ impl ElementNameSet for Vec<&'static str> {
 }
 
 /// Consume an element, apply a function to an element scoped stream, return the function result
-pub fn element<S: XmlEventStream, N: ElementNameSet, F, T>(stream: &mut S, expected_name: N, mut f: F) -> Result<T> where F: FnMut(&mut ElementScopedStream<S>) -> Result<T> {
+pub fn element<S: XmlEventStream, N: ElementNameSet, F, T>(
+  stream: &mut S,
+  expected_name: N,
+  mut f: F,
+) -> Result<T>
+where
+  F: FnMut(&mut ElementScopedStream<S>) -> Result<T>,
+{
   let mut ss = ElementScopedStream::new(stream)?;
   if !expected_name.contains_element_name(&ss.elem().name.local_name) {
-    return Err(format!("unexpected element: expected '{:?}', found: '{}'", expected_name, ss.elem().name.local_name).into())
+    return Err(
+      format!("unexpected element: expected '{:?}', found: '{}'",
+      expected_name, ss.elem().name.local_name).into(),
+    );
   }
   let result = f(&mut ss)?;
   ss.consume_remaining()?;
@@ -368,11 +366,14 @@ pub fn element<S: XmlEventStream, N: ElementNameSet, F, T>(stream: &mut S, expec
 }
 
 /// Consume all events of a stream by calling a function repeatly
-pub fn all<S: XmlEventStream, F, T>(stream: &mut S, mut f: F) -> Result<Vec<T>> where F: FnMut(&mut S) -> Result<T> {
+pub fn all<S: XmlEventStream, F, T>(stream: &mut S, mut f: F) -> Result<Vec<T>>
+where
+  F: FnMut(&mut S) -> Result<T>,
+{
   let mut result = vec![];
   loop {
     match stream.peek() {
-      Some(&Ok(_)) => {},
+      Some(&Ok(_)) => {}
       Some(&Err(ref err)) => return Err(err.clone().into()),
       None => break,
     }
@@ -382,7 +383,14 @@ pub fn all<S: XmlEventStream, F, T>(stream: &mut S, mut f: F) -> Result<Vec<T>> 
 }
 
 /// Consume all elements of a stream, fold them to a value
-pub fn fold_elements<S: XmlEventStream, State, F>(stream: &mut S, state: State, mut f: F) -> Result<State> where F: FnMut(&mut ElementScopedStream<S>, &mut State) -> Result<()> {
+pub fn fold_elements<S: XmlEventStream, State, F>(
+  stream: &mut S,
+  state: State,
+  mut f: F,
+) -> Result<State>
+where
+  F: FnMut(&mut ElementScopedStream<S>, &mut State) -> Result<()>,
+{
   let mut state = state;
   {
     let state_ref = &mut state;
@@ -413,7 +421,8 @@ macro_rules! test_decode {
     ) => {
       {
         let mut s = $crate::decode::Stream::new(::std::io::Cursor::new($xml));
-        let result = <$decoder as $crate::decode::FromXMLStream<_>>::from_xml(&mut s).expect("decode");
+        let result = <$decoder as $crate::decode::FromXMLStream<_>>::from_xml(&mut s)
+          .expect("decode");
         assert_eq!(result, $result);
       }
     };
@@ -427,7 +436,7 @@ mod tests {
   #[test]
   fn test_start_element() {
     let mut s = Stream::new(Cursor::new(r#"<test name="single">888</test>"#));
-    
+
     start_document(&mut s).expect("start document");
     let elem = start_element(&mut s, "test").expect("expected an element");
     let name = elem.attributes.value("name").expect("name attr");
@@ -440,7 +449,7 @@ mod tests {
   #[test]
   fn test_element_scope() {
     let mut s = Stream::new(Cursor::new(r#"<test>content</test>"#));
-    
+
     start_document(&mut s).expect("start document");
     let (name, content): (String, String) = element(&mut s, "test", |s| {
       Ok((s.elem().name.local_name.clone(), characters(s)?))
@@ -464,7 +473,8 @@ mod tests {
 
   #[test]
   fn test_element_list() {
-    let mut s = Stream::new(Cursor::new(r#"      <Order>
+    let mut s = Stream::new(Cursor::new(
+      r#"      <Order>
         <LatestShipDate>2017-01-07T10:00:00Z</LatestShipDate>
         <OrderType>StandardOrder</OrderType>
         <PurchaseDate>2017-01-06T05:05:04Z</PurchaseDate>
@@ -484,28 +494,29 @@ mod tests {
         <IsPrime>false</IsPrime>
         <ShipmentServiceLevelCategory>SecondDay</ShipmentServiceLevelCategory>
         <SellerOrderId>102-6272421-6433852</SellerOrderId>
-      </Order>"#));
+      </Order>"#,
+    ));
 
-      #[derive(Default, Debug, PartialEq)]
-      struct Order {
-        amazon_order_id: String,
-        order_type: String,
-      }
+    #[derive(Default, Debug, PartialEq)]
+    struct Order {
+      amazon_order_id: String,
+      order_type: String,
+    }
 
-      start_document(&mut s).expect("start document");
-      let order = element(&mut s, "Order", |ss| {
-        let order = fold_elements(ss, Order::default(), |ss, state| {
-          match ss.elem().name.local_name.as_ref() {
-            "AmazonOrderId" => state.amazon_order_id = characters(ss)?,
-            "OrderType" => state.order_type = characters(ss)?,
-            _ => {},
-          }
-          Ok(())
-        })?;
-        Ok(order)
-      }).expect("order");
+    start_document(&mut s).expect("start document");
+    let order = element(&mut s, "Order", |ss| {
+      let order = fold_elements(ss, Order::default(), |ss, state| {
+        match ss.elem().name.local_name.as_ref() {
+          "AmazonOrderId" => state.amazon_order_id = characters(ss)?,
+          "OrderType" => state.order_type = characters(ss)?,
+          _ => {}
+        }
+        Ok(())
+      })?;
+      Ok(order)
+    }).expect("order");
 
-      assert_eq!(order, Order {
+    assert_eq!(order, Order {
         amazon_order_id: "102-6272421-6433852".to_string(),
         order_type: "StandardOrder".to_string(),
       });
@@ -513,15 +524,15 @@ mod tests {
 
   #[test]
   fn test_empty_element() {
-      let mut s = Stream::new(Cursor::new(r#"<Empty></Empty>"#));
+    let mut s = Stream::new(Cursor::new(r#"<Empty></Empty>"#));
 
-      start_document(&mut s).expect("start document");
-      element(&mut s, "Empty", |s| {
-        assert_eq!(s.local_name(), "Empty");
-        let v: String = characters(s)?;
-        assert_eq!(v, "");
-        Ok(())
-      }).expect("element");
+    start_document(&mut s).expect("start document");
+    element(&mut s, "Empty", |s| {
+      assert_eq!(s.local_name(), "Empty");
+      let v: String = characters(s)?;
+      assert_eq!(v, "");
+      Ok(())
+    }).expect("element");
   }
 
 }
