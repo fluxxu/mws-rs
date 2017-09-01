@@ -1,3 +1,6 @@
+//! Client library for Amazon Marketplace Web Service (Amazon MWS)
+//!
+
 extern crate url;
 extern crate chrono;
 extern crate crypto;

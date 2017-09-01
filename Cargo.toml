@@ -10,7 +10,7 @@ reqwest = "0.7.0"
 url = "1.2.4"
 chrono = "0.4"
 error-chain = "0.10"
-xmlhelper = { path = "./crates/xmlhelper" }
+xmlhelper = "0.1.0"
 csv = "0.14"
 
 [dev-dependencies]
