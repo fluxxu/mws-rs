@@ -5,7 +5,7 @@
 use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{Order, OrderItem, OrderStatus, FulfillmentChannel, PaymentMethod, TFMShipmentStatus};
+pub use self::types::*;
 use xmlhelper::decode;
 use super::types::ToIso8601;
 
