@@ -238,9 +238,10 @@ impl XmlAttributeList {
   }
 
   pub fn value_or<K: AsRef<str>, V: Into<String>>(&self, name: K, default: V) -> String {
-    self
-      .find_name(name.as_ref())
-      .map_or_else(|| default.into(), |a| a.value.clone())
+    self.find_name(name.as_ref()).map_or_else(
+      || default.into(),
+      |a| a.value.clone(),
+    )
   }
 }
 
@@ -420,8 +421,8 @@ macro_rules! test_decode {
       $decoder:ident, $xml:expr, $result:expr
     ) => {
       {
-        let mut s = $crate::decode::Stream::new(::std::io::Cursor::new($xml));
-        let result = <$decoder as $crate::decode::FromXMLStream<_>>::from_xml(&mut s)
+        let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
+        let result = <$decoder as $crate::xmlhelper::decode::FromXMLStream<_>>::from_xml(&mut s)
           .expect("decode");
         assert_eq!(result, $result);
       }

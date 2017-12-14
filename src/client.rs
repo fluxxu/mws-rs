@@ -1,4 +1,4 @@
-use sign::{SignatureV2};
+use sign::SignatureV2;
 pub use reqwest::{Method, StatusCode};
 pub use reqwest::header::ContentType;
 use reqwest;
@@ -36,13 +36,13 @@ pub enum Response<T> {
 pub struct ErrorResponse {
   pub status: StatusCode,
   pub info: Option<ErrorResponseInfo>,
-  pub raw: String
+  pub raw: String,
 }
 
 #[derive(Debug, Default)]
 pub struct ErrorResponseInfo {
   pub errors: Vec<ErrorResponseError>,
-  pub request_id: String
+  pub request_id: String,
 }
 
 #[derive(Debug, Default, PartialEq)]
@@ -50,11 +50,13 @@ pub struct ErrorResponseError {
   pub error_type: String,
   pub code: String,
   pub message: String,
-  pub detail: String
+  pub detail: String,
 }
 
 impl ErrorResponseInfo {
-  fn from_xml_stream<R: ::std::io::Read>(s: &mut Stream<R>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+  fn from_xml_stream<R: ::std::io::Read>(
+    s: &mut Stream<R>,
+  ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
     use xmlhelper::decode::{start_document, element, fold_elements, characters};
     start_document(s)?;
     element(s, "ErrorResponse", |s| {
@@ -65,25 +67,25 @@ impl ErrorResponseInfo {
               match s.local_name() {
                 "Type" => {
                   err.error_type = characters(s)?;
-                },
+                }
                 "Code" => {
                   err.code = characters(s)?;
-                },
+                }
                 "Message" => {
                   err.message = characters(s)?;
-                },
+                }
                 "Detail" => {
                   err.detail = characters(s)?;
-                },
+                }
                 _ => {}
               }
               Ok(())
             })?;
             resp.errors.push(err);
-          },
+          }
           "RequestID" => {
             resp.request_id = characters(s)?;
-          },
+          }
           _ => {}
         }
         Ok(())
@@ -99,7 +101,9 @@ impl FromXMLStream<Stream<reqwest::Response>> for ErrorResponseInfo {
 }
 
 impl FromXMLStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
-  fn from_xml(s: &mut Stream<::std::io::Cursor<String>>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+  fn from_xml(
+    s: &mut Stream<::std::io::Cursor<String>>,
+  ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
   }
 }
@@ -140,44 +144,87 @@ impl Client {
     }
   }
 
-  pub fn request<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<reqwest::Response> 
-    where P: Into<Vec<(String, String)>>
+  pub fn request<P>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> Result<reqwest::Response>
+  where
+    P: Into<Vec<(String, String)>>,
   {
-    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    let mut sign = SignatureV2::new(
+      self.options.endpoint.clone(),
+      self.options.aws_access_key_id.clone(),
+      self.options.secret_key.clone(),
+    );
     for (k, v) in parameters.into() {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
     //sign.add("Merchant", self.options.seller_id.as_ref());
-    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    let url = sign
+      .generate_url(method.clone(), path, version, action)?
+      .to_string();
     //println!("request: {}", url);
-    self.http_client.request(method, &url)?.send()
-      .map_err(Into::into)
+    self.http_client.request(method, &url)?.send().map_err(
+      Into::into,
+    )
   }
 
-  pub fn request_with_body<P, R>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_md5: String, content_type: ContentType) -> Result<reqwest::Response> 
-    where P: Into<Vec<(String, String)>>,
-          R: Read + Send + 'static
+  pub fn request_with_body<P, R>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+    body: R,
+    content_md5: String,
+    content_type: ContentType,
+  ) -> Result<reqwest::Response>
+  where
+    P: Into<Vec<(String, String)>>,
+    R: Read + Send + 'static,
   {
-    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    let mut sign = SignatureV2::new(
+      self.options.endpoint.clone(),
+      self.options.aws_access_key_id.clone(),
+      self.options.secret_key.clone(),
+    );
     for (k, v) in parameters.into() {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
     sign.add("ContentMD5Value", content_md5);
     //sign.add("Merchant", self.options.seller_id.as_ref());
-    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
+    let url = sign
+      .generate_url(method.clone(), path, version, action)?
+      .to_string();
     //println!("request: {}", url);
 
-    self.http_client.request(method, &url)?
+    self
+      .http_client
+      .request(method, &url)?
       .header(content_type)
       .body(reqwest::Body::new(body))
       .send()
       .map_err(Into::into)
   }
 
-  pub fn request_xml<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
-    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>
+  pub fn request_xml<P, T>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> Result<Response<T>>
+  where
+    P: Into<Vec<(String, String)>>,
+    T: FromXMLStream<Stream<reqwest::Response>>,
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
@@ -205,11 +252,32 @@ impl Client {
     }
   }
 
-  pub fn request_xml_with_body<P, R, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P, body: R, content_md5: String, content_type: ContentType) -> Result<Response<T>>
-    where P: Into<Vec<(String, String)>>, T: FromXMLStream<Stream<reqwest::Response>>,
-          R: Read + Send + 'static
+  pub fn request_xml_with_body<P, R, T>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+    body: R,
+    content_md5: String,
+    content_type: ContentType,
+  ) -> Result<Response<T>>
+  where
+    P: Into<Vec<(String, String)>>,
+    T: FromXMLStream<Stream<reqwest::Response>>,
+    R: Read + Send + 'static,
   {
-    let mut resp = self.request_with_body(method, path, version, action, parameters, body, content_md5, content_type)?;
+    let mut resp = self.request_with_body(
+      method,
+      path,
+      version,
+      action,
+      parameters,
+      body,
+      content_md5,
+      content_type,
+    )?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;
@@ -235,8 +303,17 @@ impl Client {
     }
   }
 
-  pub fn request_tdff<P, T>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<Response<T>>
-    where P: Into<Vec<(String, String)>>, T: FromTdff<reqwest::Response>
+  pub fn request_tdff<P, T>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> Result<Response<T>>
+  where
+    P: Into<Vec<(String, String)>>,
+    T: FromTdff<reqwest::Response>,
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
@@ -264,17 +341,31 @@ impl Client {
   }
 
   #[cfg(test)]
-  pub fn request_raw<P>(&self, method: Method, path: &str, version: &str, action: &str, parameters: P) -> Result<(StatusCode, String)>
-    where P: Into<Vec<(String, String)>>
+  pub fn request_raw<P>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> Result<(StatusCode, String)>
+  where
+    P: Into<Vec<(String, String)>>,
   {
     use std::io::Read;
 
-    let mut sign = SignatureV2::new(self.options.endpoint.clone(), self.options.aws_access_key_id.clone(), self.options.secret_key.clone());
+    let mut sign = SignatureV2::new(
+      self.options.endpoint.clone(),
+      self.options.aws_access_key_id.clone(),
+      self.options.secret_key.clone(),
+    );
     for (k, v) in parameters.into() {
       sign.add(&k, v);
     }
-    let url = sign.generate_url(method.clone(), path, version, action)?.to_string();
-    let mut resp = self.http_client.request(method, &url).send()?;
+    let url = sign
+      .generate_url(method.clone(), path, version, action)?
+      .to_string();
+    let mut resp = self.http_client.request(method, &url)?.send()?;
     let mut s = String::new();
     resp.read_to_string(&mut s)?;
     Ok((resp.status().clone(), s))
@@ -288,7 +379,7 @@ pub fn get_test_client() -> Client {
     endpoint: env::var("Endpoint").expect("get Endpoint"),
     seller_id: env::var("SellerId").expect("get SellerId"),
     mws_auth_token: None,
-    aws_access_key_id : env::var("AWSAccessKeyId").expect("get AWSAccessKeyId"),
+    aws_access_key_id: env::var("AWSAccessKeyId").expect("get AWSAccessKeyId"),
     secret_key: env::var("SecretKey").expect("get SecretKey"),
   }).expect("create client")
 }
@@ -302,19 +393,41 @@ mod tests {
   fn it_works() {
     dotenv().ok();
     let client = get_test_client();
-    let (status, body) = client.request_raw(Method::Post, "/Orders/2013-09-01", "2013-09-01", "GetServiceStatus", vec![]).expect("send request");
+    let (status, body) = client
+      .request_raw(
+        Method::Post,
+        "/Orders/2013-09-01",
+        "2013-09-01",
+        "GetServiceStatus",
+        vec![],
+      )
+      .expect("send request");
     assert!(status.is_success());
     assert!(body.starts_with("<?xml"));
 
     use std::io::Cursor;
-    let (status, body) = client.request_raw(Method::Post, "/Fake/2013-09-01", "2013-09-01", "GetServiceStatus", vec![]).expect("send request");
+    let (status, body) = client
+      .request_raw(
+        Method::Post,
+        "/Fake/2013-09-01",
+        "2013-09-01",
+        "GetServiceStatus",
+        vec![],
+      )
+      .expect("send request");
     assert!(!status.is_success());
     let source = Cursor::new(body);
     let mut s = Stream::new(source);
     let err_info = ErrorResponseInfo::from_xml(&mut s).expect("decode error response");
     assert_eq!(err_info.errors.len(), 1);
-    assert_eq!(err_info.errors[0], ErrorResponseError {
-      error_type: "Sender".to_string(), code: "InvalidAddress".to_string(), message: "Section Fake/2013-09-01 is invalid".to_string(), detail: "".to_string()
-    });
+    assert_eq!(
+      err_info.errors[0],
+      ErrorResponseError {
+        error_type: "Sender".to_string(),
+        code: "InvalidAddress".to_string(),
+        message: "Section Fake/2013-09-01 is invalid".to_string(),
+        detail: "".to_string(),
+      }
+    );
   }
 }

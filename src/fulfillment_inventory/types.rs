@@ -30,32 +30,32 @@ str_enum! {
 pub struct InventorySupply {
   /// The Seller SKU of the item.
   pub SellerSKU: String,
-  /// The Fulfillment Network SKU (FNSKU) of the item. 
+  /// The Fulfillment Network SKU (FNSKU) of the item.
   /// The FNSKU is a unique identifier for each inventory item stored in an Amazon fulfillment center.
   pub FNSKU: String,
   /// The Amazon Standard Identification Number (ASIN) of the item.
   pub ASIN: String,
   /// The condition of the item.
   pub Condition: Option<Condition>,
-  /// The total item quantity in the Amazon Fulfillment Network supply chain. 
-  /// This includes item quantity currently in an Amazon fulfillment center, 
-  /// item quantity currently in an inbound shipment, and item quantity being 
+  /// The total item quantity in the Amazon Fulfillment Network supply chain.
+  /// This includes item quantity currently in an Amazon fulfillment center,
+  /// item quantity currently in an inbound shipment, and item quantity being
   /// transferred between Amazon fulfillment centers in the Amazon Fulfillment Network.
   pub TotalSupplyQuantity: i32,
-  /// The item quantity available for fulfillment. This does not 
-  /// include item quantity currently in an inbound shipment or item 
-  /// quantity being transferred between Amazon fulfillment centers 
+  /// The item quantity available for fulfillment. This does not
+  /// include item quantity currently in an inbound shipment or item
+  /// quantity being transferred between Amazon fulfillment centers
   /// in the Amazon Fulfillment Network.
   pub InStockSupplyQuantity: i32,
   /// The earliest date that your inventory is expected to be available for picking.
   pub EarliestAvailability: Timepoint,
-  /// Detailed information about the availability of inventory for a specific 
+  /// Detailed information about the availability of inventory for a specific
   /// item and its current location in the Amazon Fulfillment Network supply chain.
   pub SupplyDetail: Option<Vec<InventorySupplyDetail>>,
 }
 
-/// Indicates whether inventory is immediately available for picking, 
-/// whether inventory availability is unknown, or whether inventory 
+/// Indicates whether inventory is immediately available for picking,
+/// whether inventory availability is unknown, or whether inventory
 /// is expected to be available for picking by a specific date.
 str_enum! {
   pub enum TimepointType {
@@ -69,7 +69,7 @@ str_enum! {
 #[derive(Debug, Default, PartialEq)]
 pub struct Timepoint {
   pub TimepointType: TimepointType,
-  /// The date and time by which inventory is expected 
+  /// The date and time by which inventory is expected
   /// to be available for picking, in ISO 8601 date time format.
   pub DateTime: Option<DateTime<Utc>>,
 }
@@ -81,7 +81,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Timepoint {
       match s.local_name() {
         "TimepointType" => record.TimepointType = characters(s)?,
         "DateTime" => record.DateTime = characters(s).map(Some)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
@@ -99,8 +99,8 @@ str_enum! {
 
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq)]
-/// Specific information about the availability of inventory for a single SKU, 
-/// including the number of units that are in an Amazon fulfillment center, in an inbound shipment, 
+/// Specific information about the availability of inventory for a single SKU,
+/// including the number of units that are in an Amazon fulfillment center, in an inbound shipment,
 /// or being transferred between Amazon fulfillment centers.
 pub struct InventorySupplyDetail {
   /// The quantity of inventory for a specific item.
@@ -126,9 +126,11 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InventorySupply {
                 match s.local_name() {
                   "Quantity" => detail.Quantity = characters(s)?,
                   "SupplyType" => detail.SupplyType = characters(s)?,
-                  "EarliestAvailableToPick" => detail.EarliestAvailableToPick = Timepoint::from_xml(s)?,
+                  "EarliestAvailableToPick" => {
+                    detail.EarliestAvailableToPick = Timepoint::from_xml(s)?
+                  }
                   "LatestAvailableToPick" => detail.LatestAvailableToPick = Timepoint::from_xml(s)?,
-                  _ => {},
+                  _ => {}
                 };
                 Ok(())
               })?;
@@ -136,14 +138,14 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InventorySupply {
               Ok(())
             }).map(Some)?;
           }
-        },
+        }
         "TotalSupplyQuantity" => record.TotalSupplyQuantity = characters(s)?,
         "EarliestAvailability" => record.EarliestAvailability = Timepoint::from_xml(s)?,
         "FNSKU" => record.FNSKU = characters(s)?,
         "InStockSupplyQuantity" => record.InStockSupplyQuantity = characters(s)?,
         "ASIN" => record.ASIN = characters(s)?,
         "SellerSKU" => record.SellerSKU = characters(s)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
@@ -159,7 +161,8 @@ mod tests {
 
   #[test]
   fn test_decode_inventory_supply() {
-      let mut s = decode::Stream::new(Cursor::new(r#"
+    let mut s = decode::Stream::new(Cursor::new(
+      r#"
         <Condition>NewItem</Condition>
         <SupplyDetail/>
         <TotalSupplyQuantity>127</TotalSupplyQuantity>
@@ -170,11 +173,14 @@ mod tests {
         <InStockSupplyQuantity>127</InStockSupplyQuantity>
         <ASIN>B013JG71CG</ASIN>
         <SellerSKU>edifier-k815-white</SellerSKU>
-      "#));
+      "#,
+    ));
 
-      decode::start_document(&mut s).expect("start element");
-      let record = InventorySupply::from_xml(&mut s).expect("decode inventory supply");
-      assert_eq!(record, InventorySupply {
+    decode::start_document(&mut s).expect("start element");
+    let record = InventorySupply::from_xml(&mut s).expect("decode inventory supply");
+    assert_eq!(
+      record,
+      InventorySupply {
         SellerSKU: "edifier-k815-white".to_owned(),
         FNSKU: "B013JG71CG".to_owned(),
         ASIN: "B013JG71CG".to_owned(),
@@ -186,12 +192,14 @@ mod tests {
           DateTime: None,
         },
         SupplyDetail: None,
-      });
+      }
+    );
   }
 
   #[test]
   fn test_decode_inventory_supply_detail() {
-      let mut s = decode::Stream::new(Cursor::new(r#"
+    let mut s = decode::Stream::new(Cursor::new(
+      r#"
         <Condition>NewItem</Condition>
         <SupplyDetail>
           <member>
@@ -233,11 +241,14 @@ mod tests {
         <InStockSupplyQuantity>127</InStockSupplyQuantity>
         <ASIN>B013JG71CG</ASIN>
         <SellerSKU>edifier-k815-white</SellerSKU>
-      "#));
+      "#,
+    ));
 
-      decode::start_document(&mut s).expect("start element");
-      let record = InventorySupply::from_xml(&mut s).expect("decode inventory supply");
-      assert_eq!(record, InventorySupply {
+    decode::start_document(&mut s).expect("start element");
+    let record = InventorySupply::from_xml(&mut s).expect("decode inventory supply");
+    assert_eq!(
+      record,
+      InventorySupply {
         SellerSKU: "edifier-k815-white".to_owned(),
         FNSKU: "B013JG71CG".to_owned(),
         ASIN: "B013JG71CG".to_owned(),
@@ -284,8 +295,9 @@ mod tests {
             },
             Quantity: 58,
             SupplyType: SupplyType::InStock,
-          }
+          },
         ]),
-      });
+      }
+    );
   }
 }
