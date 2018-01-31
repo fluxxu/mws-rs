@@ -46,7 +46,7 @@ pub struct FulfillmentOrder {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrder {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentOrder> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentOrder::default(), |s, record| {
       match s.local_name() {
         "SellerFulfillmentOrderId" => record.SellerFulfillmentOrderId = characters(s)?,
@@ -86,7 +86,7 @@ pub struct Currency {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Currency {
   fn from_xml(s: &mut S) -> decode::Result<Currency> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Currency::default(), |s, record| {
       match s.local_name() {
         "CurrencyCode" => record.CurrencyCode = characters(s)?,
@@ -146,7 +146,7 @@ pub struct FulfillmentOrderItem {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrderItem {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentOrderItem> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
 
     fold_elements(s, FulfillmentOrderItem::default(), |s, record| {
       match s.local_name() {
@@ -186,7 +186,7 @@ pub struct DestinationAddress {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DestinationAddress {
   fn from_xml(s: &mut S) -> decode::Result<DestinationAddress> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, DestinationAddress::default(), |s, record| {
       match s.local_name() {
         "PhoneNumber" => record.PhoneNumber = characters(s)?,
@@ -261,7 +261,7 @@ pub struct FulfillmentShipment {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipment {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipment> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipment::default(), |s, record| {
       match s.local_name() {
         "AmazonShipmentId" => record.AmazonShipmentId = characters(s)?,
@@ -306,7 +306,7 @@ pub struct FulfillmentShipmentItem {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipmentItem {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipmentItem> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipmentItem::default(), |s, record| {
       match s.local_name() {
         "SellerSKU" => record.SellerSKU = characters(s).map(Some)?,
@@ -337,13 +337,177 @@ pub struct FulfillmentShipmentPackage {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipmentPackage {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipmentPackage> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipmentPackage::default(), |s, record| {
       match s.local_name() {
         "PackageNumber" => record.PackageNumber = characters(s)?,
         "CarrierCode" => record.CarrierCode = characters(s)?,
         "TrackingNumber" => record.TrackingNumber = characters(s).map(Some)?,
         "EstimatedArrivalDateTime" => record.EstimatedArrivalDateTime = characters(s).map(Some)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// The current status of the fulfillment order.
+str_enum! {
+  pub enum PackageStatus {
+    IN_TRANSIT,
+    DELIVERED,
+    RETURNING,
+    RETURNED,
+    UNDELIVERABLE,
+    DELAYED,
+    AVAILABLE_FOR_PICKUP,
+    CUSTOMER_ACTION,
+  }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct TrackingAddress {
+  pub City: String,
+  pub State: String,
+  pub Country: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for TrackingAddress {
+  fn from_xml(s: &mut S) -> decode::Result<TrackingAddress> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, TrackingAddress::default(), |s, record| {
+      match s.local_name() {
+        "City" => record.City = characters(s)?,
+        "State" => record.State = characters(s)?,
+        "Country" => record.Country = characters(s)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct TrackingEvent {
+  pub EventDate: Option<DateTime<Utc>>,
+  pub EventAddress: Option<TrackingAddress>,
+  pub EventCode: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for TrackingEvent {
+  fn from_xml(s: &mut S) -> decode::Result<TrackingEvent> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, TrackingEvent::default(), |s, record| {
+      match s.local_name() {
+        "EventDate" => record.EventDate = characters(s).map(Some)?,
+        "EventAddress" => record.EventAddress = TrackingAddress::from_xml(s).map(Some)?,
+        "EventCode" => record.EventCode = characters(s)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+impl TrackingEvent {
+  pub fn event_description(&self) -> Option<&'static str> {
+    let value = match self.EventCode.as_ref() {
+      "EVENT_101" => "Carrier notified to pick up package.",
+      "EVENT_102" => "Shipment picked up from seller's facility.",
+      "EVENT_201" => "Arrival scan.",
+      "EVENT_202" => "Departure scan.",
+      "EVENT_203" => "Arrived at destination country.",
+      "EVENT_204" => "Initiated customs clearance process.",
+      "EVENT_205" => "Completed customs clearance process.",
+      "EVENT_206" => "In transit to pickup location.",
+      "EVENT_301" => "Delivered.",
+      "EVENT_302" => "Out for delivery.",
+      "EVENT_304" => "Delivery attempted.",
+      "EVENT_306" => "Customer contacted to arrange delivery.",
+      "EVENT_307" => "Delivery appointment scheduled.",
+      "EVENT_308" => "Available for pickup.",
+      "EVENT_309" => "Returned to seller.",
+      "EVENT_401" => "Held by carrier - incorrect address.",
+      "EVENT_402" => "Customs clearance delay.",
+      "EVENT_403" => "Customer moved.",
+      "EVENT_404" => "Delay in delivery due to external factors.",
+      "EVENT_405" => "Shipment damaged.",
+      "EVENT_406" => "Held by carrier.",
+      "EVENT_407" => "Customer refused delivery.",
+      "EVENT_408" => "Returning to seller.",
+      "EVENT_409" => "Lost by carrier.",
+      "EVENT_411" => "Paperwork received - did not receive shipment.",
+      "EVENT_412" => "Shipment received- did not receive paperwork.",
+      "EVENT_413" => "Held by carrier- customer refused shipment due to customs charges.",
+      "EVENT_414" => "Missorted by carrier.",
+      "EVENT_415" => "Received from prior carrier.",
+      "EVENT_416" => "Undeliverable.",
+      "EVENT_417" => "Shipment missorted.",
+      "EVENT_418" => "Shipment delayed.",
+      "EVENT_419" => "Address corrected - delivery rescheduled.",
+      _ => "",
+    };
+    if value.is_empty() {
+      None
+    } else {
+      Some(value)
+    }
+  }
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct PackageTrackingDetails {
+  /// The package identifier.
+  pub PackageNumber: String,
+  /// The tracking number for the package.
+  pub TrackingNumber: Option<String>,
+  /// The name of the carrier.
+  pub CarrierCode: Option<String>,
+  /// The phone number of the carrier.
+  pub CarrierPhoneNumber: Option<String>,
+  /// The URL of the carrier’s website.
+  pub CarrierURL: Option<String>,
+  /// The shipping date for the package.
+  pub ShipDate: Option<DateTime<Utc>>,
+  /// The destination city for the package.
+  pub ShipToAddress: Option<TrackingAddress>,
+  /// The current delivery status of the package.
+  pub CurrentStatus: PackageStatus,
+  /// The name of the person who signed for the package.
+  pub SignedForBy: Option<String>,
+  /// The estimated arrival date.
+  pub EstimatedArrivalDate: Option<DateTime<Utc>>,
+  /// A list of tracking events.
+  pub TrackingEvents: Vec<TrackingEvent>,
+  /// Additional location information.
+  pub AdditionalLocationInfo: Option<String>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for PackageTrackingDetails {
+  fn from_xml(s: &mut S) -> decode::Result<PackageTrackingDetails> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, PackageTrackingDetails::default(), |s, record| {
+      match s.local_name() {
+        "PackageNumber" => record.PackageNumber = characters(s)?,
+        "TrackingNumber" => record.TrackingNumber = characters(s).map(Some)?,
+        "CarrierCode" => record.CarrierCode = characters(s).map(Some)?,
+        "CarrierPhoneNumber" => record.CarrierPhoneNumber = characters(s).map(Some)?,
+        "CarrierURL" => record.CarrierURL = characters(s).map(Some)?,
+        "ShipDate" => record.ShipDate = characters(s).map(Some)?,
+        "ShipToAddress" => record.ShipToAddress = TrackingAddress::from_xml(s).map(Some)?,
+        "CurrentStatus" => record.CurrentStatus = characters(s)?,
+        "SignedForBy" => record.SignedForBy = characters(s).map(Some)?,
+        "EstimatedArrivalDate" => record.EstimatedArrivalDate = characters(s).map(Some)?,
+        "TrackingEvents" => {
+          record.TrackingEvents = fold_elements(s, vec![], |s, v| {
+            v.push(TrackingEvent::from_xml(s)?);
+            Ok(())
+          })?
+        }
+        "AdditionalLocationInfo" => record.AdditionalLocationInfo = characters(s).map(Some)?,
         _ => {}
       }
       Ok(())
@@ -451,7 +615,6 @@ mod tests {
         NotificationEmailList: vec!["hello@ventmere.com".to_owned()],
       }
     );
-
   }
 
   #[test]
@@ -488,6 +651,68 @@ mod tests {
         TrackingNumber: Some("7777777777".to_owned()),
         CarrierCode: "USPS".to_owned(),
         PackageNumber: "185528000".to_owned(),
+      }
+    );
+  }
+
+  #[test]
+  fn test_package_tracking_details() {
+    test_decode!(
+      PackageTrackingDetails,
+      r#"
+        <ShipToAddress/>
+        <AdditionalLocationInfo/>
+        <CurrentStatus>IN_TRANSIT</CurrentStatus>
+        <SignedForBy/>
+        <ShipDate>2018-01-30T23:38:45Z</ShipDate>
+        <PackageNumber>7777777777</PackageNumber>
+        <CarrierCode>USPS</CarrierCode>
+        <EstimatedArrivalDate>2018-02-01T08:00:00Z</EstimatedArrivalDate>
+        <TrackingEvents>
+          <member>
+            <EventCode>EVENT_201</EventCode>
+            <EventAddress>
+              <Country>US</Country>
+              <State>CALIFORNIA</State>
+              <City>Newark</City>
+            </EventAddress>
+            <EventDate>2018-01-31T17:20:58Z</EventDate>
+          </member>
+          <member>
+            <EventCode>EVENT_101</EventCode>
+            <EventDate>2018-01-30T23:38:45Z</EventDate>
+          </member>
+        </TrackingEvents>
+        <TrackingNumber>1818181818181818188181</TrackingNumber>
+      "#,
+      PackageTrackingDetails {
+        PackageNumber: "7777777777".to_owned(),
+        TrackingNumber: Some("1818181818181818188181".to_owned()),
+        CarrierCode: Some("USPS".to_owned()),
+        CarrierPhoneNumber: None,
+        CarrierURL: None,
+        ShipDate: Some(Utc.ymd(2018, 1, 30).and_hms(23, 38, 45)),
+        ShipToAddress: Some(Default::default()),
+        CurrentStatus: PackageStatus::IN_TRANSIT,
+        SignedForBy: Some(String::default()),
+        EstimatedArrivalDate: Some(Utc.ymd(2018, 2, 1).and_hms(8, 0, 0)),
+        TrackingEvents: vec![
+          TrackingEvent {
+            EventCode: "EVENT_201".to_owned(),
+            EventDate: Some(Utc.ymd(2018, 1, 31).and_hms(17, 20, 58)),
+            EventAddress: Some(TrackingAddress {
+              Country: "US".to_owned(),
+              State: "CALIFORNIA".to_owned(),
+              City: "Newark".to_owned(),
+            }),
+          },
+          TrackingEvent {
+            EventCode: "EVENT_101".to_owned(),
+            EventDate: Some(Utc.ymd(2018, 1, 30).and_hms(23, 38, 45)),
+            EventAddress: None,
+          },
+        ],
+        AdditionalLocationInfo: Some(String::default()),
       }
     );
   }
