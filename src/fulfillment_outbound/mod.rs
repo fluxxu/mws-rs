@@ -6,8 +6,8 @@ use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
 pub use self::types::*;
-use xmlhelper::decode;
 use super::types::ToIso8601;
+use xmlhelper::decode;
 
 error_chain! {
   links {

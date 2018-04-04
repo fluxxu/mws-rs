@@ -1,10 +1,10 @@
-use sign::SignatureV2;
-pub use reqwest::{Method, StatusCode};
-pub use reqwest::header::ContentType;
 use reqwest;
-use xmlhelper::decode::{FromXMLStream, Stream};
-use tdff::FromTdff;
+pub use reqwest::header::ContentType;
+pub use reqwest::{Method, StatusCode};
+use sign::SignatureV2;
 use std::io::Read;
+use tdff::FromTdff;
+use xmlhelper::decode::{FromXMLStream, Stream};
 
 error_chain! {
   foreign_links {
@@ -57,7 +57,7 @@ impl ErrorResponseInfo {
   fn from_xml_stream<R: ::std::io::Read>(
     s: &mut Stream<R>,
   ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
-    use xmlhelper::decode::{start_document, element, fold_elements, characters};
+    use xmlhelper::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ErrorResponse", |s| {
       fold_elements(s, ErrorResponseInfo::default(), |s, resp| {
@@ -133,7 +133,7 @@ impl Client {
   pub fn new(options: ClientOptions) -> Result<Client> {
     Ok(Client {
       options: options,
-      http_client: reqwest::Client::new()?,
+      http_client: reqwest::Client::new(),
     })
   }
 
@@ -169,9 +169,11 @@ impl Client {
       .generate_url(method.clone(), path, version, action)?
       .to_string();
     //println!("request: {}", url);
-    self.http_client.request(method, &url)?.send().map_err(
-      Into::into,
-    )
+    self
+      .http_client
+      .request(method, &url)
+      .send()
+      .map_err(Into::into)
   }
 
   pub fn request_with_body<P, R>(
@@ -207,7 +209,7 @@ impl Client {
 
     self
       .http_client
-      .request(method, &url)?
+      .request(method, &url)
       .header(content_type)
       .body(reqwest::Body::new(body))
       .send()
@@ -232,7 +234,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(Response::Success(v))
     } else {
-      use std::io::{Read, Cursor};
+      use std::io::{Cursor, Read};
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
@@ -283,7 +285,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(Response::Success(v))
     } else {
-      use std::io::{Read, Cursor};
+      use std::io::{Cursor, Read};
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
@@ -320,7 +322,7 @@ impl Client {
       let v = T::from_tdff(resp)?;
       Ok(Response::Success(v))
     } else {
-      use std::io::{Read, Cursor};
+      use std::io::{Cursor, Read};
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
@@ -386,8 +388,8 @@ pub fn get_test_client() -> Client {
 
 #[cfg(test)]
 mod tests {
-  use dotenv::dotenv;
   use super::*;
+  use dotenv::dotenv;
 
   #[test]
   fn it_works() {
