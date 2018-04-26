@@ -1,6 +1,6 @@
 [package]
 name = "mws"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 license = "MIT"
 description = "Client library for Amazon Marketplace Web Service (Amazon MWS)"

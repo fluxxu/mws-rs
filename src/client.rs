@@ -367,7 +367,7 @@ impl Client {
     let url = sign
       .generate_url(method.clone(), path, version, action)?
       .to_string();
-    let mut resp = self.http_client.request(method, &url)?.send()?;
+    let mut resp = self.http_client.request(method, &url).send()?;
     let mut s = String::new();
     resp.read_to_string(&mut s)?;
     Ok((resp.status().clone(), s))

@@ -5,9 +5,10 @@
 use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{InventorySupply, InventorySupplyDetail, Condition, Timepoint, TimepointType};
-use xmlhelper::decode;
+pub use self::types::{Condition, InventorySupply, InventorySupplyDetail, SupplyType, Timepoint,
+                      TimepointType};
 use super::types::ToIso8601;
+use xmlhelper::decode;
 
 error_chain! {
   links {
@@ -32,7 +33,7 @@ pub struct ListInventorySupplyParameters {
   pub seller_sku_list: Vec<String>,
   pub query_start_datetime: Option<DateTime<Utc>>,
   pub response_group: Option<ResponseGroup>,
-  pub marketplace_id: Option<String>,  
+  pub marketplace_id: Option<String>,
 }
 
 impl Into<Vec<(String, String)>> for ListInventorySupplyParameters {
@@ -47,10 +48,13 @@ impl Into<Vec<(String, String)>> for ListInventorySupplyParameters {
     }
 
     if let Some(group) = self.response_group {
-      result.push(("ResponseGroup".to_string(), match group {
-        ResponseGroup::Basic => "Basic".to_owned(),
-        ResponseGroup::Detailed => "Detailed".to_owned(),
-      }));
+      result.push((
+        "ResponseGroup".to_string(),
+        match group {
+          ResponseGroup::Basic => "Basic".to_owned(),
+          ResponseGroup::Detailed => "Detailed".to_owned(),
+        },
+      ));
     }
 
     if let Some(id) = self.marketplace_id {
@@ -64,84 +68,111 @@ impl Into<Vec<(String, String)>> for ListInventorySupplyParameters {
 #[derive(Debug, Default)]
 pub struct ListInventorySupplyResponse {
   pub request_id: String,
-  /// Indicates the specific marketplace to which the Inventory details apply. 
-  /// The element will only be included in the response if the corresponding 
-  /// request included a MarketplaceId. The value of the response MarketplaceId 
+  /// Indicates the specific marketplace to which the Inventory details apply.
+  /// The element will only be included in the response if the corresponding
+  /// request included a MarketplaceId. The value of the response MarketplaceId
   /// should match the corresponding request MarketplaceId.
   pub marketplace_id: String,
   /// A structured list of items that are or soon will be available for fulfillment
   /// by the Amazon Fulfillment Network. Each item is either currently in the Amazon
-  /// Fulfillment Network or is in an inbound shipment to an Amazon fulfillment center. 
+  /// Fulfillment Network or is in an inbound shipment to an Amazon fulfillment center.
   /// SKU, ASIN, condition, quantity, and availability information is included with each item.
   pub inventory_supply_list: Vec<InventorySupply>,
   /// A generated string used to pass information to your next request. If NextToken is returned,
-  /// pass the value of NextToken to ListInventorySupplyByNextToken. If NextToken is not returned, 
+  /// pass the value of NextToken to ListInventorySupplyByNextToken. If NextToken is not returned,
   /// there is no more inventory availability information to return.
   pub next_token: Option<String>,
 }
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInventorySupplyResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInventorySupplyResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
-    element(s, vec!["ListInventorySupplyResponse", "ListInventorySupplyByNextTokenResponse"], |s| {
-      fold_elements(s, ListInventorySupplyResponse::default(), |s, response| {
-        match s.local_name() {
-          "ListInventorySupplyResult" | "ListInventorySupplyByNextTokenResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "InventorySupplyList" => {
-                  response.inventory_supply_list = fold_elements(s, vec![], |s, list| {
-                    list.push(InventorySupply::from_xml(s)?);
-                    Ok(())
-                  })?;
-                },
-                "MarketplaceId" => {
-                  response.marketplace_id = characters(s)?;
-                },
-                "NextToken" => {
-                  response.next_token = Some(characters(s)?);
-                },
-                _ => {},
-              }
+    element(
+      s,
+      vec![
+        "ListInventorySupplyResponse",
+        "ListInventorySupplyByNextTokenResponse",
+      ],
+      |s| {
+        fold_elements(
+          s,
+          ListInventorySupplyResponse::default(),
+          |s, response| match s.local_name() {
+            "ListInventorySupplyResult" | "ListInventorySupplyByNextTokenResult" => {
+              fold_elements(s, (), |s, _| {
+                match s.local_name() {
+                  "InventorySupplyList" => {
+                    response.inventory_supply_list = fold_elements(s, vec![], |s, list| {
+                      list.push(InventorySupply::from_xml(s)?);
+                      Ok(())
+                    })?;
+                  }
+                  "MarketplaceId" => {
+                    response.marketplace_id = characters(s)?;
+                  }
+                  "NextToken" => {
+                    response.next_token = Some(characters(s)?);
+                  }
+                  _ => {}
+                }
+                Ok(())
+              })
+            }
+            "ResponseMetadata" => {
+              response.request_id = element(s, "RequestId", |s| characters(s))?;
               Ok(())
-            })
+            }
+            _ => Ok(()),
           },
-          "ResponseMetadata" => {
-            response.request_id = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
-            Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
-    })
+        )
+      },
+    )
   }
 }
 
-/// The ListInventorySupply operation returns information about the availability of 
-/// inventory that a seller has in the Amazon Fulfillment Network and in current inbound shipments. 
-/// You can check the current availabilty status for your Amazon Fulfillment Network inventory as well 
+/// The ListInventorySupply operation returns information about the availability of
+/// inventory that a seller has in the Amazon Fulfillment Network and in current inbound shipments.
+/// You can check the current availabilty status for your Amazon Fulfillment Network inventory as well
 /// as discover when availability status changes.
-/// 
+///
 /// This operation does not return availability information for inventory that is:
 /// - Unsellable
 /// - Bound to a customer order
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inventory/FBAInventory_ListInventorySupply.html)
 #[allow(non_snake_case)]
-pub fn ListInventorySupply(client: &Client, parameters: ListInventorySupplyParameters) -> Result<Response<ListInventorySupplyResponse>> {
-  client.request_xml(Method::Post, PATH, VERSION, "ListInventorySupply", parameters).map_err(|err| err.into())
+pub fn ListInventorySupply(
+  client: &Client,
+  parameters: ListInventorySupplyParameters,
+) -> Result<Response<ListInventorySupplyResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInventorySupply",
+      parameters,
+    )
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of information about the availability of a seller's inventory using the NextToken parameter.
 #[allow(non_snake_case)]
-pub fn ListInventorySupplyByNextToken(client: &Client, next_token: String) -> Result<Response<ListInventorySupplyResponse>> {
-  let params = vec![
-    ("NextToken".to_string(), next_token)
-  ]; 
-  client.request_xml(Method::Post, PATH, VERSION, "ListInventorySupplyByNextToken", params).map_err(|err| err.into())
+pub fn ListInventorySupplyByNextToken(
+  client: &Client,
+  next_token: String,
+) -> Result<Response<ListInventorySupplyResponse>> {
+  let params = vec![("NextToken".to_string(), next_token)];
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInventorySupplyByNextToken",
+      params,
+    )
+    .map_err(|err| err.into())
 }
 
 // #[cfg(test)]
