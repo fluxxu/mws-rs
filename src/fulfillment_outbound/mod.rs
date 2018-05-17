@@ -253,47 +253,55 @@ pub struct GetFulfillmentPreviewParameters {
 
   // Optional API Parameters
   pub MarketplaceId: Option<String>,
-  pub ShippingSpeedCategories: Option<Vec<String>>,
+  pub ShippingSpeedCategories: Option<Vec<ShippingSpeedCategory>>,
+}
+
+fn get_address_pairs(prop: &str, addr: &DestinationAddress) -> Vec<(String, String)> {
+  let mut result = vec![
+    (format!("{}.Name", prop), addr.Name.clone()),
+    (format!("{}.Line1", prop), addr.Line1.clone()),
+    (
+      format!("{}.StateOrProvinceCode", prop),
+      addr.StateOrProvinceCode.clone(),
+    ),
+    (format!("{}.CountryCode", prop), addr.CountryCode.clone()),
+  ];
+
+  if !addr.Line2.is_empty() {
+    result.push((format!("{}.Line2", prop), addr.Line2.clone()))
+  }
+
+  if !addr.Line3.is_empty() {
+    result.push((format!("{}.Line3", prop), addr.Line3.clone()))
+  }
+
+  if !addr.DistrictOrCounty.is_empty() {
+    result.push((
+      format!("{}.DistrictOrCounty", prop),
+      addr.DistrictOrCounty.clone(),
+    ))
+  }
+
+  if !addr.City.is_empty() {
+    result.push((format!("{}.City", prop), addr.City.clone()))
+  }
+
+  if !addr.PhoneNumber.is_empty() {
+    result.push((format!("{}.PhoneNumber", prop), addr.PhoneNumber.clone()))
+  }
+
+  if !addr.PostalCode.is_empty() {
+    result.push((format!("{}.PostalCode", prop), addr.PostalCode.clone()))
+  }
+
+  result
 }
 
 impl Into<Vec<(String, String)>> for GetFulfillmentPreviewParameters {
   fn into(self) -> Vec<(String, String)> {
-    let mut result = vec![
-      ("Address.Name".to_owned(), self.Address.Name),
-      ("Address.Line1".to_owned(), self.Address.Line1),
-      (
-        "Address.StateOrProvinceCode".to_owned(),
-        self.Address.StateOrProvinceCode,
-      ),
-      ("Address.CountryCode".to_owned(), self.Address.CountryCode),
-    ];
+    let mut result = vec![];
 
-    if !self.Address.Line2.is_empty() {
-      result.push(("Address.Line2".to_owned(), self.Address.Line2))
-    }
-
-    if !self.Address.Line3.is_empty() {
-      result.push(("Address.Line3".to_owned(), self.Address.Line3))
-    }
-
-    if !self.Address.DistrictOrCounty.is_empty() {
-      result.push((
-        "Address.DistrictOrCounty".to_owned(),
-        self.Address.DistrictOrCounty,
-      ))
-    }
-
-    if !self.Address.City.is_empty() {
-      result.push(("Address.City".to_owned(), self.Address.City))
-    }
-
-    if !self.Address.PhoneNumber.is_empty() {
-      result.push(("Address.PhoneNumber".to_owned(), self.Address.PhoneNumber))
-    }
-
-    if !self.Address.PostalCode.is_empty() {
-      result.push(("Address.PostalCode".to_owned(), self.Address.PostalCode))
-    }
+    result.append(&mut get_address_pairs("Address", &self.Address));
 
     for (i, item) in self.Items.into_iter().enumerate() {
       result.push((format!("Items.member.{}.SellerSKU", i + 1), item.SellerSKU));
@@ -313,7 +321,10 @@ impl Into<Vec<(String, String)>> for GetFulfillmentPreviewParameters {
 
     if let Some(cats) = self.ShippingSpeedCategories {
       for (i, cat) in cats.into_iter().enumerate() {
-        result.push((format!("ShippingSpeedCategories.member.{}", i + 1), cat))
+        result.push((
+          format!("ShippingSpeedCategories.member.{}", i + 1),
+          cat.to_string(),
+        ))
       }
     }
 
@@ -371,6 +382,255 @@ pub fn GetFulfillmentPreview(
     .map_err(|err| err.into())
 }
 
+/// Item information for creating a fulfillment order.
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct CreateFulfillmentOrderItem {
+  /// The seller SKU of the item.
+  pub SellerSKU: String,
+  /// A fulfillment order item identifier that you
+  /// created with a call to the
+  /// GetFulfillmentPreview operation.
+  pub SellerFulfillmentOrderItemId: String,
+  /// The item quantity.
+  pub Quantity: i32,
+  /// A message to the gift recipient, if applicable.
+  pub GiftMessage: Option<String>,
+  /// Item-specific text that displays in recipient-facing
+  /// materials such as the outbound shipment packing slip.
+  pub DisplayableComment: Option<String>,
+  /// Amazon's fulfillment network SKU of the item.
+  pub FulfillmentNetworkSKU: Option<String>,
+  /// The monetary value assigned by the seller to this item.
+  pub PerUnitDeclaredValue: Option<Currency>,
+  /// The amount to be collected from the customer
+  /// for this item in a COD (Cash On Delivery) order.
+  pub PerUnitPrice: Option<Currency>,
+  /// The tax on the amount to be collected from the customer
+  /// for this item in a COD (Cash On Delivery) order.
+  pub PerUnitTax: Option<Currency>,
+}
+
+/// Parameters for `CreateFulfillmentOrder`
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct CreateFulfillmentOrderParameters {
+  pub SellerFulfillmentOrderId: String,
+  pub ShippingSpeedCategory: ShippingSpeedCategory,
+  pub DisplayableOrderId: String,
+  pub DisplayableOrderDateTime: DateTime<Utc>,
+  pub DisplayableOrderComment: String,
+  pub DestinationAddress: DestinationAddress,
+  pub Items: Vec<CreateFulfillmentOrderItem>,
+
+  // Optional API Parameters
+  pub MarketplaceId: Option<String>,
+  pub ShipFromCountryCode: Option<String>,
+  pub FulfillmentPolicy: Option<FulfillmentPolicy>,
+  pub FulfillmentAction: Option<FulfillmentAction>,
+  pub NotificationEmailList: Option<Vec<String>>,
+}
+
+impl Into<Vec<(String, String)>> for CreateFulfillmentOrderParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![
+      (
+        "SellerFulfillmentOrderId".to_owned(),
+        self.SellerFulfillmentOrderId,
+      ),
+      (
+        "ShippingSpeedCategory".to_owned(),
+        self.ShippingSpeedCategory.to_string(),
+      ),
+      ("DisplayableOrderId".to_owned(), self.DisplayableOrderId),
+      (
+        "DisplayableOrderDateTime".to_owned(),
+        self.DisplayableOrderDateTime.to_iso8601(),
+      ),
+      (
+        "DisplayableOrderComment".to_owned(),
+        self.DisplayableOrderComment,
+      ),
+    ];
+
+    result.append(&mut get_address_pairs(
+      "DestinationAddress",
+      &self.DestinationAddress,
+    ));
+
+    for (i, item) in self.Items.into_iter().enumerate() {
+      result.push((format!("Items.member.{}.SellerSKU", i + 1), item.SellerSKU));
+      result.push((
+        format!("Items.member.{}.SellerFulfillmentOrderItemId", i + 1),
+        item.SellerFulfillmentOrderItemId,
+      ));
+      result.push((
+        format!("Items.member.{}.Quantity", i + 1),
+        item.Quantity.to_string(),
+      ));
+
+      if let Some(msg) = item.GiftMessage {
+        result.push((format!("Items.member.{}.GiftMessage", i + 1), msg));
+      }
+
+      if let Some(msg) = item.DisplayableComment {
+        result.push((format!("Items.member.{}.DisplayableComment", i + 1), msg));
+      }
+
+      if let Some(msg) = item.FulfillmentNetworkSKU {
+        result.push((format!("Items.member.{}.FulfillmentNetworkSKU", i + 1), msg));
+      }
+
+      if let Some(c) = item.PerUnitDeclaredValue {
+        result.push((
+          format!("Items.member.{}.PerUnitDeclaredValue.CurrencyCode", i + 1),
+          c.CurrencyCode,
+        ));
+        result.push((
+          format!("Items.member.{}.PerUnitDeclaredValue.Value", i + 1),
+          c.Value,
+        ));
+      }
+
+      if let Some(c) = item.PerUnitPrice {
+        result.push((
+          format!("Items.member.{}.PerUnitPrice.CurrencyCode", i + 1),
+          c.CurrencyCode,
+        ));
+        result.push((
+          format!("Items.member.{}.PerUnitPrice.Value", i + 1),
+          c.Value,
+        ));
+      }
+
+      if let Some(c) = item.PerUnitTax {
+        result.push((
+          format!("Items.member.{}.PerUnitTax.CurrencyCode", i + 1),
+          c.CurrencyCode,
+        ));
+        result.push((format!("Items.member.{}.PerUnitTax.Value", i + 1), c.Value));
+      }
+    }
+
+    if let Some(marketplace_id) = self.MarketplaceId {
+      result.push(("MarketplaceId".to_owned(), marketplace_id))
+    }
+
+    if let Some(code) = self.ShipFromCountryCode {
+      result.push(("ShipFromCountryCode".to_owned(), code))
+    }
+
+    if let Some(v) = self.FulfillmentPolicy {
+      result.push(("FulfillmentPolicy".to_owned(), v.to_string()))
+    }
+
+    if let Some(v) = self.FulfillmentAction {
+      result.push(("FulfillmentAction".to_owned(), v.to_string()))
+    }
+
+    if let Some(emails) = self.NotificationEmailList {
+      for (i, email) in emails.into_iter().enumerate() {
+        result.push((format!("NotificationEmailList.member.{}", i + 1), email))
+      }
+    }
+
+    result
+  }
+}
+
+#[derive(Debug, Default)]
+#[allow(non_snake_case)]
+pub struct CreateFulfillmentOrderResponse {
+  pub RequestId: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for CreateFulfillmentOrderResponse {
+  fn from_xml(s: &mut S) -> decode::Result<CreateFulfillmentOrderResponse> {
+    use self::decode::{characters, element, fold_elements, start_document};
+    start_document(s)?;
+    element(s, "CreateFulfillmentOrderResponse", |s| {
+      fold_elements(
+        s,
+        CreateFulfillmentOrderResponse::default(),
+        |s, response| match s.local_name() {
+          "ResponseMetadata" => {
+            response.RequestId = element(s, "RequestId", |s| characters(s))?;
+            Ok(())
+          }
+          _ => Ok(()),
+        },
+      )
+    })
+  }
+}
+
+/// Requests that Amazon ship items from the seller's inventory in Amazon's fulfillment network to a destination address.
+///
+/// [Documentation](https://docs.developer.amazonservices.com/en_US/fba_outbound/FBAOutbound_CreateFulfillmentOrder.html)
+#[allow(non_snake_case)]
+pub fn CreateFulfillmentOrder(
+  client: &Client,
+  params: CreateFulfillmentOrderParameters,
+) -> Result<Response<CreateFulfillmentOrderResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "CreateFulfillmentOrder",
+      params,
+    )
+    .map_err(|err| err.into())
+}
+
+#[derive(Debug, Default)]
+#[allow(non_snake_case)]
+pub struct CancelFulfillmentOrderResponse {
+  pub RequestId: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for CancelFulfillmentOrderResponse {
+  fn from_xml(s: &mut S) -> decode::Result<CancelFulfillmentOrderResponse> {
+    use self::decode::{characters, element, fold_elements, start_document};
+    start_document(s)?;
+    element(s, "CancelFulfillmentOrderResponse", |s| {
+      fold_elements(
+        s,
+        CancelFulfillmentOrderResponse::default(),
+        |s, response| match s.local_name() {
+          "ResponseMetadata" => {
+            response.RequestId = element(s, "RequestId", |s| characters(s))?;
+            Ok(())
+          }
+          _ => Ok(()),
+        },
+      )
+    })
+  }
+}
+
+/// Requests that Amazon stop attempting to fulfill an existing fulfillment order.
+///
+/// [Documentation](https://docs.developer.amazonservices.com/en_US/fba_outbound/FBAOutbound_CancelFulfillmentOrder.html)
+#[allow(non_snake_case)]
+pub fn CancelFulfillmentOrder(
+  client: &Client,
+  seller_fulfillment_order_id: &str,
+) -> Result<Response<CancelFulfillmentOrderResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "CancelFulfillmentOrder",
+      vec![(
+        "SellerFulfillmentOrderId".to_owned(),
+        seller_fulfillment_order_id.to_owned(),
+      )],
+    )
+    .map_err(|err| err.into())
+}
+
 #[cfg(test)]
 mod tests {
   use super::super::client::get_test_client;
@@ -392,6 +652,7 @@ mod tests {
   }
 
   #[test]
+  #[ignore]
   fn test_get_fufillment_preview() {
     dotenv().ok();
     let c = get_test_client();
@@ -406,30 +667,97 @@ mod tests {
           Name: "Foo Bar".to_owned(),
           StateOrProvinceCode: "ON".to_owned(),
           DistrictOrCounty: "".to_owned(),
-          Line1: "1000-5162 Yonge Street".to_owned(),
+          Line1: "1000-7777 Yonge Street".to_owned(),
           Line2: "".to_owned(),
           Line3: "".to_owned(),
         },
         Items: vec![
           GetFulfillmentPreviewItem {
-            SellerSKU: "edifier-r1280t-fba".to_owned(),
+            SellerSKU: "e1".to_owned(),
             SellerFulfillmentOrderItemId: "1".to_owned(),
             Quantity: 1,
           },
           GetFulfillmentPreviewItem {
-            SellerSKU: "edifier-h210-black".to_owned(),
+            SellerSKU: "e2".to_owned(),
             SellerFulfillmentOrderItemId: "2".to_owned(),
             Quantity: 139,
           },
         ],
         MarketplaceId: Some("A2EUQ1WTGCTBG2".to_string()),
         ShippingSpeedCategories: Some(vec![
-          "Standard".to_owned(),
-          "Expedited".to_owned(),
-          "Priority".to_owned(),
+          ShippingSpeedCategory::Standard,
+          ShippingSpeedCategory::Expedited,
+          ShippingSpeedCategory::Priority,
         ]),
       },
     ).expect("GetFulfillmentPreview");
+    match res {
+      Response::Error(e) => panic!("request error: {:?}", e),
+      Response::Success(res) => {
+        println!("res = {:?}", res);
+      }
+    }
+  }
+
+  #[test]
+  #[ignore]
+  fn test_create_fulfillment_order() {
+    use chrono::TimeZone;
+
+    dotenv().ok();
+    let c = get_test_client();
+    let res = CreateFulfillmentOrder(
+      &c,
+      CreateFulfillmentOrderParameters {
+        SellerFulfillmentOrderId: "S2_TEST_20180517_3".to_owned(),
+        ShippingSpeedCategory: ShippingSpeedCategory::Expedited,
+        DisplayableOrderId: "TEST".to_owned(),
+        DisplayableOrderDateTime: Utc.ymd(2018, 5, 5).and_hms(0, 0, 0),
+        DisplayableOrderComment: "DisplayableOrderComment".to_owned(),
+        DestinationAddress: DestinationAddress {
+          PhoneNumber: "".to_owned(),
+          City: "North York".to_owned(),
+          CountryCode: "CA".to_owned(),
+          PostalCode: "M2N0E9".to_owned(),
+          Name: "F A".to_owned(),
+          StateOrProvinceCode: "ON".to_owned(),
+          DistrictOrCounty: "".to_owned(),
+          Line1: "88-888 Yonge Street".to_owned(),
+          Line2: "".to_owned(),
+          Line3: "".to_owned(),
+        },
+        Items: vec![CreateFulfillmentOrderItem {
+          SellerSKU: "e-fba".to_owned(),
+          SellerFulfillmentOrderItemId: "1".to_owned(),
+          Quantity: 1,
+          GiftMessage: Some("GiftMessage".to_owned()),
+          DisplayableComment: Some("DisplayableComment".to_owned()),
+          FulfillmentNetworkSKU: None,
+          PerUnitDeclaredValue: None,
+          PerUnitPrice: None,
+          PerUnitTax: None,
+        }],
+        MarketplaceId: Some("A2EUQ1WTGCTBG2".to_string()),
+        ShipFromCountryCode: None,
+        FulfillmentPolicy: Some(FulfillmentPolicy::FillOrKill),
+        FulfillmentAction: Some(FulfillmentAction::Hold),
+        NotificationEmailList: Some(vec!["a@gmail.com".to_owned(), "b@ventmere.com".to_owned()]),
+      },
+    ).expect("CreateFulfillmentOrder");
+    match res {
+      Response::Error(e) => panic!("request error: {:?}", e),
+      Response::Success(res) => {
+        println!("res = {:?}", res);
+      }
+    }
+  }
+
+  #[test]
+  #[ignore]
+  fn test_cancel_fulfillment_order() {
+    dotenv().ok();
+    let c = get_test_client();
+    let res = CancelFulfillmentOrder(&c, "S2_TEST_20180517_3").expect("CancelFulfillmentOrder");
     match res {
       Response::Error(e) => panic!("request error: {:?}", e),
       Response::Success(res) => {

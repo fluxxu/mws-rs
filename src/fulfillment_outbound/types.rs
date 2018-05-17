@@ -31,7 +31,7 @@ pub struct FulfillmentOrder {
   pub SellerFulfillmentOrderId: String,
   pub DestinationAddress: DestinationAddress,
   pub DisplayableOrderDateTime: Option<DateTime<Utc>>,
-  pub ShippingSpeedCategory: String,
+  pub ShippingSpeedCategory: ShippingSpeedCategory,
   pub FulfillmentMethod: String,
   pub FulfillmentOrderStatus: FulfillmentOrderStatus,
   pub StatusUpdatedDateTime: Option<DateTime<Utc>>,
@@ -515,6 +515,25 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for PackageTrackingDeta
   }
 }
 
+/// The shipping method for your fulfillment order.
+str_enum! {
+  pub enum ShippingSpeedCategory {
+    Standard,
+    Expedited,
+    Priority,
+    ScheduledDelivery,
+  }
+}
+
+/// Specifies whether the fulfillment order should
+/// ship now or have an order hold put on it.
+str_enum! {
+  pub enum FulfillmentAction {
+    Ship,
+    Hold,
+  }
+}
+
 /// Weight unit and amount.
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq)]
@@ -890,7 +909,7 @@ mod tests {
           Line3: "".to_owned(),
         },
         DisplayableOrderDateTime: Some(Utc.ymd(2017, 12, 11).and_hms(8, 0, 0)),
-        ShippingSpeedCategory: "Expedited".to_owned(),
+        ShippingSpeedCategory: ShippingSpeedCategory::Expedited,
         FulfillmentMethod: "Consumer".to_owned(),
         FulfillmentOrderStatus: FulfillmentOrderStatus::COMPLETE,
         StatusUpdatedDateTime: Some(Utc.ymd(2017, 12, 12).and_hms(10, 27, 43)),
