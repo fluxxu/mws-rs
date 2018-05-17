@@ -76,7 +76,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrder {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Currency {
   /// Three-digit currency code.
   pub CurrencyCode: String,
@@ -515,13 +515,301 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for PackageTrackingDeta
   }
 }
 
+/// Weight unit and amount.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct Weight {
+  /// Indicates the unit of weight.
+  pub Unit: String,
+  /// The numeric value of the item's weight.
+  pub Value: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Weight {
+  fn from_xml(s: &mut S) -> decode::Result<Weight> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, Weight::default(), |s, record| {
+      match s.local_name() {
+        "Unit" => record.Unit = characters(s)?,
+        "Value" => record.Value = characters(s)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Fee type and cost.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct Fee {
+  /// The type of fee.
+  pub Name: String,
+  /// The numeric value of the item's weight.
+  pub Amount: Currency,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Fee {
+  fn from_xml(s: &mut S) -> decode::Result<Fee> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, Fee::default(), |s, record| {
+      match s.local_name() {
+        "Name" => record.Name = characters(s)?,
+        "Amount" => record.Amount = Currency::from_xml(s)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Item information for a shipment in a fulfillment order preview.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct FulfillmentPreviewItem {
+  /// The seller SKU of the item.
+  pub SellerSKU: String,
+  /// A fulfillment order item identifier that you
+  /// created with a call to the
+  /// GetFulfillmentPreview operation.
+  pub SellerFulfillmentOrderItemId: String,
+  /// The item quantity.
+  pub Quantity: i32,
+  /// The estimated shipping weight of the item
+  /// quantity for a single item, as identified by
+  /// SellerSKU, in a shipment.
+  pub EstimatedShippingWeight: Option<Weight>,
+  /// 	The method used to calculate EstimatedShippingWeight.
+  pub ShippingWeightCalculationMethod: Option<String>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewItem {
+  fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreviewItem> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, FulfillmentPreviewItem::default(), |s, record| {
+      match s.local_name() {
+        "SellerSKU" => record.SellerSKU = characters(s)?,
+        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
+        "Quantity" => record.Quantity = characters(s)?,
+        "EstimatedShippingWeight" => {
+          record.EstimatedShippingWeight = Weight::from_xml(s).map(Some)?
+        }
+        "ShippingWeightCalculationMethod" => {
+          record.ShippingWeightCalculationMethod = characters(s).map(Some)?
+        }
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Delivery and item information for a shipment in a fulfillment order preview.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct FulfillmentPreviewShipment {
+  /// The earliest date that the shipment is expected to
+  /// be sent from the fulfillment center.
+  pub EarliestShipDate: Option<DateTime<Utc>>,
+  /// The latest date that the shipment is expected to be
+  /// sent from the fulfillment center.
+  pub LatestShipDate: Option<DateTime<Utc>>,
+  /// The earliest date that the shipment is expected to
+  /// arrive at its destination.
+  pub EarliestArrivalDate: Option<DateTime<Utc>>,
+  /// The latest date that the shipment is expected to
+  /// arrive at its destination.
+  pub LatestArrivalDate: Option<DateTime<Utc>>,
+  /// Information about the items in the shipment.
+  pub FulfillmentPreviewItems: Vec<FulfillmentPreviewItem>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewShipment {
+  fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreviewShipment> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, FulfillmentPreviewShipment::default(), |s, record| {
+      match s.local_name() {
+        "EarliestShipDate" => record.EarliestShipDate = characters(s).map(Some)?,
+        "LatestShipDate" => record.LatestShipDate = characters(s).map(Some)?,
+        "EarliestArrivalDate" => record.EarliestArrivalDate = characters(s).map(Some)?,
+        "LatestArrivalDate" => record.LatestArrivalDate = characters(s).map(Some)?,
+        "FulfillmentPreviewItems" => {
+          record.FulfillmentPreviewItems = fold_elements(s, vec![], |s, v| {
+            v.push(FulfillmentPreviewItem::from_xml(s)?);
+            Ok(())
+          })?
+        }
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Information about unfulfillable items in a fulfillment order preview.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct UnfulfillablePreviewItem {
+  pub SellerSKU: String,
+  pub SellerFulfillmentOrderItemId: String,
+  pub Quantity: i32,
+  /// Error codes associated with the fulfillment order
+  /// preview that indicate why the item is unfulfillable.
+  pub ItemUnfulfillableReasons: Option<Vec<String>>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for UnfulfillablePreviewItem {
+  fn from_xml(s: &mut S) -> decode::Result<UnfulfillablePreviewItem> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, UnfulfillablePreviewItem::default(), |s, record| {
+      match s.local_name() {
+        "SellerSKU" => record.SellerSKU = characters(s)?,
+        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
+        "Quantity" => record.Quantity = characters(s)?,
+        "ItemUnfulfillableReasons" => {
+          record.ItemUnfulfillableReasons = fold_elements(s, vec![], |s, v| {
+            v.push(characters(s)?);
+            Ok(())
+          }).map(Some)?
+        }
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// The time range within which your Scheduled Delivery fulfillment order should be delivered.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct DeliveryWindow {
+  pub StartDateTime: Option<DateTime<Utc>>,
+  pub EndDateTime: Option<DateTime<Utc>>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DeliveryWindow {
+  fn from_xml(s: &mut S) -> decode::Result<DeliveryWindow> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, DeliveryWindow::default(), |s, record| {
+      match s.local_name() {
+        "StartDateTime" => record.StartDateTime = characters(s).map(Some)?,
+        "EndDateTime" => record.EndDateTime = characters(s).map(Some)?,
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Delivery information for a Scheduled Delivery.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct ScheduledDeliveryInfo {
+  pub DeliveryTimeZone: String,
+  pub DeliveryWindows: Vec<DeliveryWindow>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ScheduledDeliveryInfo {
+  fn from_xml(s: &mut S) -> decode::Result<ScheduledDeliveryInfo> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, ScheduledDeliveryInfo::default(), |s, record| {
+      match s.local_name() {
+        "DeliveryTimeZone" => record.DeliveryTimeZone = characters(s)?,
+        "DeliveryWindows" => {
+          record.DeliveryWindows = fold_elements(s, vec![], |s, v| {
+            v.push(DeliveryWindow::from_xml(s)?);
+            Ok(())
+          })?
+        }
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
+/// Information about a fulfillment order preview,
+/// including delivery and fee information based on shipping method.
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq)]
+pub struct FulfillmentPreview {
+  /// The shipping method for your fulfillment order.
+  pub ShippingSpeedCategory: String,
+  /// Indicates whether this fulfillment order preview is fulfillable.
+  pub IsFulfillable: bool,
+  /// Indicates whether this fulfillment order preview is for COD (Cash On Delivery).
+  pub IsCODCapable: bool,
+  /// The marketplace the fulfillment order is placed against.
+  pub MarketplaceId: String,
+  /// Estimated shipping weight for this fulfillment order preview.
+  pub EstimatedShippingWeight: Option<Weight>,
+  /// The estimated fulfillment fees for this fulfillment order
+  /// preview, if applicable.
+  pub EstimatedFees: Option<Vec<Fee>>,
+  /// A list of fulfillable outbound shipments
+  /// for this fulfillment order preview.
+  pub FulfillmentPreviewShipments: Option<Vec<FulfillmentPreviewShipment>>,
+  /// A list of unfulfillable items for this fulfillment order preview.
+  pub UnfulfillablePreviewItems: Option<Vec<UnfulfillablePreviewItem>>,
+  /// Error codes associated with the fulfillment order preview that indicate why the order is not fulfillable.
+  pub OrderUnfulfillableReasons: Option<Vec<String>>,
+  /// Delivery information for a Scheduled Delivery.
+  pub ScheduledDeliveryInfo: Option<ScheduledDeliveryInfo>,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreview {
+  fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreview> {
+    use xmlhelper::decode::{characters, fold_elements};
+    fold_elements(s, FulfillmentPreview::default(), |s, record| {
+      match s.local_name() {
+        "ShippingSpeedCategory" => record.ShippingSpeedCategory = characters(s)?,
+        "IsFulfillable" => record.IsFulfillable = characters(s)?,
+        "IsCODCapable" => record.IsCODCapable = characters(s)?,
+        "MarketplaceId" => record.MarketplaceId = characters(s)?,
+        "EstimatedShippingWeight" => {
+          record.EstimatedShippingWeight = Weight::from_xml(s).map(Some)?
+        }
+        "EstimatedFees" => {
+          record.EstimatedFees = fold_elements(s, vec![], |s, v| {
+            v.push(Fee::from_xml(s)?);
+            Ok(())
+          }).map(Some)?
+        }
+        "FulfillmentPreviewShipments" => {
+          record.FulfillmentPreviewShipments = fold_elements(s, vec![], |s, v| {
+            v.push(FulfillmentPreviewShipment::from_xml(s)?);
+            Ok(())
+          }).map(Some)?
+        }
+        "UnfulfillablePreviewItems" => {
+          record.UnfulfillablePreviewItems = fold_elements(s, vec![], |s, v| {
+            v.push(UnfulfillablePreviewItem::from_xml(s)?);
+            Ok(())
+          }).map(Some)?
+        }
+        "OrderUnfulfillableReasons" => {
+          record.OrderUnfulfillableReasons = fold_elements(s, vec![], |s, v| {
+            v.push(characters(s)?);
+            Ok(())
+          }).map(Some)?
+        }
+        "ScheduledDeliveryInfo" => {
+          record.ScheduledDeliveryInfo = ScheduledDeliveryInfo::from_xml(s).map(Some)?
+        }
+        _ => {}
+      }
+      Ok(())
+    })
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
+  use chrono::TimeZone;
+  use std::io::Cursor;
   use xmlhelper::decode;
   use xmlhelper::decode::FromXMLStream;
-  use std::io::Cursor;
-  use chrono::TimeZone;
 
   #[test]
   fn test_decode_destination_address() {
@@ -713,6 +1001,113 @@ mod tests {
           },
         ],
         AdditionalLocationInfo: Some(String::default()),
+      }
+    );
+  }
+
+  #[test]
+  fn test_fulfillment_preview() {
+    use chrono::Utc;
+    test_decode!(
+      FulfillmentPreview,
+      r#"
+        <MarketplaceId>A2EUQ1WTGCTBG2</MarketplaceId>
+        <IsCODCapable>false</IsCODCapable>
+        <ShippingSpeedCategory>Standard</ShippingSpeedCategory>
+        <IsFulfillable>false</IsFulfillable>
+        <UnfulfillablePreviewItems>
+          <member>
+            <SellerFulfillmentOrderItemId>2</SellerFulfillmentOrderItemId>
+            <Quantity>139</Quantity>
+            <SellerSKU>p2</SellerSKU>
+            <ItemUnfulfillableReasons>
+              <member>InventoryUnavailable</member>
+            </ItemUnfulfillableReasons>
+          </member>
+        </UnfulfillablePreviewItems>
+        <EstimatedFees>
+          <member>
+            <Name>FBAPerUnitFulfillmentFee</Name>
+            <Amount>
+              <CurrencyCode>CAD</CurrencyCode>
+              <Value>441.00</Value>
+            </Amount>
+          </member>
+          <member>
+            <Name>FBATransportationFee</Name>
+            <Amount>
+              <CurrencyCode>CAD</CurrencyCode>
+              <Value>16.34</Value>
+            </Amount>
+          </member>
+        </EstimatedFees>
+        <FulfillmentPreviewShipments>
+          <member>
+            <LatestShipDate>2018-05-18T17:08:05.000Z</LatestShipDate>
+            <LatestArrivalDate>2018-05-25T17:08:05.000Z</LatestArrivalDate>
+            <FulfillmentPreviewItems>
+              <member>
+                <SellerFulfillmentOrderItemId>1</SellerFulfillmentOrderItemId>
+                <ShippingWeightCalculationMethod>Package</ShippingWeightCalculationMethod>
+                <EstimatedShippingWeight>
+                  <Value>5.420</Value>
+                  <Unit>KILOGRAMS</Unit>
+                </EstimatedShippingWeight>
+                <Quantity>1</Quantity>
+                <SellerSKU>p1</SellerSKU>
+              </member>
+            </FulfillmentPreviewItems>
+            <EarliestArrivalDate>2018-05-23T17:08:05.000Z</EarliestArrivalDate>
+            <EarliestShipDate>2018-05-18T17:08:05.000Z</EarliestShipDate>
+          </member>
+        </FulfillmentPreviewShipments>
+      "#,
+      FulfillmentPreview {
+        ShippingSpeedCategory: "Standard".to_owned(),
+        IsFulfillable: false,
+        IsCODCapable: false,
+        MarketplaceId: "A2EUQ1WTGCTBG2".to_owned(),
+        EstimatedShippingWeight: None,
+        EstimatedFees: Some(vec![
+          Fee {
+            Name: "FBAPerUnitFulfillmentFee".to_owned(),
+            Amount: Currency {
+              CurrencyCode: "CAD".to_owned(),
+              Value: "441.00".to_owned(),
+            },
+          },
+          Fee {
+            Name: "FBATransportationFee".to_owned(),
+            Amount: Currency {
+              CurrencyCode: "CAD".to_owned(),
+              Value: "16.34".to_owned(),
+            },
+          },
+        ]),
+        FulfillmentPreviewShipments: Some(vec![FulfillmentPreviewShipment {
+          EarliestShipDate: Some(Utc.ymd(2018, 05, 18).and_hms(17, 8, 5)),
+          LatestShipDate: Some(Utc.ymd(2018, 05, 18).and_hms(17, 8, 5)),
+          EarliestArrivalDate: Some(Utc.ymd(2018, 05, 23).and_hms(17, 8, 5)),
+          LatestArrivalDate: Some(Utc.ymd(2018, 05, 25).and_hms(17, 8, 5)),
+          FulfillmentPreviewItems: vec![FulfillmentPreviewItem {
+            SellerFulfillmentOrderItemId: "1".to_owned(),
+            ShippingWeightCalculationMethod: Some("Package".to_owned()),
+            EstimatedShippingWeight: Some(Weight {
+              Unit: "KILOGRAMS".to_owned(),
+              Value: "5.420".to_owned(),
+            }),
+            Quantity: 1,
+            SellerSKU: "p1".to_owned(),
+          }],
+        }]),
+        UnfulfillablePreviewItems: Some(vec![UnfulfillablePreviewItem {
+          SellerSKU: "p2".to_owned(),
+          SellerFulfillmentOrderItemId: "2".to_owned(),
+          Quantity: 139,
+          ItemUnfulfillableReasons: Some(vec!["InventoryUnavailable".to_owned()]),
+        }]),
+        OrderUnfulfillableReasons: None,
+        ScheduledDeliveryInfo: None,
       }
     );
   }

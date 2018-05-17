@@ -84,12 +84,10 @@ pub fn ListAllFulfillmentOrders(
       PATH,
       VERSION,
       "ListAllFulfillmentOrders",
-      vec![
-        (
-          "QueryStartDateTime".to_string(),
-          query_start_date_time.to_iso8601(),
-        ),
-      ],
+      vec![(
+        "QueryStartDateTime".to_string(),
+        query_start_date_time.to_iso8601(),
+      )],
     )
     .map_err(|err| err.into())
 }
@@ -172,12 +170,10 @@ pub fn GetFulfillmentOrder(
   client: &Client,
   seller_fulfillment_order_id: String,
 ) -> Result<Response<GetFulfillmentOrderResponse>> {
-  let params = vec![
-    (
-      "SellerFulfillmentOrderId".to_string(),
-      seller_fulfillment_order_id,
-    ),
-  ];
+  let params = vec![(
+    "SellerFulfillmentOrderId".to_string(),
+    seller_fulfillment_order_id,
+  )];
   client
     .request_xml(Method::Post, PATH, VERSION, "GetFulfillmentOrder", params)
     .map_err(|err| err.into())
@@ -234,22 +230,211 @@ pub fn GetPackageTrackingDetails(
     .map_err(|err| err.into())
 }
 
-// #[cfg(test)]
-// mod tests {
-//   use dotenv::dotenv;
-//   use super::*;
-//   use super::super::client::get_test_client;
+/// Item information for a fulfillment order preview.
+#[allow(non_snake_case)]
+#[derive(Debug, Default)]
+pub struct GetFulfillmentPreviewItem {
+  /// The seller SKU of the item.
+  pub SellerSKU: String,
+  /// A fulfillment order item identifier that you
+  /// created with a call to the
+  /// GetFulfillmentPreview operation.
+  pub SellerFulfillmentOrderItemId: String,
+  /// The item quantity.
+  pub Quantity: i32,
+}
 
-//   #[test]
-//   fn test_get_package_tracking_details() {
-//     dotenv().ok();
-//     let c = get_test_client();
-//     let res = GetPackageTrackingDetails(&c, "187748827").expect("GetPackageTrackingDetails");
-//     match res {
-//       Response::Error(e) => panic!("request error: {:?}", e),
-//       Response::Success(res) => {
-//         println!("res = {:?}", res);
-//       }
-//     }
-//   }
-// }
+/// Parameters for `GetFulfillmentPreview`
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct GetFulfillmentPreviewParameters {
+  pub Address: DestinationAddress,
+  pub Items: Vec<GetFulfillmentPreviewItem>,
+
+  // Optional API Parameters
+  pub MarketplaceId: Option<String>,
+  pub ShippingSpeedCategories: Option<Vec<String>>,
+}
+
+impl Into<Vec<(String, String)>> for GetFulfillmentPreviewParameters {
+  fn into(self) -> Vec<(String, String)> {
+    let mut result = vec![
+      ("Address.Name".to_owned(), self.Address.Name),
+      ("Address.Line1".to_owned(), self.Address.Line1),
+      (
+        "Address.StateOrProvinceCode".to_owned(),
+        self.Address.StateOrProvinceCode,
+      ),
+      ("Address.CountryCode".to_owned(), self.Address.CountryCode),
+    ];
+
+    if !self.Address.Line2.is_empty() {
+      result.push(("Address.Line2".to_owned(), self.Address.Line2))
+    }
+
+    if !self.Address.Line3.is_empty() {
+      result.push(("Address.Line3".to_owned(), self.Address.Line3))
+    }
+
+    if !self.Address.DistrictOrCounty.is_empty() {
+      result.push((
+        "Address.DistrictOrCounty".to_owned(),
+        self.Address.DistrictOrCounty,
+      ))
+    }
+
+    if !self.Address.City.is_empty() {
+      result.push(("Address.City".to_owned(), self.Address.City))
+    }
+
+    if !self.Address.PhoneNumber.is_empty() {
+      result.push(("Address.PhoneNumber".to_owned(), self.Address.PhoneNumber))
+    }
+
+    if !self.Address.PostalCode.is_empty() {
+      result.push(("Address.PostalCode".to_owned(), self.Address.PostalCode))
+    }
+
+    for (i, item) in self.Items.into_iter().enumerate() {
+      result.push((format!("Items.member.{}.SellerSKU", i + 1), item.SellerSKU));
+      result.push((
+        format!("Items.member.{}.SellerFulfillmentOrderItemId", i + 1),
+        item.SellerFulfillmentOrderItemId,
+      ));
+      result.push((
+        format!("Items.member.{}.Quantity", i + 1),
+        item.Quantity.to_string(),
+      ));
+    }
+
+    if let Some(marketplace_id) = self.MarketplaceId {
+      result.push(("MarketplaceId".to_owned(), marketplace_id))
+    }
+
+    if let Some(cats) = self.ShippingSpeedCategories {
+      for (i, cat) in cats.into_iter().enumerate() {
+        result.push((format!("ShippingSpeedCategories.member.{}", i + 1), cat))
+      }
+    }
+
+    result
+  }
+}
+
+#[derive(Debug, Default)]
+#[allow(non_snake_case)]
+pub struct GetFulfillmentPreviewResponse {
+  pub FulfillmentPreviews: Vec<FulfillmentPreview>,
+  pub RequestId: String,
+}
+
+impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFulfillmentPreviewResponse {
+  fn from_xml(s: &mut S) -> decode::Result<GetFulfillmentPreviewResponse> {
+    use self::decode::{characters, element, fold_elements, start_document};
+    start_document(s)?;
+    element(s, "GetFulfillmentPreviewResponse", |s| {
+      fold_elements(
+        s,
+        GetFulfillmentPreviewResponse::default(),
+        |s, response| match s.local_name() {
+          "GetFulfillmentPreviewResult" => fold_elements(s, (), |s, _| match s.local_name() {
+            "FulfillmentPreviews" => {
+              response.FulfillmentPreviews = fold_elements(s, vec![], |s, v| {
+                v.push(FulfillmentPreview::from_xml(s)?);
+                Ok(())
+              })?;
+              Ok(())
+            }
+            _ => Ok(()),
+          }),
+          "ResponseMetadata" => {
+            response.RequestId = element(s, "RequestId", |s| characters(s))?;
+            Ok(())
+          }
+          _ => Ok(()),
+        },
+      )
+    })
+  }
+}
+
+/// Returns a list of fulfillment order previews based on shipping criteria that you specify.
+///
+/// [Documentation](https://docs.developer.amazonservices.com/en_US/fba_outbound/FBAOutbound_GetFulfillmentPreview.html)
+#[allow(non_snake_case)]
+pub fn GetFulfillmentPreview(
+  client: &Client,
+  params: GetFulfillmentPreviewParameters,
+) -> Result<Response<GetFulfillmentPreviewResponse>> {
+  client
+    .request_xml(Method::Post, PATH, VERSION, "GetFulfillmentPreview", params)
+    .map_err(|err| err.into())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::super::client::get_test_client;
+  use super::*;
+  use dotenv::dotenv;
+
+  #[test]
+  #[ignore]
+  fn test_get_package_tracking_details() {
+    dotenv().ok();
+    let c = get_test_client();
+    let res = GetPackageTrackingDetails(&c, "187748827").expect("GetPackageTrackingDetails");
+    match res {
+      Response::Error(e) => panic!("request error: {:?}", e),
+      Response::Success(res) => {
+        println!("res = {:?}", res);
+      }
+    }
+  }
+
+  #[test]
+  fn test_get_fufillment_preview() {
+    dotenv().ok();
+    let c = get_test_client();
+    let res = GetFulfillmentPreview(
+      &c,
+      GetFulfillmentPreviewParameters {
+        Address: DestinationAddress {
+          PhoneNumber: "".to_owned(),
+          City: "North York".to_owned(),
+          CountryCode: "CA".to_owned(),
+          PostalCode: "M2N0E9".to_owned(),
+          Name: "Foo Bar".to_owned(),
+          StateOrProvinceCode: "ON".to_owned(),
+          DistrictOrCounty: "".to_owned(),
+          Line1: "1000-5162 Yonge Street".to_owned(),
+          Line2: "".to_owned(),
+          Line3: "".to_owned(),
+        },
+        Items: vec![
+          GetFulfillmentPreviewItem {
+            SellerSKU: "edifier-r1280t-fba".to_owned(),
+            SellerFulfillmentOrderItemId: "1".to_owned(),
+            Quantity: 1,
+          },
+          GetFulfillmentPreviewItem {
+            SellerSKU: "edifier-h210-black".to_owned(),
+            SellerFulfillmentOrderItemId: "2".to_owned(),
+            Quantity: 139,
+          },
+        ],
+        MarketplaceId: Some("A2EUQ1WTGCTBG2".to_string()),
+        ShippingSpeedCategories: Some(vec![
+          "Standard".to_owned(),
+          "Expedited".to_owned(),
+          "Priority".to_owned(),
+        ]),
+      },
+    ).expect("GetFulfillmentPreview");
+    match res {
+      Response::Error(e) => panic!("request error: {:?}", e),
+      Response::Success(res) => {
+        println!("res = {:?}", res);
+      }
+    }
+  }
+}
