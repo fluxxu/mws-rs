@@ -1,7 +1,7 @@
-use super::{Message};
+use super::Message;
 
 #[allow(non_snake_case)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct InventoryMessage {
   /// Used to identify an individual product. Each product must have a SKU, and each SKU must
   /// be unique.

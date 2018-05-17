@@ -1,8 +1,8 @@
-use std::io::Read;
 use chrono::{DateTime, Utc};
+use std::io::Read;
 use tdff;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ReportInfo {
   pub report_type: String,
   pub acknowledged: bool,
@@ -22,7 +22,7 @@ str_enum! {
   }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ReportRequestInfo {
   pub report_request_id: String,
   pub report_type: String,
@@ -50,24 +50,31 @@ pub struct SettlementReport {
 }
 
 macro_rules! parse_field {
-    ($var:ident, $field:ident, $value:ident) => ({
-      let trimmed = $value.trim();
-      if !trimmed.is_empty() {
-        $var.$field = trimmed.parse()
-          .map_err(|err| tdff::ErrorKind::ParseString(stringify!($field).to_string(), format!("{}: '{}'", err, $value)))?;
-      }
-    })
+  ($var:ident, $field:ident, $value:ident) => {{
+    let trimmed = $value.trim();
+    if !trimmed.is_empty() {
+      $var.$field = trimmed.parse().map_err(|err| {
+        tdff::ErrorKind::ParseString(
+          stringify!($field).to_string(),
+          format!("{}: '{}'", err, $value),
+        )
+      })?;
+    }
+  }};
 }
 
 macro_rules! parse_option_field {
-    ($var:ident, $field:ident, $value:ident) => ({
-      let trimmed = $value.trim();
-      if !trimmed.is_empty() {      
-        $var.$field = trimmed.parse()
-          .map(Some)
-          .map_err(|err| tdff::ErrorKind::ParseString(stringify!($field).to_string(), format!("{}: '{}'", err, $value)))?;
-      }
-    })
+  ($var:ident, $field:ident, $value:ident) => {{
+    let trimmed = $value.trim();
+    if !trimmed.is_empty() {
+      $var.$field = trimmed.parse().map(Some).map_err(|err| {
+        tdff::ErrorKind::ParseString(
+          stringify!($field).to_string(),
+          format!("{}: '{}'", err, $value),
+        )
+      })?;
+    }
+  }};
 }
 
 impl<R: Read> tdff::FromTdff<R> for SettlementReport {
@@ -84,7 +91,7 @@ impl<R: Read> tdff::FromTdff<R> for SettlementReport {
             "deposit-date" => parse_option_field!(report, DepositDate, value),
             "total-amount" => parse_field!(report, TotalAmount, value),
             "currency" => parse_field!(report, Currency, value),
-            _ => {},
+            _ => {}
           }
         }
       } else {
@@ -121,7 +128,7 @@ impl<R: Read> tdff::FromTdff<R> for SettlementReport {
             "direct-payment-type" => item.DirectPaymentType = value,
             "direct-payment-amount" => parse_field!(item, DirectPaymentAmount, value),
             "other-amount" => parse_field!(item, OtherAmount, value),
-            _ => {},
+            _ => {}
           }
         }
         report.Items.push(item);
@@ -149,20 +156,20 @@ pub struct SettlementReportItem {
   pub PostedDate: Option<DateTime<Utc>>,
   pub OrderItemCode: String,
   pub MerchantOrderItemId: String,
-  pub MerchantAdjustmentItemId: String,	
-  pub Sku: String,	
-  pub QuantityPurchased: i32,	
+  pub MerchantAdjustmentItemId: String,
+  pub Sku: String,
+  pub QuantityPurchased: i32,
   pub PriceType: String,
-  pub PriceAmount: f64,	
-  pub ItemRelatedFeeType: String,	
-  pub ItemRelatedFeeAmount: f64,	
-  pub MiscFeeAmount: f64,	
+  pub PriceAmount: f64,
+  pub ItemRelatedFeeType: String,
+  pub ItemRelatedFeeAmount: f64,
+  pub MiscFeeAmount: f64,
   pub OtherFeeAmount: f64,
-  pub OtherFeeReasonDescription: String,	
-  pub PromotionId: String,	
-  pub PromotionType: String,	
-  pub PromotionAmount: f64,	
+  pub OtherFeeReasonDescription: String,
+  pub PromotionId: String,
+  pub PromotionType: String,
+  pub PromotionAmount: f64,
   pub DirectPaymentType: String,
-  pub DirectPaymentAmount: f64,	
+  pub DirectPaymentAmount: f64,
   pub OtherAmount: f64,
 }

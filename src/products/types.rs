@@ -6,14 +6,14 @@ mod default {
   use xmlhelper::decode;
 
   /// DecimalWithUnits
-  #[derive(Debug, Default)]
+  #[derive(Debug, Default, Serialize)]
   pub struct DecimalWithUnits {
     pub value: f64,
     pub units: String,
   }
 
   /// DimensionType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct DimensionType {
     pub height: DecimalWithUnits,
     pub length: DecimalWithUnits,
@@ -22,14 +22,14 @@ mod default {
   }
 
   /// Price
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct Price {
     amount: Option<f64>,
     currency_code: Option<String>,
   }
 
   /// Image
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct Image {
     url: String,
     height: DecimalWithUnits,
@@ -37,7 +37,7 @@ mod default {
   }
 
   /// ItemAttributesType (part of)
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub enum Attribute {
     Binding(String),
     Brand(String),
@@ -62,7 +62,7 @@ mod default {
 
 pub mod product {
   //! [ProductsAPI_Response.xsd](http://g-ecx.images-amazon.com/images/G/01/mwsportal/doc/en_US/products/ProductsAPI_Response.xsd)
-  
+
   pub use super::default::*;
   //use xml::decode::{XmlDecode, XmlDecoderContext, XmlDecodeEvent, Result as XmlDecodeResult};
 
@@ -71,22 +71,22 @@ pub mod product {
       ASIN,
       GCID,
       SellerSKU,
-      UPC, 
-      EAN, 
+      UPC,
+      EAN,
       ISBN,
       JAN,
     }
   }
 
   /// MarketplaceASINType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct MarketplaceASIN {
     pub marketplace_id: String,
     pub asin: String,
   }
 
   /// SellerSKUIdentifier
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct SellerSKUIdentifier {
     pub marketplace_id: String,
     pub seller_id: String,
@@ -94,35 +94,33 @@ pub mod product {
   }
 
   /// IdentifierType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub enum Identifier {
     MarketplaceASIN(MarketplaceASIN),
     SellerSKU(SellerSKUIdentifier),
   }
 
-  
-
   /// BaseRelationshipType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct BaseRelationship {
     pub identifiers: Vec<Identifier>,
   }
 
   /// BaseRelationship
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub enum Relationship {
     VariationParent(BaseRelationship),
   }
 
   /// SalesRankType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct SalesRank {
     pub product_category_id: String,
     pub rank: i32,
   }
 
   /// ProductType
-  #[derive(Debug)]
+  #[derive(Debug, Serialize)]
   pub struct Product {
     pub identifiers: Vec<Identifier>,
     pub attribute_sets: Vec<Attribute>,

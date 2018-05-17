@@ -2,11 +2,11 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/feeds/Feeds_Overview.html)
 
-use chrono::{DateTime, Utc};
-use client::{Client, Method, Response, ContentType};
-use xmlhelper::{encode, decode};
-use std::io::{Read, Write};
 use super::types::ToIso8601;
+use chrono::{DateTime, Utc};
+use client::{Client, ContentType, Method, Response};
+use std::io::{Read, Write};
+use xmlhelper::{decode, encode};
 
 mod inventory;
 
@@ -47,7 +47,7 @@ string_map_enum! {
 /// The optional OperationType element can be used to specify the type of operation (Update, Delete
 /// or PartialUpdate) to be performed on the data. The OperationType is only applicable to productrelated
 /// feeds (Product, Inventory, Price, etc) and will be ignored for non-applicable feeds.
-#[derive(Debug, PartialEq)] 
+#[derive(Debug, PartialEq, Serialize)]
 pub enum OperationType {
   /// All specified information overwrites any existing information. Any
   /// unspecified information is erased.
@@ -69,19 +69,18 @@ pub trait Message {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct EnvelopeMessage<M: Message> {
   pub data: M,
   pub operation_type: Option<OperationType>,
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Envelope<M: Message> {
   pub MerchantIdentifier: String,
   messages: Vec<EnvelopeMessage<M>>,
 }
-
 
 impl<M: Message> Envelope<M> {
   pub fn new(merchant_identifier: String) -> Self {
@@ -99,12 +98,16 @@ impl<M: Message> Envelope<M> {
     self
   }
 
-  pub fn write_envelope_xml<W: encode::XmlEventWriter, F: FnMut(&mut W) -> encode::Result<()>>(&self, w: &mut W, mut f: F) -> encode::Result<()> {
+  pub fn write_envelope_xml<W: encode::XmlEventWriter, F: FnMut(&mut W) -> encode::Result<()>>(
+    &self,
+    w: &mut W,
+    mut f: F,
+  ) -> encode::Result<()> {
     w.write(
       encode::XmlEvent::start_element("AmazonEnvelope")
         .ns("xsi", "http://www.w3.org/2001/XMLSchema-instance")
         .attr("xsi:noNamespaceSchemaLocation", "amznenvelope.xsd")
-        .into()
+        .into(),
     )?;
 
     let mid: &str = self.MerchantIdentifier.as_ref();
@@ -121,9 +124,7 @@ impl<M: Message> Envelope<M> {
       ]
     )?;
 
-    w.write(
-      encode::XmlEvent::end_element().into()
-    )
+    w.write(encode::XmlEvent::end_element().into())
   }
 }
 
@@ -148,7 +149,7 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<inventory::Inve
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct SubmitFeedParameters {
   pub FeedType: String,
 
@@ -169,7 +170,14 @@ impl Into<Vec<(String, String)>> for SubmitFeedParameters {
     }
 
     if let Some(v) = self.PurgeAndReplace {
-      result.push(("PurgeAndReplace".to_owned(), if v { "true".to_owned() } else { "false".to_owned() }))
+      result.push((
+        "PurgeAndReplace".to_owned(),
+        if v {
+          "true".to_owned()
+        } else {
+          "false".to_owned()
+        },
+      ))
     }
 
     result
@@ -177,7 +185,7 @@ impl Into<Vec<(String, String)>> for SubmitFeedParameters {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct SubmitFeedResponse {
   pub RequestId: String,
   pub FeedType: String,
@@ -188,73 +196,94 @@ pub struct SubmitFeedResponse {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse {
   fn from_xml(s: &mut S) -> decode::Result<SubmitFeedResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "SubmitFeedResponse", |s| {
-      fold_elements(s, SubmitFeedResponse::default(), |s, response| {
-        match s.local_name() {
+      fold_elements(
+        s,
+        SubmitFeedResponse::default(),
+        |s, response| match s.local_name() {
           "SubmitFeedResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "FeedSubmissionInfo" => {
-                  fold_elements(s, (), |s, _| {
-                    match s.local_name() {
-                      "FeedSubmissionId" => {
-                        response.FeedSubmissionId = characters(s)?;
-                      },
-                      "FeedType" => {
-                        response.FeedType = characters(s)?;
-                      },
-                      "SubmittedDate" => {
-                        response.SubmittedDate = Some(characters(s)?);
-                      },
-                      "FeedProcessingStatus" => {
-                        response.FeedProcessingStatus = characters(s)?;
-                      },
-                      _ => {}
-                    }
-                    Ok(())
-                  })
-                },
-                _ => { Ok(()) }
-              }
+            fold_elements(s, (), |s, _| match s.local_name() {
+              "FeedSubmissionInfo" => fold_elements(s, (), |s, _| {
+                match s.local_name() {
+                  "FeedSubmissionId" => {
+                    response.FeedSubmissionId = characters(s)?;
+                  }
+                  "FeedType" => {
+                    response.FeedType = characters(s)?;
+                  }
+                  "SubmittedDate" => {
+                    response.SubmittedDate = Some(characters(s)?);
+                  }
+                  "FeedProcessingStatus" => {
+                    response.FeedProcessingStatus = characters(s)?;
+                  }
+                  _ => {}
+                }
+                Ok(())
+              }),
+              _ => Ok(()),
             })?;
             Ok(())
-          },
+          }
           "ResponseMetadata" => {
-            response.RequestId = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
+            response.RequestId = element(s, "RequestId", |s| characters(s))?;
             Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
+          }
+          _ => Ok(()),
+        },
+      )
     })
   }
 }
 
 #[allow(non_snake_case)]
-pub fn SubmitFeed<R>(client: &Client, parameters: SubmitFeedParameters, content: R, content_md5: String, content_type: String) -> Result<Response<SubmitFeedResponse>> 
-  where R: Read + Send + 'static
+pub fn SubmitFeed<R>(
+  client: &Client,
+  parameters: SubmitFeedParameters,
+  content: R,
+  content_md5: String,
+  content_type: String,
+) -> Result<Response<SubmitFeedResponse>>
+where
+  R: Read + Send + 'static,
 {
-  client.request_xml_with_body(Method::Post, PATH, VERSION, "SubmitFeed", parameters, content, content_md5, ContentType(
-    content_type.parse().unwrap()
-  ))
+  client
+    .request_xml_with_body(
+      Method::Post,
+      PATH,
+      VERSION,
+      "SubmitFeed",
+      parameters,
+      content,
+      content_md5,
+      ContentType(content_type.parse().unwrap()),
+    )
     .map_err(Into::into)
 }
 
 #[allow(non_snake_case)]
-pub fn GetFeedSubmissionResult<W: Write>(client: &Client, FeedSubmissionId: String, out: &mut W) -> Result<u64> {
+pub fn GetFeedSubmissionResult<W: Write>(
+  client: &Client,
+  FeedSubmissionId: String,
+  out: &mut W,
+) -> Result<u64> {
   let params = vec![("FeedSubmissionId".to_string(), FeedSubmissionId)];
-  let mut resp = client.request(Method::Post, PATH, VERSION, "GetFeedSubmissionResult", params)?;
+  let mut resp = client.request(
+    Method::Post,
+    PATH,
+    VERSION,
+    "GetFeedSubmissionResult",
+    params,
+  )?;
   let size = ::std::io::copy(&mut resp, out)?;
   Ok(size)
 }
 
 /// Parameters for `GetFeedSubmissionList`
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct GetFeedSubmissionListParameters {
   pub FeedSubmissionIdList: Option<Vec<String>>,
   pub MaxCount: Option<i32>,
@@ -302,7 +331,7 @@ impl Into<Vec<(String, String)>> for GetFeedSubmissionListParameters {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct FeedSubmissionInfo {
   pub FeedProcessingStatus: String,
   pub FeedType: String,
@@ -313,7 +342,7 @@ pub struct FeedSubmissionInfo {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct GetFeedSubmissionListResponse {
   pub RequestId: String,
   pub FeedSubmissionInfo: Vec<FeedSubmissionInfo>,
@@ -322,97 +351,134 @@ pub struct GetFeedSubmissionListResponse {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFeedSubmissionListResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetFeedSubmissionListResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
-    element(s, vec!["GetFeedSubmissionListResponse", "GetFeedSubmissionListByNextTokenResponse"], |s| {
-      fold_elements(s, GetFeedSubmissionListResponse::default(), |s, response| {
-        match s.local_name() {
-          "GetFeedSubmissionListResult" | "GetFeedSubmissionListByNextTokenResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "FeedSubmissionInfo" => {
-                  response.FeedSubmissionInfo.push(fold_elements(s, FeedSubmissionInfo::default(), |s, item| {
-                    match s.local_name() {
-                      "FeedProcessingStatus" => {
-                        item.FeedProcessingStatus = characters(s)?;
+    element(
+      s,
+      vec![
+        "GetFeedSubmissionListResponse",
+        "GetFeedSubmissionListByNextTokenResponse",
+      ],
+      |s| {
+        fold_elements(
+          s,
+          GetFeedSubmissionListResponse::default(),
+          |s, response| match s.local_name() {
+            "GetFeedSubmissionListResult" | "GetFeedSubmissionListByNextTokenResult" => {
+              fold_elements(s, (), |s, _| {
+                match s.local_name() {
+                  "FeedSubmissionInfo" => {
+                    response.FeedSubmissionInfo.push(fold_elements(
+                      s,
+                      FeedSubmissionInfo::default(),
+                      |s, item| {
+                        match s.local_name() {
+                          "FeedProcessingStatus" => {
+                            item.FeedProcessingStatus = characters(s)?;
+                          }
+                          "FeedType" => {
+                            item.FeedType = characters(s)?;
+                          }
+                          "FeedSubmissionId" => {
+                            item.FeedSubmissionId = characters(s)?;
+                          }
+                          "StartedProcessingDate" => {
+                            item.StartedProcessingDate = Some(characters(s)?);
+                          }
+                          "SubmittedDate" => {
+                            item.SubmittedDate = Some(characters(s)?);
+                          }
+                          "CompletedProcessingDate" => {
+                            item.CompletedProcessingDate = Some(characters(s)?);
+                          }
+                          _ => {}
+                        }
+                        Ok(())
                       },
-                      "FeedType" => {
-                        item.FeedType = characters(s)?;
-                      },
-                      "FeedSubmissionId" => {
-                        item.FeedSubmissionId = characters(s)?;
-                      },
-                      "StartedProcessingDate" => {
-                        item.StartedProcessingDate = Some(characters(s)?);
-                      },
-                      "SubmittedDate" => {
-                        item.SubmittedDate = Some(characters(s)?);
-                      },
-                      "CompletedProcessingDate" => {
-                        item.CompletedProcessingDate = Some(characters(s)?);
-                      },
-                      _ => {}
-                    }
-                    Ok(())
-                  })?);
-                },
-                "NextToken" => {
-                  response.NextToken = Some(characters(s)?);
-                },
-                _ => {},
-              }
+                    )?);
+                  }
+                  "NextToken" => {
+                    response.NextToken = Some(characters(s)?);
+                  }
+                  _ => {}
+                }
+                Ok(())
+              })
+            }
+            "ResponseMetadata" => {
+              response.RequestId = element(s, "RequestId", |s| characters(s))?;
               Ok(())
-            })
+            }
+            _ => Ok(()),
           },
-          "ResponseMetadata" => {
-            response.RequestId = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
-            Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
-    })
+        )
+      },
+    )
   }
 }
 
 #[allow(non_snake_case)]
-pub fn GetFeedSubmissionList(client: &Client, parameters: GetFeedSubmissionListParameters) -> Result<Response<GetFeedSubmissionListResponse>> {
-  client.request_xml(Method::Post, PATH, VERSION, "GetFeedSubmissionList", parameters).map_err(|err| err.into())
+pub fn GetFeedSubmissionList(
+  client: &Client,
+  parameters: GetFeedSubmissionListParameters,
+) -> Result<Response<GetFeedSubmissionListResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "GetFeedSubmissionList",
+      parameters,
+    )
+    .map_err(|err| err.into())
 }
 
 #[allow(non_snake_case)]
-pub fn GetFeedSubmissionListByNextToken(client: &Client, next_token: String) -> Result<Response<GetFeedSubmissionListResponse>> {
-  let params = vec![
-    ("NextToken".to_string(), next_token)
-  ]; 
-  client.request_xml(Method::Post, PATH, VERSION, "GetFeedSubmissionListByNextToken", params).map_err(|err| err.into())
+pub fn GetFeedSubmissionListByNextToken(
+  client: &Client,
+  next_token: String,
+) -> Result<Response<GetFeedSubmissionListResponse>> {
+  let params = vec![("NextToken".to_string(), next_token)];
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "GetFeedSubmissionListByNextToken",
+      params,
+    )
+    .map_err(|err| err.into())
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use xmlhelper::encode::{EventWriter, EmitterConfig};
   use xmlhelper::encode::XmlWrite;
+  use xmlhelper::encode::{EmitterConfig, EventWriter};
 
   #[test]
   fn test_envelope_write_xml() {
-    let mut writer = EventWriter::new_with_config(vec![], EmitterConfig::new().perform_indent(true));
+    let mut writer =
+      EventWriter::new_with_config(vec![], EmitterConfig::new().perform_indent(true));
 
     {
       let w = &mut writer;
       let mut e = Envelope::<inventory::InventoryMessage>::new("1234567890".to_owned());
-      e.add_message(inventory::InventoryMessage {
-        SKU: "p1".to_owned(),
-        Quantity: 100,
-        FulfillmentLatency: 0,
-      }, Some(OperationType::PartialUpdate))
-      .add_message(inventory::InventoryMessage {
-        SKU: "p2".to_owned(),
-        Quantity: 200,
-        FulfillmentLatency: 0,
-      }, Some(OperationType::PartialUpdate));
+      e.add_message(
+        inventory::InventoryMessage {
+          SKU: "p1".to_owned(),
+          Quantity: 100,
+          FulfillmentLatency: 0,
+        },
+        Some(OperationType::PartialUpdate),
+      ).add_message(
+        inventory::InventoryMessage {
+          SKU: "p2".to_owned(),
+          Quantity: 200,
+          FulfillmentLatency: 0,
+        },
+        Some(OperationType::PartialUpdate),
+      );
       e.write_xml(w).unwrap();
     }
 

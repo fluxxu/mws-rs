@@ -26,7 +26,7 @@ string_map_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Amount {
   pub CurrencyCode: String,
   pub Value: f64,
@@ -48,7 +48,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Amount {
 
 /// The manual processing fee per unit and total fee for a shipment.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct BoxContentsFeeDetails {
   pub TotalUnits: i32,
   pub FeePerUnit: Option<Amount>,
@@ -81,7 +81,7 @@ str_enum! {
 
 /// Postal address information.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Address {
   /// The name or business name.
   pub Name: String,
@@ -123,7 +123,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Address {
 
 /// Information about your inbound shipments. Returned by the `ListInboundShipments` operation.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct InboundShipmentInfo {
   /// The ShipmentId submitted in the request.
   pub ShipmentId: String,
@@ -177,7 +177,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentInfo
 
 /// Item information for an inbound shipment. Submitted with a call to the CreateInboundShipment or UpdateInboundShipment operation.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct InboundShipmentItem {
   pub ShipmentId: String,
   pub SellerSKU: String,

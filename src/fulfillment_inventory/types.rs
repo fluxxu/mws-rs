@@ -26,7 +26,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct InventorySupply {
   /// The Seller SKU of the item.
   pub SellerSKU: String,
@@ -66,7 +66,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Timepoint {
   pub TimepointType: TimepointType,
   /// The date and time by which inventory is expected
@@ -76,7 +76,7 @@ pub struct Timepoint {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Timepoint {
   fn from_xml(s: &mut S) -> decode::Result<Timepoint> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Timepoint::default(), |s, record| {
       match s.local_name() {
         "TimepointType" => record.TimepointType = characters(s)?,
@@ -98,7 +98,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 /// Specific information about the availability of inventory for a single SKU,
 /// including the number of units that are in an Amazon fulfillment center, in an inbound shipment,
 /// or being transferred between Amazon fulfillment centers.
@@ -115,7 +115,7 @@ pub struct InventorySupplyDetail {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InventorySupply {
   fn from_xml(s: &mut S) -> decode::Result<InventorySupply> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InventorySupply::default(), |s, record| {
       match s.local_name() {
         "Condition" => record.Condition = characters(s).map(Some)?,
@@ -155,9 +155,9 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InventorySupply {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::io::Cursor;
   use xmlhelper::decode;
   use xmlhelper::decode::FromXMLStream;
-  use std::io::Cursor;
 
   #[test]
   fn test_decode_inventory_supply() {

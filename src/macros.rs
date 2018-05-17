@@ -15,7 +15,7 @@ macro_rules! str_enum {
     $name:ident, $($item:tt)*
   ) => {
     #[allow(non_camel_case_types)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum $name {
       $(
         $item,
@@ -99,7 +99,7 @@ macro_rules! string_map_enum {
     }
   ) => (
     #[allow(non_camel_case_types)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Serialize)]
     pub enum $name {
       $($variant,)*
       UnknownValue(String)

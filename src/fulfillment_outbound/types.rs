@@ -26,7 +26,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentOrder {
   pub SellerFulfillmentOrderId: String,
   pub DestinationAddress: DestinationAddress,
@@ -76,7 +76,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrder {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Currency {
   /// Three-digit currency code.
   pub CurrencyCode: String,
@@ -99,7 +99,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Currency {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct FulfillmentOrderItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -170,7 +170,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrderIte
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct DestinationAddress {
   pub PhoneNumber: String,
   pub City: String,
@@ -206,10 +206,10 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DestinationAddress 
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ReturnItemList;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ReturnAuthorizationList;
 
 /// The current status of the shipment.
@@ -224,7 +224,7 @@ str_enum! {
 
 /// Delivery and item information for a shipment in a fulfillment order.
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct FulfillmentShipment {
   /// A shipment identifier assigned by Amazon.
   pub AmazonShipmentId: String,
@@ -290,7 +290,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipment
 
 /// Item information for a shipment in a fulfillment order.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentShipmentItem {
   /// The seller SKU of the item.
   pub SellerSKU: Option<String>,
@@ -321,7 +321,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipment
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentShipmentPackage {
   /// Identifies a package in a shipment.
   pub PackageNumber: String,
@@ -366,7 +366,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct TrackingAddress {
   pub City: String,
   pub State: String,
@@ -389,7 +389,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for TrackingAddress {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct TrackingEvent {
   pub EventDate: Option<DateTime<Utc>>,
   pub EventAddress: Option<TrackingAddress>,
@@ -458,7 +458,7 @@ impl TrackingEvent {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct PackageTrackingDetails {
   /// The package identifier.
   pub PackageNumber: String,
@@ -536,7 +536,7 @@ str_enum! {
 
 /// Weight unit and amount.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Weight {
   /// Indicates the unit of weight.
   pub Unit: String,
@@ -560,7 +560,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Weight {
 
 /// Fee type and cost.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Fee {
   /// The type of fee.
   pub Name: String,
@@ -584,7 +584,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Fee {
 
 /// Item information for a shipment in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentPreviewItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -625,7 +625,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewI
 
 /// Delivery and item information for a shipment in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentPreviewShipment {
   /// The earliest date that the shipment is expected to
   /// be sent from the fulfillment center.
@@ -667,7 +667,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewS
 
 /// Information about unfulfillable items in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct UnfulfillablePreviewItem {
   pub SellerSKU: String,
   pub SellerFulfillmentOrderItemId: String,
@@ -700,7 +700,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for UnfulfillablePrevie
 
 /// The time range within which your Scheduled Delivery fulfillment order should be delivered.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct DeliveryWindow {
   pub StartDateTime: Option<DateTime<Utc>>,
   pub EndDateTime: Option<DateTime<Utc>>,
@@ -722,7 +722,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DeliveryWindow {
 
 /// Delivery information for a Scheduled Delivery.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ScheduledDeliveryInfo {
   pub DeliveryTimeZone: String,
   pub DeliveryWindows: Vec<DeliveryWindow>,
@@ -750,7 +750,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ScheduledDeliveryIn
 /// Information about a fulfillment order preview,
 /// including delivery and fee information based on shipping method.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct FulfillmentPreview {
   /// The shipping method for your fulfillment order.
   pub ShippingSpeedCategory: String,

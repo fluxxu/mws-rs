@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use xmlhelper::decode;
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ShippingAddress {
   pub StateOrRegion: String,
   pub City: String,
@@ -15,14 +15,14 @@ pub struct ShippingAddress {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct CurrencyAmount {
   pub CurrencyCode: String,
   pub Amount: f64,
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Order {
   pub LatestShipDate: Option<DateTime<Utc>>,
   pub OrderType: String,
@@ -51,7 +51,7 @@ pub struct Order {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Order {
   fn from_xml(s: &mut S) -> decode::Result<Order> {
-    use xmlhelper::decode::{element, fold_elements, characters};
+    use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "Order", |s| {
       fold_elements(s, Order::default(), |s, order| {
         match s.local_name() {
@@ -172,7 +172,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct OrderItem {
   pub OrderItemId: String,
   pub QuantityOrdered: i32,
@@ -192,7 +192,7 @@ pub struct OrderItem {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for OrderItem {
   fn from_xml(s: &mut S) -> decode::Result<OrderItem> {
-    use xmlhelper::decode::{element, fold_elements, characters};
+    use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "OrderItem", |s| {
       fold_elements(s, OrderItem::default(), |s, item| {
         match s.local_name() {
@@ -293,9 +293,9 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for OrderItem {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::io::Cursor;
   use xmlhelper::decode;
   use xmlhelper::decode::FromXMLStream;
-  use std::io::Cursor;
 
   #[test]
   fn test_decode_order() {
@@ -342,15 +342,19 @@ mod tests {
     assert_eq!(
       order,
       Order {
-        LatestShipDate: Some("2016-11-03T00:09:40Z".parse().expect(
-          "parse LatestShipDate",
-        )),
+        LatestShipDate: Some(
+          "2016-11-03T00:09:40Z"
+            .parse()
+            .expect("parse LatestShipDate",)
+        ),
         OrderType: "StandardOrder".to_string(),
         PurchaseDate: Some("2016-11-01T05:01:22Z".parse().expect("parse PurchaseDate")),
         AmazonOrderId: "104-8343004-0000000".to_string(),
-        LastUpdateDate: Some("2016-11-03T00:12:39Z".parse().expect(
-          "parse LastUpdateDate",
-        )),
+        LastUpdateDate: Some(
+          "2016-11-03T00:12:39Z"
+            .parse()
+            .expect("parse LastUpdateDate",)
+        ),
         ShipServiceLevel: "SecondDay".to_string(),
         NumberOfItemsShipped: 1,
         OrderStatus: OrderStatus::Shipped,
@@ -358,9 +362,11 @@ mod tests {
         IsBusinessOrder: false,
         NumberOfItemsUnshipped: 0,
         IsPremiumOrder: false,
-        EarliestShipDate: Some("2016-11-03T00:09:40Z".parse().expect(
-          "parse EarliestShipDate",
-        )),
+        EarliestShipDate: Some(
+          "2016-11-03T00:09:40Z"
+            .parse()
+            .expect("parse EarliestShipDate",)
+        ),
         MarketplaceId: "MMMMMMMMMMMMM".to_string(),
         FulfillmentChannel: FulfillmentChannel::AFN,
         PaymentMethod: PaymentMethod::Other,

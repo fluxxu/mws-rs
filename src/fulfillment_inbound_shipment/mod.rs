@@ -2,10 +2,10 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_Overview.html)
 
+use super::types::ToIso8601;
 use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 use xmlhelper::decode;
-use super::types::ToIso8601;
 
 mod types;
 pub use self::types::*;
@@ -21,7 +21,7 @@ static PATH: &'static str = "/FulfillmentInboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
 /// Parameters for `ListInboundShipments`
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ListInboundShipmentsParameters {
   pub shipment_status_list: Vec<ShipmentStatus>,
   pub shipment_id_list: Vec<String>,
@@ -33,7 +33,10 @@ impl Into<Vec<(String, String)>> for ListInboundShipmentsParameters {
   fn into(self) -> Vec<(String, String)> {
     let mut result = vec![];
     for (i, s) in self.shipment_status_list.into_iter().enumerate() {
-      result.push((format!("ShipmentStatusList.member.{}", i + 1), s.to_string()));
+      result.push((
+        format!("ShipmentStatusList.member.{}", i + 1),
+        s.to_string(),
+      ));
     }
 
     for (i, id) in self.shipment_id_list.into_iter().enumerate() {
@@ -52,7 +55,7 @@ impl Into<Vec<(String, String)>> for ListInboundShipmentsParameters {
   }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ListInboundShipmentsResponse {
   pub request_id: String,
   pub shipment_data: Vec<InboundShipmentInfo>,
@@ -61,62 +64,89 @@ pub struct ListInboundShipmentsResponse {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInboundShipmentsResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentsResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
-    element(s, vec!["ListInboundShipmentsResponse", "ListInboundShipmentsByNextTokenResponse"], |s| {
-      fold_elements(s, ListInboundShipmentsResponse::default(), |s, response| {
-        match s.local_name() {
-          "ListInboundShipmentsResult" | "ListInboundShipmentsByNextTokenResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "ShipmentData" => {
-                  response.shipment_data = fold_elements(s, vec![], |s, list| {
-                    list.push(InboundShipmentInfo::from_xml(s)?);
-                    Ok(())
-                  })?;
-                },
-                "NextToken" => {
-                  response.next_token = Some(characters(s)?);
-                },
-                _ => {},
-              }
+    element(
+      s,
+      vec![
+        "ListInboundShipmentsResponse",
+        "ListInboundShipmentsByNextTokenResponse",
+      ],
+      |s| {
+        fold_elements(
+          s,
+          ListInboundShipmentsResponse::default(),
+          |s, response| match s.local_name() {
+            "ListInboundShipmentsResult" | "ListInboundShipmentsByNextTokenResult" => {
+              fold_elements(s, (), |s, _| {
+                match s.local_name() {
+                  "ShipmentData" => {
+                    response.shipment_data = fold_elements(s, vec![], |s, list| {
+                      list.push(InboundShipmentInfo::from_xml(s)?);
+                      Ok(())
+                    })?;
+                  }
+                  "NextToken" => {
+                    response.next_token = Some(characters(s)?);
+                  }
+                  _ => {}
+                }
+                Ok(())
+              })
+            }
+            "ResponseMetadata" => {
+              response.request_id = element(s, "RequestId", |s| characters(s))?;
               Ok(())
-            })
+            }
+            _ => Ok(()),
           },
-          "ResponseMetadata" => {
-            response.request_id = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
-            Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
-    })
+        )
+      },
+    )
   }
 }
 
 /// Returns a list of inbound shipments based on criteria that you specify.
-/// 
+///
 /// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipments.html)
 #[allow(non_snake_case)]
-pub fn ListInboundShipments(client: &Client, parameters: ListInboundShipmentsParameters) -> Result<Response<ListInboundShipmentsResponse>> {
-  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipments", parameters).map_err(|err| err.into())
+pub fn ListInboundShipments(
+  client: &Client,
+  parameters: ListInboundShipmentsParameters,
+) -> Result<Response<ListInboundShipmentsResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInboundShipments",
+      parameters,
+    )
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipments using the NextToken parameter.
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipmentsByNextToken.html)
 #[allow(non_snake_case)]
-pub fn ListInboundShipmentsByNextToken(client: &Client, next_token: String) -> Result<Response<ListInboundShipmentsResponse>> {
-  let params = vec![
-    ("NextToken".to_string(), next_token)
-  ]; 
-  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipmentsByNextToken", params).map_err(|err| err.into())
+pub fn ListInboundShipmentsByNextToken(
+  client: &Client,
+  next_token: String,
+) -> Result<Response<ListInboundShipmentsResponse>> {
+  let params = vec![("NextToken".to_string(), next_token)];
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInboundShipmentsByNextToken",
+      params,
+    )
+    .map_err(|err| err.into())
 }
 
 /// Parameters for `ListInboundShipments`
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ListInboundShipmentItemsParameters {
   pub shipment_id: String,
   pub last_updated_after: Option<DateTime<Utc>>,
@@ -125,9 +155,7 @@ pub struct ListInboundShipmentItemsParameters {
 
 impl Into<Vec<(String, String)>> for ListInboundShipmentItemsParameters {
   fn into(self) -> Vec<(String, String)> {
-    let mut result = vec![
-      ("ShipmentId".to_owned(), self.shipment_id)
-    ];
+    let mut result = vec![("ShipmentId".to_owned(), self.shipment_id)];
 
     if let Some(date) = self.last_updated_after {
       result.push(("LastUpdatedAfter".to_string(), date.to_iso8601()));
@@ -141,7 +169,7 @@ impl Into<Vec<(String, String)>> for ListInboundShipmentItemsParameters {
   }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ListInboundShipmentItemsResponse {
   pub request_id: String,
   pub item_data: Vec<InboundShipmentItem>,
@@ -150,58 +178,85 @@ pub struct ListInboundShipmentItemsResponse {
 
 impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInboundShipmentItemsResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentItemsResponse> {
-    use self::decode::{start_document, element, fold_elements, characters};
+    use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
-    element(s, vec!["ListInboundShipmentItemsResponse", "ListInboundShipmentItemsByNextTokenResponse"], |s| {
-      fold_elements(s, ListInboundShipmentItemsResponse::default(), |s, response| {
-        match s.local_name() {
-          "ListInboundShipmentItemsResult" | "ListInboundShipmentItemsByNextTokenResult" => {
-            fold_elements(s, (), |s, _| {
-              match s.local_name() {
-                "ItemData" => {
-                  response.item_data = fold_elements(s, vec![], |s, list| {
-                    list.push(InboundShipmentItem::from_xml(s)?);
-                    Ok(())
-                  })?;
-                },
-                "NextToken" => {
-                  response.next_token = Some(characters(s)?);
-                },
-                _ => {},
-              }
+    element(
+      s,
+      vec![
+        "ListInboundShipmentItemsResponse",
+        "ListInboundShipmentItemsByNextTokenResponse",
+      ],
+      |s| {
+        fold_elements(
+          s,
+          ListInboundShipmentItemsResponse::default(),
+          |s, response| match s.local_name() {
+            "ListInboundShipmentItemsResult" | "ListInboundShipmentItemsByNextTokenResult" => {
+              fold_elements(s, (), |s, _| {
+                match s.local_name() {
+                  "ItemData" => {
+                    response.item_data = fold_elements(s, vec![], |s, list| {
+                      list.push(InboundShipmentItem::from_xml(s)?);
+                      Ok(())
+                    })?;
+                  }
+                  "NextToken" => {
+                    response.next_token = Some(characters(s)?);
+                  }
+                  _ => {}
+                }
+                Ok(())
+              })
+            }
+            "ResponseMetadata" => {
+              response.request_id = element(s, "RequestId", |s| characters(s))?;
               Ok(())
-            })
+            }
+            _ => Ok(()),
           },
-          "ResponseMetadata" => {
-            response.request_id = element(s, "RequestId", |s| {
-              characters(s)
-            })?;
-            Ok(())
-          },
-          _ => { Ok(()) }
-        }
-      })
-    })
+        )
+      },
+    )
   }
 }
 
 /// Returns a list of items in a specified inbound shipment, or a list of items that were updated within a specified time frame.
-/// 
+///
 /// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipmentItems.html)
 #[allow(non_snake_case)]
-pub fn ListInboundShipmentItems(client: &Client, parameters: ListInboundShipmentItemsParameters) -> Result<Response<ListInboundShipmentItemsResponse>> {
-  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipmentItems", parameters).map_err(|err| err.into())
+pub fn ListInboundShipmentItems(
+  client: &Client,
+  parameters: ListInboundShipmentItemsParameters,
+) -> Result<Response<ListInboundShipmentItemsResponse>> {
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInboundShipmentItems",
+      parameters,
+    )
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipment items using the NextToken parameter.
 ///
 /// [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_ListInboundShipmentItemsByNextToken.html)
 #[allow(non_snake_case)]
-pub fn ListInboundShipmentItemsByNextToken(client: &Client, next_token: String) -> Result<Response<ListInboundShipmentItemsResponse>> {
-  let params = vec![
-    ("NextToken".to_string(), next_token)
-  ]; 
-  client.request_xml(Method::Post, PATH, VERSION, "ListInboundShipmentItemsByNextToken", params).map_err(|err| err.into())
+pub fn ListInboundShipmentItemsByNextToken(
+  client: &Client,
+  next_token: String,
+) -> Result<Response<ListInboundShipmentItemsResponse>> {
+  let params = vec![("NextToken".to_string(), next_token)];
+  client
+    .request_xml(
+      Method::Post,
+      PATH,
+      VERSION,
+      "ListInboundShipmentItemsByNextToken",
+      params,
+    )
+    .map_err(|err| err.into())
 }
 
 #[cfg(test)]

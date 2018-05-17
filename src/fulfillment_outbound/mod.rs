@@ -19,7 +19,7 @@ error_chain! {
 static PATH: &'static str = "/FulfillmentOutboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ListAllFulfillmentOrdersResponse {
   pub request_id: String,
   pub fulfillment_orders: Vec<FulfillmentOrder>,
@@ -112,7 +112,7 @@ pub fn ListAllFulfillmentOrdersByNextToken(
     .map_err(|err| err.into())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 #[allow(non_snake_case)]
 pub struct GetFulfillmentOrderResponse {
   pub fulfillment_shipments: Vec<FulfillmentShipment>,
@@ -179,7 +179,7 @@ pub fn GetFulfillmentOrder(
     .map_err(|err| err.into())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 #[allow(non_snake_case)]
 pub struct GetPackageTrackingDetailsResponse {
   pub details: PackageTrackingDetails,
@@ -232,7 +232,7 @@ pub fn GetPackageTrackingDetails(
 
 /// Item information for a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct GetFulfillmentPreviewItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -246,7 +246,7 @@ pub struct GetFulfillmentPreviewItem {
 
 /// Parameters for `GetFulfillmentPreview`
 #[allow(non_snake_case)]
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct GetFulfillmentPreviewParameters {
   pub Address: DestinationAddress,
   pub Items: Vec<GetFulfillmentPreviewItem>,
@@ -332,7 +332,7 @@ impl Into<Vec<(String, String)>> for GetFulfillmentPreviewParameters {
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 #[allow(non_snake_case)]
 pub struct GetFulfillmentPreviewResponse {
   pub FulfillmentPreviews: Vec<FulfillmentPreview>,
@@ -384,7 +384,7 @@ pub fn GetFulfillmentPreview(
 
 /// Item information for creating a fulfillment order.
 #[allow(non_snake_case)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct CreateFulfillmentOrderItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -413,7 +413,7 @@ pub struct CreateFulfillmentOrderItem {
 
 /// Parameters for `CreateFulfillmentOrder`
 #[allow(non_snake_case)]
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct CreateFulfillmentOrderParameters {
   pub SellerFulfillmentOrderId: String,
   pub ShippingSpeedCategory: ShippingSpeedCategory,
@@ -538,7 +538,7 @@ impl Into<Vec<(String, String)>> for CreateFulfillmentOrderParameters {
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 #[allow(non_snake_case)]
 pub struct CreateFulfillmentOrderResponse {
   pub RequestId: String,
@@ -583,7 +583,7 @@ pub fn CreateFulfillmentOrder(
     .map_err(|err| err.into())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 #[allow(non_snake_case)]
 pub struct CancelFulfillmentOrderResponse {
   pub RequestId: String,

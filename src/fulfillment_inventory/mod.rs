@@ -20,14 +20,14 @@ error_chain! {
 static PATH: &'static str = "/FulfillmentInventory/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum ResponseGroup {
   Basic,
   Detailed,
 }
 
 /// Parameters for `ListInventorySupply`
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ListInventorySupplyParameters {
   // Optional API Parameters
   pub seller_sku_list: Vec<String>,
@@ -65,7 +65,7 @@ impl Into<Vec<(String, String)>> for ListInventorySupplyParameters {
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct ListInventorySupplyResponse {
   pub request_id: String,
   /// Indicates the specific marketplace to which the Inventory details apply.
