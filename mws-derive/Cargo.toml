@@ -10,7 +10,7 @@ syn = "0.14"
 quote = "0.6"
 
 [dev-dependencies]
-mws = "0.8.0"
+mws = "*"
 
 [lib]
 proc-macro = true
