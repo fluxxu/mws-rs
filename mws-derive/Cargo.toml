@@ -2,13 +2,15 @@
 name = "mws-derive"
 version = "0.1.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
+license = "MIT"
+description = "Derive macros for mws"
 
 [dependencies]
 syn = "0.14"
 quote = "0.6"
 
 [dev-dependencies]
-mws = { path = "../mws" }
+mws = "0.8.0"
 
 [lib]
 proc-macro = true

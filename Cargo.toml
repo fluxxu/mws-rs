@@ -5,4 +5,5 @@ members = [
 ]
 
 [patch.crates-io]
+mws = { path = "mws" }
 mws-derive = { path = "mws-derive" }
