@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "./mws",
-  "./mws-derive"
+  "./mws-derive",
+  "./mws-tests"
 ]
 
 [patch.crates-io]

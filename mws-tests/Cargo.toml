@@ -1,0 +1,8 @@
+[package]
+name = "mws-tests"
+version = "0.1.0"
+authors = ["Flux Xu <fluxxu@gmail.com>"]
+
+[dependencies]
+mws = { path = "../mws" }
+mws-derive = { path = "../mws-derive" }
