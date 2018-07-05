@@ -194,15 +194,13 @@ pub struct SubmitFeedResponse {
   pub FeedProcessingStatus: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for SubmitFeedResponse {
   fn from_xml(s: &mut S) -> decode::Result<SubmitFeedResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "SubmitFeedResponse", |s| {
-      fold_elements(
-        s,
-        SubmitFeedResponse::default(),
-        |s, response| match s.local_name() {
+      fold_elements(s, SubmitFeedResponse::default(), |s, response| {
+        match s.local_name() {
           "SubmitFeedResult" => {
             fold_elements(s, (), |s, _| match s.local_name() {
               "FeedSubmissionInfo" => fold_elements(s, (), |s, _| {
@@ -232,8 +230,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for SubmitFeedResponse 
             Ok(())
           }
           _ => Ok(()),
-        },
-      )
+        }
+      })
     })
   }
 }
@@ -349,7 +347,7 @@ pub struct GetFeedSubmissionListResponse {
   pub NextToken: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFeedSubmissionListResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFeedSubmissionListResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetFeedSubmissionListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;

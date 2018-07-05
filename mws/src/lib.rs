@@ -13,6 +13,8 @@ extern crate csv;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate mws_derive;
 
 #[cfg(test)]
 extern crate dotenv;
@@ -32,5 +34,8 @@ pub mod feeds;
 pub mod fulfillment_inbound_shipment;
 pub mod fulfillment_inventory;
 pub mod fulfillment_outbound;
+pub mod merchant_fulfillment;
 pub mod orders;
 pub mod reports;
+
+pub use self::types::SerializeMwsParams;

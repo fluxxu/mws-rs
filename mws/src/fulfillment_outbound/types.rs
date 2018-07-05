@@ -44,7 +44,7 @@ pub struct FulfillmentOrder {
   pub NotificationEmailList: Vec<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrder {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentOrder {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentOrder> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentOrder::default(), |s, record| {
@@ -84,7 +84,7 @@ pub struct Currency {
   pub Value: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Currency {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Currency {
   fn from_xml(s: &mut S) -> decode::Result<Currency> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Currency::default(), |s, record| {
@@ -144,7 +144,7 @@ pub struct FulfillmentOrderItem {
   pub PerUnitTax: Option<Currency>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentOrderItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentOrderItem {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentOrderItem> {
     use xmlhelper::decode::{characters, fold_elements};
 
@@ -184,7 +184,7 @@ pub struct DestinationAddress {
   pub Line3: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DestinationAddress {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for DestinationAddress {
   fn from_xml(s: &mut S) -> decode::Result<DestinationAddress> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, DestinationAddress::default(), |s, record| {
@@ -259,7 +259,7 @@ pub struct FulfillmentShipment {
   pub FulfillmentShipmentPackage: Vec<FulfillmentShipmentPackage>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipment {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipment {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipment> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipment::default(), |s, record| {
@@ -304,7 +304,7 @@ pub struct FulfillmentShipmentItem {
   pub PackageNumber: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipmentItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipmentItem {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipmentItem> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipmentItem::default(), |s, record| {
@@ -335,7 +335,7 @@ pub struct FulfillmentShipmentPackage {
   pub EstimatedArrivalDateTime: Option<DateTime<Utc>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentShipmentPackage {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipmentPackage {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentShipmentPackage> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentShipmentPackage::default(), |s, record| {
@@ -373,7 +373,7 @@ pub struct TrackingAddress {
   pub Country: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for TrackingAddress {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for TrackingAddress {
   fn from_xml(s: &mut S) -> decode::Result<TrackingAddress> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, TrackingAddress::default(), |s, record| {
@@ -396,7 +396,7 @@ pub struct TrackingEvent {
   pub EventCode: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for TrackingEvent {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for TrackingEvent {
   fn from_xml(s: &mut S) -> decode::Result<TrackingEvent> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, TrackingEvent::default(), |s, record| {
@@ -486,7 +486,7 @@ pub struct PackageTrackingDetails {
   pub AdditionalLocationInfo: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for PackageTrackingDetails {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for PackageTrackingDetails {
   fn from_xml(s: &mut S) -> decode::Result<PackageTrackingDetails> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, PackageTrackingDetails::default(), |s, record| {
@@ -544,7 +544,7 @@ pub struct Weight {
   pub Value: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Weight {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Weight {
   fn from_xml(s: &mut S) -> decode::Result<Weight> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Weight::default(), |s, record| {
@@ -568,7 +568,7 @@ pub struct Fee {
   pub Amount: Currency,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Fee {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Fee {
   fn from_xml(s: &mut S) -> decode::Result<Fee> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Fee::default(), |s, record| {
@@ -602,7 +602,7 @@ pub struct FulfillmentPreviewItem {
   pub ShippingWeightCalculationMethod: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreviewItem {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreviewItem> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentPreviewItem::default(), |s, record| {
@@ -643,7 +643,7 @@ pub struct FulfillmentPreviewShipment {
   pub FulfillmentPreviewItems: Vec<FulfillmentPreviewItem>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreviewShipment {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreviewShipment {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreviewShipment> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentPreviewShipment::default(), |s, record| {
@@ -677,7 +677,7 @@ pub struct UnfulfillablePreviewItem {
   pub ItemUnfulfillableReasons: Option<Vec<String>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for UnfulfillablePreviewItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for UnfulfillablePreviewItem {
   fn from_xml(s: &mut S) -> decode::Result<UnfulfillablePreviewItem> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, UnfulfillablePreviewItem::default(), |s, record| {
@@ -706,7 +706,7 @@ pub struct DeliveryWindow {
   pub EndDateTime: Option<DateTime<Utc>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for DeliveryWindow {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for DeliveryWindow {
   fn from_xml(s: &mut S) -> decode::Result<DeliveryWindow> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, DeliveryWindow::default(), |s, record| {
@@ -728,7 +728,7 @@ pub struct ScheduledDeliveryInfo {
   pub DeliveryWindows: Vec<DeliveryWindow>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ScheduledDeliveryInfo {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ScheduledDeliveryInfo {
   fn from_xml(s: &mut S) -> decode::Result<ScheduledDeliveryInfo> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, ScheduledDeliveryInfo::default(), |s, record| {
@@ -776,7 +776,7 @@ pub struct FulfillmentPreview {
   pub ScheduledDeliveryInfo: Option<ScheduledDeliveryInfo>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreview {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreview {
   fn from_xml(s: &mut S) -> decode::Result<FulfillmentPreview> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, FulfillmentPreview::default(), |s, record| {
@@ -826,9 +826,6 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for FulfillmentPreview 
 mod tests {
   use super::*;
   use chrono::TimeZone;
-  use std::io::Cursor;
-  use xmlhelper::decode;
-  use xmlhelper::decode::FromXMLStream;
 
   #[test]
   fn test_decode_destination_address() {

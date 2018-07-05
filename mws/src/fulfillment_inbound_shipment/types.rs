@@ -32,14 +32,14 @@ pub struct Amount {
   pub Value: f64,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Amount {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Amount {
   fn from_xml(s: &mut S) -> decode::Result<Amount> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Amount::default(), |s, record| {
       match s.local_name() {
         "CurrencyCode" => record.CurrencyCode = characters(s)?,
         "Value" => record.Value = characters(s)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
@@ -55,15 +55,15 @@ pub struct BoxContentsFeeDetails {
   pub TotalFee: Option<Amount>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for BoxContentsFeeDetails {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for BoxContentsFeeDetails {
   fn from_xml(s: &mut S) -> decode::Result<BoxContentsFeeDetails> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, BoxContentsFeeDetails::default(), |s, record| {
       match s.local_name() {
         "TotalUnits" => record.TotalUnits = characters(s)?,
         "FeePerUnit" => record.FeePerUnit = Amount::from_xml(s).map(Some)?,
         "TotalFee" => record.TotalFee = Amount::from_xml(s).map(Some)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
@@ -72,12 +72,11 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for BoxContentsFeeDetai
 
 str_enum! {
   pub enum LabelPrepType {
-    NO_LABEL, 
-    SELLER_LABEL, 
+    NO_LABEL,
+    SELLER_LABEL,
     AMAZON_LABEL,
   }
 }
-
 
 /// Postal address information.
 #[allow(non_snake_case)]
@@ -101,9 +100,9 @@ pub struct Address {
   pub PostalCode: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Address {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Address {
   fn from_xml(s: &mut S) -> decode::Result<Address> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Address::default(), |s, record| {
       match s.local_name() {
         "Name" => record.Name = characters(s)?,
@@ -114,7 +113,7 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Address {
         "StateOrProvinceCode" => record.StateOrProvinceCode = characters(s)?,
         "CountryCode" => record.CountryCode = characters(s)?,
         "PostalCode" => record.PostalCode = characters(s)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
@@ -137,15 +136,15 @@ pub struct InboundShipmentInfo {
   pub LabelPrepType: Option<LabelPrepType>,
   /// The status of your inbound shipment.
   pub ShipmentStatus: ShipmentStatus,
-  /// Indicates whether or not an inbound shipment contains case-packed boxes. 
-  /// When AreCasesRequired = true for an inbound shipment, all items in the 
+  /// Indicates whether or not an inbound shipment contains case-packed boxes.
+  /// When AreCasesRequired = true for an inbound shipment, all items in the
   /// inbound shipment must be case packed.
   pub AreCasesRequired: bool,
   ///	Date that the shipment must arrive at an Amazon fulfillment center to avoid
-  /// delivery promise breaks for pre-ordered items. For more information, see 
+  /// delivery promise breaks for pre-ordered items. For more information, see
   /// GetPreorderInfo. Pre-orders are only available in India and Japan.
   pub ConfirmedNeedByDate: Option<String>,
-  ///	Where the seller provided box contents information for a shipment. This is 
+  ///	Where the seller provided box contents information for a shipment. This is
   /// only returned for shipments to US fulfillment centers.
   pub BoxContentsSource: Option<BoxContentsSource>,
   /// An estimate of the manual processing fee charged by Amazon for boxes
@@ -153,9 +152,9 @@ pub struct InboundShipmentInfo {
   pub EstimatedBoxContentsFee: Option<BoxContentsFeeDetails>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentInfo {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentInfo {
   fn from_xml(s: &mut S) -> decode::Result<InboundShipmentInfo> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InboundShipmentInfo::default(), |s, record| {
       match s.local_name() {
         "ShipmentId" => record.ShipmentId = characters(s)?,
@@ -167,8 +166,10 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentInfo
         "AreCasesRequired" => record.AreCasesRequired = characters(s)?,
         "ConfirmedNeedByDate" => record.ConfirmedNeedByDate = characters(s).map(Some)?,
         "BoxContentsSource" => record.BoxContentsSource = characters(s).map(Some)?,
-        "EstimatedBoxContentsFee" => record.EstimatedBoxContentsFee = BoxContentsFeeDetails::from_xml(s).map(Some)?,
-        _ => {},
+        "EstimatedBoxContentsFee" => {
+          record.EstimatedBoxContentsFee = BoxContentsFeeDetails::from_xml(s).map(Some)?
+        }
+        _ => {}
       }
       Ok(())
     })
@@ -189,9 +190,9 @@ pub struct InboundShipmentItem {
   // ReleaseDate: xs:string,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentItem {
   fn from_xml(s: &mut S) -> decode::Result<InboundShipmentItem> {
-    use xmlhelper::decode::{fold_elements, characters};
+    use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InboundShipmentItem::default(), |s, record| {
       match s.local_name() {
         "ShipmentId" => record.ShipmentId = characters(s)?,
@@ -200,24 +201,24 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InboundShipmentItem
         "QuantityShipped" => record.QuantityShipped = characters(s)?,
         "QuantityReceived" => record.QuantityReceived = characters(s).map(Some)?,
         "QuantityInCase" => record.QuantityInCase = characters(s).map(Some)?,
-        _ => {},
+        _ => {}
       }
       Ok(())
     })
   }
 }
 
-
 #[cfg(test)]
 mod tests {
   use super::*;
-  use xmlhelper::decode;
-  use xmlhelper::decode::FromXMLStream;
   use std::io::Cursor;
+  use xmlhelper::decode;
+  use xmlhelper::decode::FromXmlStream;
 
   #[test]
   fn test_decode_inbound_shipment_info() {
-    let mut s = decode::Stream::new(Cursor::new(r#"
+    let mut s = decode::Stream::new(Cursor::new(
+      r#"
     <member>
         <ShipFromAddress>
             <PostalCode>V5V 1A1</PostalCode>
@@ -245,46 +246,51 @@ mod tests {
             </TotalFee>
         </EstimatedBoxContentsFee>
     </member>
-    "#));
+    "#,
+    ));
 
     decode::start_document(&mut s).expect("start element");
     let record = decode::element(&mut s, "member", |s| InboundShipmentInfo::from_xml(s)).unwrap();
-    assert_eq!(record, InboundShipmentInfo {
-      ShipFromAddress: Address {
-        PostalCode: "V5V 1A1".to_owned(),
-        Name: "Janani Arvind FBA QA".to_owned(),
-        CountryCode: "CA".to_owned(),
-        StateOrProvinceCode: "BC".to_owned(),
-        AddressLine1: "Address 1".to_owned(),
-        AddressLine2: "".to_owned(),
-        City: "Vancouver".to_owned(),
-        DistrictOrCounty: "".to_owned(),
-      },
-      ShipmentId: "FBA1123".to_owned(),
-      ShipmentName: "Test MWS CA Shipment 1".to_owned(),
-      ShipmentStatus: ShipmentStatus::WORKING,
-      LabelPrepType: Some(LabelPrepType::NO_LABEL),
-      DestinationFulfillmentCenterId: "RIC2".to_owned(),
-      BoxContentsSource: Some(BoxContentsSource::NONE),
-      EstimatedBoxContentsFee: Some(BoxContentsFeeDetails {
-        TotalUnits: 10,
-        FeePerUnit: Some(Amount {
-          CurrencyCode: "USD".to_owned(),
-          Value: 0.10,
+    assert_eq!(
+      record,
+      InboundShipmentInfo {
+        ShipFromAddress: Address {
+          PostalCode: "V5V 1A1".to_owned(),
+          Name: "Janani Arvind FBA QA".to_owned(),
+          CountryCode: "CA".to_owned(),
+          StateOrProvinceCode: "BC".to_owned(),
+          AddressLine1: "Address 1".to_owned(),
+          AddressLine2: "".to_owned(),
+          City: "Vancouver".to_owned(),
+          DistrictOrCounty: "".to_owned(),
+        },
+        ShipmentId: "FBA1123".to_owned(),
+        ShipmentName: "Test MWS CA Shipment 1".to_owned(),
+        ShipmentStatus: ShipmentStatus::WORKING,
+        LabelPrepType: Some(LabelPrepType::NO_LABEL),
+        DestinationFulfillmentCenterId: "RIC2".to_owned(),
+        BoxContentsSource: Some(BoxContentsSource::NONE),
+        EstimatedBoxContentsFee: Some(BoxContentsFeeDetails {
+          TotalUnits: 10,
+          FeePerUnit: Some(Amount {
+            CurrencyCode: "USD".to_owned(),
+            Value: 0.10,
+          }),
+          TotalFee: Some(Amount {
+            CurrencyCode: "USD".to_owned(),
+            Value: 10.0,
+          })
         }),
-        TotalFee: Some(Amount {
-          CurrencyCode: "USD".to_owned(),
-          Value: 10.0,
-        })
-      }),
-      AreCasesRequired: false,
-      ConfirmedNeedByDate: None,
-    });
+        AreCasesRequired: false,
+        ConfirmedNeedByDate: None,
+      }
+    );
   }
 
   #[test]
   fn test_decode_inbound_shipment_item() {
-    let mut s = decode::Stream::new(Cursor::new(r#"
+    let mut s = decode::Stream::new(Cursor::new(
+      r#"
     <member>
         <ShipmentId>SSF85DGIZZ3OF1</ShipmentId>
         <SellerSKU>SampleSKU2</SellerSKU>
@@ -293,18 +299,22 @@ mod tests {
         <QuantityReceived>0</QuantityReceived>
         <FulfillmentNetworkSKU>B0011VECH4</FulfillmentNetworkSKU>
     </member>
-    "#));
+    "#,
+    ));
 
     decode::start_document(&mut s).expect("start element");
     let record = decode::element(&mut s, "member", |s| InboundShipmentItem::from_xml(s)).unwrap();
 
-    assert_eq!(record, InboundShipmentItem {
-      ShipmentId: "SSF85DGIZZ3OF1".to_owned(),
-      SellerSKU: "SampleSKU2".to_owned(),
-      QuantityShipped: 10,
-      QuantityInCase: Some(0),
-      QuantityReceived: Some(0),
-      FulfillmentNetworkSKU: "B0011VECH4".to_owned(),
-    });
+    assert_eq!(
+      record,
+      InboundShipmentItem {
+        ShipmentId: "SSF85DGIZZ3OF1".to_owned(),
+        SellerSKU: "SampleSKU2".to_owned(),
+        QuantityShipped: 10,
+        QuantityInCase: Some(0),
+        QuantityReceived: Some(0),
+        FulfillmentNetworkSKU: "B0011VECH4".to_owned(),
+      }
+    );
   }
 }

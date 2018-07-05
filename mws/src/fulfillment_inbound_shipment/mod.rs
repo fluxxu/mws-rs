@@ -62,7 +62,7 @@ pub struct ListInboundShipmentsResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInboundShipmentsResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentsResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -176,7 +176,7 @@ pub struct ListInboundShipmentItemsResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInboundShipmentItemsResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentItemsResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentItemsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;

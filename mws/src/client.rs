@@ -4,7 +4,7 @@ pub use reqwest::{Method, StatusCode};
 use sign::SignatureV2;
 use std::io::Read;
 use tdff::FromTdff;
-use xmlhelper::decode::{FromXMLStream, Stream};
+use xmlhelper::decode::{FromXmlStream, Stream};
 
 error_chain! {
   foreign_links {
@@ -94,13 +94,13 @@ impl ErrorResponseInfo {
   }
 }
 
-impl FromXMLStream<Stream<reqwest::Response>> for ErrorResponseInfo {
+impl FromXmlStream<Stream<reqwest::Response>> for ErrorResponseInfo {
   fn from_xml(s: &mut Stream<reqwest::Response>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
   }
 }
 
-impl FromXMLStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
+impl FromXmlStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
   fn from_xml(
     s: &mut Stream<::std::io::Cursor<String>>,
   ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
@@ -226,7 +226,7 @@ impl Client {
   ) -> Result<Response<T>>
   where
     P: Into<Vec<(String, String)>>,
-    T: FromXMLStream<Stream<reqwest::Response>>,
+    T: FromXmlStream<Stream<reqwest::Response>>,
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
@@ -267,7 +267,7 @@ impl Client {
   ) -> Result<Response<T>>
   where
     P: Into<Vec<(String, String)>>,
-    T: FromXMLStream<Stream<reqwest::Response>>,
+    T: FromXmlStream<Stream<reqwest::Response>>,
     R: Read + Send + 'static,
   {
     let mut resp = self.request_with_body(

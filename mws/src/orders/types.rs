@@ -49,7 +49,7 @@ pub struct Order {
   pub ShippingAddress: Option<ShippingAddress>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Order {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Order {
   fn from_xml(s: &mut S) -> decode::Result<Order> {
     use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "Order", |s| {
@@ -190,7 +190,7 @@ pub struct OrderItem {
   pub ShippingTax: Option<CurrencyAmount>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for OrderItem {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for OrderItem {
   fn from_xml(s: &mut S) -> decode::Result<OrderItem> {
     use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "OrderItem", |s| {
@@ -295,7 +295,7 @@ mod tests {
   use super::*;
   use std::io::Cursor;
   use xmlhelper::decode;
-  use xmlhelper::decode::FromXMLStream;
+  use xmlhelper::decode::FromXmlStream;
 
   #[test]
   fn test_decode_order() {

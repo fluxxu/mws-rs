@@ -5,8 +5,9 @@
 use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
 mod types;
-pub use self::types::{Condition, InventorySupply, InventorySupplyDetail, SupplyType, Timepoint,
-                      TimepointType};
+pub use self::types::{
+  Condition, InventorySupply, InventorySupplyDetail, SupplyType, Timepoint, TimepointType,
+};
 use super::types::ToIso8601;
 use xmlhelper::decode;
 
@@ -84,7 +85,7 @@ pub struct ListInventorySupplyResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListInventorySupplyResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInventorySupplyResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListInventorySupplyResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;

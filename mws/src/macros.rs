@@ -88,6 +88,21 @@ macro_rules! str_enum {
         }
       }
     }
+
+    impl ::SerializeMwsParams for $name {
+      fn serialize_mws_params(&self, path: &str, _include_name: bool, pairs: &mut Vec<(String, String)>) {
+        self.as_ref().serialize_mws_params(path, false, pairs);
+      }
+    }
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
+    where S: ::xmlhelper::decode::XmlEventStream
+    {
+      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+        use xmlhelper::decode::characters;
+        characters(s)
+      }
+    }
   };
 }
 
@@ -147,5 +162,50 @@ macro_rules! string_map_enum {
         $name::UnknownValue("".to_owned())
       }
     }
+
+    impl ::SerializeMwsParams for $name {
+      fn serialize_mws_params(&self, path: &str, _include_name: bool, pairs: &mut Vec<(String, String)>) {
+        self.as_ref().serialize_mws_params(path, false, pairs);
+      }
+    }
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
+    where S: ::xmlhelper::decode::XmlEventStream
+    {
+      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+        use xmlhelper::decode::characters;
+        characters(s)
+      }
+    }
   )
+}
+
+macro_rules! response_type {
+  ($name:ident < $payload_ty:ty > , $response_tag:expr, $result_tag:expr) => {
+    pub type $name = ::types::GenericResponse<$payload_ty>;
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for ::types::GenericResponse<$payload_ty>
+    where
+      S: ::xmlhelper::decode::XmlEventStream,
+    {
+      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+        use xmlhelper::decode::{characters, element, fold_elements, start_document};
+        start_document(s)?;
+        element(s, $response_tag, |s| {
+          fold_elements(
+            s,
+            ::types::GenericResponse::<$payload_ty>::default(),
+            |s, response| {
+              if s.local_name() == $result_tag {
+                response.payload = ::xmlhelper::decode::FromXmlStream::from_xml(s)?;
+              } else if s.local_name() == "ResponseMetadata" {
+                response.request_id = element(s, "RequestId", |s| characters(s))?;
+              }
+              Ok(())
+            },
+          )
+        })
+      }
+    }
+  };
 }

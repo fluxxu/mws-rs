@@ -85,7 +85,7 @@ pub struct GetReportListResponse {
   pub has_next: bool,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportListResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetReportListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -93,10 +93,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListRespon
       s,
       vec!["GetReportListResponse", "GetReportListByNextTokenResponse"],
       |s| {
-        fold_elements(
-          s,
-          GetReportListResponse::default(),
-          |s, response| match s.local_name() {
+        fold_elements(s, GetReportListResponse::default(), |s, response| {
+          match s.local_name() {
             "GetReportListResult" | "GetReportListByNextTokenResult" => {
               fold_elements(s, (), |s, _| {
                 match s.local_name() {
@@ -143,8 +141,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportListRespon
               Ok(())
             }
             _ => Ok(()),
-          },
-        )
+          }
+        })
       },
     )
   }
@@ -259,7 +257,7 @@ pub struct GetReportRequestListResponse {
   pub has_next: bool,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetReportRequestListResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportRequestListResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetReportRequestListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -411,15 +409,13 @@ pub struct RequestReportResponse {
   pub request: ReportRequestInfo,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for RequestReportResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for RequestReportResponse {
   fn from_xml(s: &mut S) -> decode::Result<RequestReportResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "RequestReportResponse", |s| {
-      fold_elements(
-        s,
-        RequestReportResponse::default(),
-        |s, response| match s.local_name() {
+      fold_elements(s, RequestReportResponse::default(), |s, response| {
+        match s.local_name() {
           "RequestReportResult" => fold_elements(s, (), |s, _| {
             match s.local_name() {
               "ReportRequestInfo" => {
@@ -470,8 +466,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for RequestReportRespon
             Ok(())
           }
           _ => Ok(()),
-        },
-      )
+        }
+      })
     })
   }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "mws"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 license = "MIT"
 description = "Client library for Amazon Marketplace Web Service (Amazon MWS)"
@@ -12,11 +12,12 @@ rust-crypto = "0.2.36"
 reqwest = "0.8.0"
 url = "1.2.4"
 chrono = { version = "0.4", features = ["serde"] }
-error-chain = "0.11"
+error-chain = "0.12"
 csv = "0.14"
 xml-rs = "0.6.1"
 serde = "1.0.0"
 serde_derive = "1.0.0"
+mws-derive = "0.1.0"
 
 [dev-dependencies]
 dotenv = "0.8.0"

@@ -26,7 +26,7 @@ pub struct ListAllFulfillmentOrdersResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListAllFulfillmentOrdersResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListAllFulfillmentOrdersResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListAllFulfillmentOrdersResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -123,7 +123,7 @@ pub struct GetFulfillmentOrderResponse {
   pub request_id: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFulfillmentOrderResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentOrderResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -186,7 +186,7 @@ pub struct GetPackageTrackingDetailsResponse {
   pub request_id: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetPackageTrackingDetailsResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetPackageTrackingDetailsResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetPackageTrackingDetailsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -339,7 +339,7 @@ pub struct GetFulfillmentPreviewResponse {
   pub RequestId: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for GetFulfillmentPreviewResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentPreviewResponse {
   fn from_xml(s: &mut S) -> decode::Result<GetFulfillmentPreviewResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -544,7 +544,7 @@ pub struct CreateFulfillmentOrderResponse {
   pub RequestId: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for CreateFulfillmentOrderResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CreateFulfillmentOrderResponse {
   fn from_xml(s: &mut S) -> decode::Result<CreateFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -589,7 +589,7 @@ pub struct CancelFulfillmentOrderResponse {
   pub RequestId: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for CancelFulfillmentOrderResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CancelFulfillmentOrderResponse {
   fn from_xml(s: &mut S) -> decode::Result<CancelFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;

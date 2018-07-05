@@ -1,0 +1,14 @@
+[package]
+name = "mws-derive"
+version = "0.1.0"
+authors = ["Flux Xu <fluxxu@gmail.com>"]
+
+[dependencies]
+syn = "0.14"
+quote = "0.6"
+
+[dev-dependencies]
+mws = { path = "../mws" }
+
+[lib]
+proc-macro = true

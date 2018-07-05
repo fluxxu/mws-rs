@@ -74,7 +74,7 @@ pub struct Timepoint {
   pub DateTime: Option<DateTime<Utc>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for Timepoint {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Timepoint {
   fn from_xml(s: &mut S) -> decode::Result<Timepoint> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Timepoint::default(), |s, record| {
@@ -113,7 +113,7 @@ pub struct InventorySupplyDetail {
   pub LatestAvailableToPick: Timepoint,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for InventorySupply {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InventorySupply {
   fn from_xml(s: &mut S) -> decode::Result<InventorySupply> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InventorySupply::default(), |s, record| {
@@ -157,7 +157,7 @@ mod tests {
   use super::*;
   use std::io::Cursor;
   use xmlhelper::decode;
-  use xmlhelper::decode::FromXMLStream;
+  use xmlhelper::decode::FromXmlStream;
 
   #[test]
   fn test_decode_inventory_supply() {

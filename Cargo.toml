@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "./mws",
+  "./mws-derive"
+]
+
+[patch.crates-io]
+mws-derive = { path = "mws-derive" }

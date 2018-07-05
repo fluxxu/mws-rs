@@ -1,13 +1,13 @@
 //! Utilities to parse a XML event stream
 //!
 
-use xml::reader::{EventReader, Events, Result as XmlReaderResult, XmlEvent};
-pub use xml::name::OwnedName as Name;
-pub use xml::attribute::OwnedAttribute as Attribute;
-use std::iter::Peekable;
-use std::io::Read;
-use std::str::FromStr;
 use std::fmt::Display;
+use std::io::Read;
+use std::iter::Peekable;
+use std::str::FromStr;
+pub use xml::attribute::OwnedAttribute as Attribute;
+pub use xml::name::OwnedName as Name;
+use xml::reader::{EventReader, Events, Result as XmlReaderResult, XmlEvent};
 
 error_chain! {
   foreign_links {
@@ -93,8 +93,51 @@ macro_rules! try_consume_event {
     }};
 }
 
-pub trait FromXMLStream<S: XmlEventStream>: Sized + Default {
+pub trait FromXmlStream<S: XmlEventStream>: Sized + Default {
   fn from_xml(stream: &mut S) -> Result<Self>;
+}
+
+macro_rules! impl_characters {
+  ($ty:ty) => {
+    impl<S> FromXmlStream<S> for $ty
+    where
+      S: XmlEventStream,
+    {
+      fn from_xml(stream: &mut S) -> Result<Self> {
+        characters(stream)
+      }
+    }
+  };
+}
+
+impl_characters!(String);
+impl_characters!(i32);
+impl_characters!(i64);
+impl_characters!(bool);
+
+// error[E0477]: the type `mws::xmlhelper::decode::ElementScopedStream<'_, _S>` does not fulfill the required lifetime
+// implemented in mws-derive
+// impl<S, T> FromXmlStream<S> for Vec<T>
+// where
+//   S: XmlEventStream,
+//   T: for<'a> FromXmlStream<ElementScopedStream<'a, S>>,
+// {
+//   fn from_xml(s: &mut S) -> Result<Self> {
+//     fold_elements(s, vec![], |s, v| {
+//       v.push(T::from_xml(s)?);
+//       Ok(())
+//     })
+//   }
+// }
+
+impl<S, T> FromXmlStream<S> for Option<T>
+where
+  S: XmlEventStream,
+  T: FromXmlStream<S>,
+{
+  fn from_xml(s: &mut S) -> Result<Self> {
+    T::from_xml(s).map(Some)
+  }
 }
 
 pub trait XmlEventStream {
@@ -238,10 +281,9 @@ impl XmlAttributeList {
   }
 
   pub fn value_or<K: AsRef<str>, V: Into<String>>(&self, name: K, default: V) -> String {
-    self.find_name(name.as_ref()).map_or_else(
-      || default.into(),
-      |a| a.value.clone(),
-    )
+    self
+      .find_name(name.as_ref())
+      .map_or_else(|| default.into(), |a| a.value.clone())
   }
 }
 
@@ -283,9 +325,7 @@ pub fn start_element<S: XmlEventStream, N: AsRef<str>>(
 
 /// Consume a `EndElement` event
 pub fn end_element<S: XmlEventStream>(stream: &mut S) -> Result<Name> {
-  Ok(
-    try_consume_event!(stream, XmlEvent::EndElement { name } => name),
-  )
+  Ok(try_consume_event!(stream, XmlEvent::EndElement { name } => name))
 }
 
 /// Consume a `Characters` event and parse it
@@ -294,15 +334,15 @@ where
   E: ::std::error::Error + Display,
 {
   if let None = stream.peek() {
-    return "".parse().map_err(|err| {
-      ErrorKind::ParseString("".to_owned(), format!("{}", err)).into()
-    });
+    return ""
+      .parse()
+      .map_err(|err| ErrorKind::ParseString("".to_owned(), format!("{}", err)).into());
   }
 
   let content = try_consume_event!(stream, XmlEvent::Characters(value) => value);
-  content.parse().map_err(|err| {
-    ErrorKind::ParseString(content, format!("{}", err)).into()
-  })
+  content
+    .parse()
+    .map_err(|err| ErrorKind::ParseString(content, format!("{}", err)).into())
 }
 
 /// Consume an element and its children
@@ -315,9 +355,7 @@ pub fn skip_element<S: XmlEventStream>(stream: &mut S) -> Result<()> {
       Some(Ok(_)) => {}
       Some(Err(err)) => return Err(err.into()),
       None => {
-        return Err(
-          ErrorKind::UnexpectedEndOfXml("expected end of element".to_string()).into(),
-        )
+        return Err(ErrorKind::UnexpectedEndOfXml("expected end of element".to_string()).into())
       }
     }
 
@@ -357,8 +395,11 @@ where
   let mut ss = ElementScopedStream::new(stream)?;
   if !expected_name.contains_element_name(&ss.elem().name.local_name) {
     return Err(
-      format!("unexpected element: expected '{:?}', found: '{}'",
-      expected_name, ss.elem().name.local_name).into(),
+      format!(
+        "unexpected element: expected '{:?}', found: '{}'",
+        expected_name,
+        ss.elem().name.local_name
+      ).into(),
     );
   }
   let result = f(&mut ss)?;
@@ -417,16 +458,12 @@ where
 
 #[macro_export]
 macro_rules! test_decode {
-    (
-      $decoder:ident, $xml:expr, $result:expr
-    ) => {
-      {
-        let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
-        let result = <$decoder as $crate::xmlhelper::decode::FromXMLStream<_>>::from_xml(&mut s)
-          .expect("decode");
-        assert_eq!(result, $result);
-      }
-    };
+  ($decoder:ident, $xml:expr, $result:expr) => {{
+    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
+    let result =
+      <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s).expect("decode");
+    assert_eq!(result, $result);
+  }};
 }
 
 #[cfg(test)]
@@ -517,10 +554,13 @@ mod tests {
       Ok(order)
     }).expect("order");
 
-    assert_eq!(order, Order {
+    assert_eq!(
+      order,
+      Order {
         amazon_order_id: "102-6272421-6433852".to_string(),
         order_type: "StandardOrder".to_string(),
-      });
+      }
+    );
   }
 
   #[test]

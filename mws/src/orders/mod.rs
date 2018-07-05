@@ -123,15 +123,13 @@ pub struct ListOrdersResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListOrdersResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ListOrdersResponse", |s| {
-      fold_elements(
-        s,
-        ListOrdersResponse::default(),
-        |s, response| match s.local_name() {
+      fold_elements(s, ListOrdersResponse::default(), |s, response| {
+        match s.local_name() {
           "ListOrdersResult" => fold_elements(s, (), |s, _| {
             match s.local_name() {
               "Orders" => {
@@ -155,8 +153,8 @@ impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersResponse 
             Ok(())
           }
           _ => Ok(()),
-        },
-      )
+        }
+      })
     })
   }
 }
@@ -187,7 +185,7 @@ pub struct ListOrdersByNextTokenResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrdersByNextTokenResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersByNextTokenResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListOrdersByNextTokenResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -246,7 +244,7 @@ pub struct ListOrderItemsResponse {
   pub next_token: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrderItemsResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrderItemsResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
@@ -319,7 +317,7 @@ pub fn ListOrderItemsByNextToken(
     .map_err(|err| err.into())
 }
 
-impl<S: decode::XmlEventStream> decode::FromXMLStream<S> for ListOrderItemsByNextTokenResponse {
+impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrderItemsByNextTokenResponse {
   fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsByNextTokenResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
