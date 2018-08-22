@@ -137,6 +137,10 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InventorySupply {
               list.push(item);
               Ok(())
             }).map(Some)?;
+          } else {
+            // if an item has an empty <SupplyDetail />
+            // it's still a valid item
+            record.SupplyDetail = Some(vec![]);
           }
         }
         "TotalSupplyQuantity" => record.TotalSupplyQuantity = characters(s)?,
