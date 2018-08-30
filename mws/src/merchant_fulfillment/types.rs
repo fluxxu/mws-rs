@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use result::MwsResult;
 use xmlhelper::decode;
 
 #[allow(non_snake_case)]
@@ -104,7 +105,7 @@ pub struct ShippingServiceOptions {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ShippingServiceOptions {
-  fn from_xml(s: &mut S) -> decode::Result<ShippingServiceOptions> {
+  fn from_xml(s: &mut S) -> MwsResult<ShippingServiceOptions> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, ShippingServiceOptions::default(), |s, record| {
       match s.local_name() {

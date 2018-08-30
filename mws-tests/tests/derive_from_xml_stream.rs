@@ -3,7 +3,7 @@ extern crate mws_derive;
 #[macro_use]
 extern crate mws;
 
-pub use mws::xmlhelper;
+pub use mws::{result, xmlhelper};
 
 #[test]
 fn derive_struct() {

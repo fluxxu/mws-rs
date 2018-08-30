@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use result::{MwsError, MwsResult};
 use std::io::Read;
 use tdff;
 
@@ -53,11 +54,9 @@ macro_rules! parse_field {
   ($var:ident, $field:ident, $value:ident) => {{
     let trimmed = $value.trim();
     if !trimmed.is_empty() {
-      $var.$field = trimmed.parse().map_err(|err| {
-        tdff::ErrorKind::ParseString(
-          stringify!($field).to_string(),
-          format!("{}: '{}'", err, $value),
-        )
+      $var.$field = trimmed.parse().map_err(|err| MwsError::ParseString {
+        what: stringify!($field).to_string(),
+        message: format!("{}: '{}'", err, $value),
       })?;
     }
   }};
@@ -67,18 +66,19 @@ macro_rules! parse_option_field {
   ($var:ident, $field:ident, $value:ident) => {{
     let trimmed = $value.trim();
     if !trimmed.is_empty() {
-      $var.$field = trimmed.parse().map(Some).map_err(|err| {
-        tdff::ErrorKind::ParseString(
-          stringify!($field).to_string(),
-          format!("{}: '{}'", err, $value),
-        )
-      })?;
+      $var.$field = trimmed
+        .parse()
+        .map(Some)
+        .map_err(|err| MwsError::ParseString {
+          what: stringify!($field).to_string(),
+          message: format!("{}: '{}'", err, $value),
+        })?;
     }
   }};
 }
 
 impl<R: Read> tdff::FromTdff<R> for SettlementReport {
-  fn from_tdff(source: R) -> tdff::Result<SettlementReport> {
+  fn from_tdff(source: R) -> MwsResult<SettlementReport> {
     let mut scanner = tdff::TdffScanner::new(source)?;
     let mut report = SettlementReport::default();
     scanner.for_each_row(|i, row| {

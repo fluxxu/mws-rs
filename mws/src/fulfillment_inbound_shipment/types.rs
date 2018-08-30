@@ -1,3 +1,4 @@
+use result::MwsResult;
 use xmlhelper::decode;
 
 str_enum! {
@@ -33,7 +34,7 @@ pub struct Amount {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Amount {
-  fn from_xml(s: &mut S) -> decode::Result<Amount> {
+  fn from_xml(s: &mut S) -> MwsResult<Amount> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Amount::default(), |s, record| {
       match s.local_name() {
@@ -56,7 +57,7 @@ pub struct BoxContentsFeeDetails {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for BoxContentsFeeDetails {
-  fn from_xml(s: &mut S) -> decode::Result<BoxContentsFeeDetails> {
+  fn from_xml(s: &mut S) -> MwsResult<BoxContentsFeeDetails> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, BoxContentsFeeDetails::default(), |s, record| {
       match s.local_name() {
@@ -101,7 +102,7 @@ pub struct Address {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Address {
-  fn from_xml(s: &mut S) -> decode::Result<Address> {
+  fn from_xml(s: &mut S) -> MwsResult<Address> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Address::default(), |s, record| {
       match s.local_name() {
@@ -153,7 +154,7 @@ pub struct InboundShipmentInfo {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentInfo {
-  fn from_xml(s: &mut S) -> decode::Result<InboundShipmentInfo> {
+  fn from_xml(s: &mut S) -> MwsResult<InboundShipmentInfo> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InboundShipmentInfo::default(), |s, record| {
       match s.local_name() {
@@ -191,7 +192,7 @@ pub struct InboundShipmentItem {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentItem {
-  fn from_xml(s: &mut S) -> decode::Result<InboundShipmentItem> {
+  fn from_xml(s: &mut S) -> MwsResult<InboundShipmentItem> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InboundShipmentItem::default(), |s, record| {
       match s.local_name() {

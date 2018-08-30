@@ -1,6 +1,7 @@
 //! Utilities to parse a XML event stream
 //!
 
+use result::{MwsError, MwsResult};
 use std::fmt::Display;
 use std::io::Read;
 use std::iter::Peekable;
@@ -8,29 +9,6 @@ use std::str::FromStr;
 pub use xml::attribute::OwnedAttribute as Attribute;
 pub use xml::name::OwnedName as Name;
 use xml::reader::{EventReader, Events, Result as XmlReaderResult, XmlEvent};
-
-error_chain! {
-  foreign_links {
-    Xml(::xml::reader::Error);
-  }
-
-  errors {
-    UnexpectedEndOfXml(msg: String) {
-      description("unexpected end of xml")
-      display("unexpected end of xml: {}", msg)
-    }
-
-    UnexpectedXmlEvent(expected: String, found: String) {
-      description("unexpected xml event")
-      display("unexpected xml event: expected '{}', found '{}'", expected, found)
-    }
-
-    ParseString(what: String, message: String) {
-      description("parse string error")
-      display("parse string error: {} : {}", what, message)
-    }
-  }
-}
 
 /// Get next event from stream, run an optional expr if type matches
 macro_rules! try_consume_event {
@@ -41,13 +19,16 @@ macro_rules! try_consume_event {
       match $stream.next() {
         Some(Ok($pattern)) => (),
         Some(Ok(event)) => {
-          return Err(ErrorKind::UnexpectedXmlEvent(
-            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+          return Err(MwsError::UnexpectedXmlEvent {
+            expected: stringify!($pattern).to_string(),
+            found: format!("{:?}", event)
+          })
         },
         Some(Err(e)) => return Err(e.into()),
         None => {
-          return Err(ErrorKind::UnexpectedEndOfXml(
-            format!("expected event: {}", stringify!($pattern))).into())
+          return Err(MwsError::UnexpectedEndOfXml(
+            format!("expected event: {}", stringify!($pattern))
+          ))
         },
       }
     }};
@@ -59,14 +40,17 @@ macro_rules! try_consume_event {
       match $stream.next() {
         Some(Ok($pattern)) => $expr,
         Some(Ok(event)) => {
-          return Err(ErrorKind::UnexpectedXmlEvent(
-            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+          return Err(MwsError::UnexpectedXmlEvent {
+            expected: stringify!($pattern).to_string(),
+            found: format!("{:?}", event)
+          })
         },
         Some(Err(e)) => return Err(e.into()),
         None => {
-          return Err(ErrorKind::UnexpectedEndOfXml(
-            format!("expected event: {}", stringify!($pattern))).into())
-          },
+          return Err(MwsError::UnexpectedEndOfXml(
+            format!("expected event: {}", stringify!($pattern))
+          ))
+        }
       }
     }};
 
@@ -81,20 +65,23 @@ macro_rules! try_consume_event {
           Some(Ok($pattern)) => $expr,
         )*
         Some(Ok(event)) => {
-          return Err(ErrorKind::UnexpectedXmlEvent(
-            stringify!($pattern).to_string(), format!("{:?}", event)).into())
+          return Err(MwsError::UnexpectedXmlEvent {
+            expected: stringify!($pattern).to_string(),
+            found: format!("{:?}", event)
+          })
         },
         Some(Err(e)) => return Err(e.into()),
         None => {
-          return Err(ErrorKind::UnexpectedEndOfXml(
-            format!("expected events: {}", stringify!($($pattern),*)).into()))
+          return Err(MwsError::UnexpectedEndOfXml(
+            format!("expected event: {}", stringify!($pattern))
+          ))
         },
       }
     }};
 }
 
 pub trait FromXmlStream<S: XmlEventStream>: Sized + Default {
-  fn from_xml(stream: &mut S) -> Result<Self>;
+  fn from_xml(stream: &mut S) -> MwsResult<Self>;
 }
 
 macro_rules! impl_characters {
@@ -103,7 +90,7 @@ macro_rules! impl_characters {
     where
       S: XmlEventStream,
     {
-      fn from_xml(stream: &mut S) -> Result<Self> {
+      fn from_xml(stream: &mut S) -> MwsResult<Self> {
         characters(stream)
       }
     }
@@ -122,7 +109,7 @@ impl_characters!(bool);
 //   S: XmlEventStream,
 //   T: for<'a> FromXmlStream<ElementScopedStream<'a, S>>,
 // {
-//   fn from_xml(s: &mut S) -> Result<Self> {
+//   fn from_xml(s: &mut S) -> MwsResult<Self> {
 //     fold_elements(s, vec![], |s, v| {
 //       v.push(T::from_xml(s)?);
 //       Ok(())
@@ -135,7 +122,7 @@ where
   S: XmlEventStream,
   T: FromXmlStream<S>,
 {
-  fn from_xml(s: &mut S) -> Result<Self> {
+  fn from_xml(s: &mut S) -> MwsResult<Self> {
     T::from_xml(s).map(Some)
   }
 }
@@ -186,7 +173,7 @@ pub struct ElementScopedStream<'a, S: XmlEventStream + 'a> {
 }
 
 impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
-  fn new(inner: &mut S) -> Result<ElementScopedStream<S>> {
+  fn new(inner: &mut S) -> MwsResult<ElementScopedStream<S>> {
     let elem = try_consume_event!(inner,
       XmlEvent::StartElement { name, attributes, .. } => XmlElement {
         name: name,
@@ -207,7 +194,7 @@ impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
     self.elem.name.local_name.as_ref()
   }
 
-  pub fn has_next(&mut self) -> Result<bool> {
+  pub fn has_next(&mut self) -> MwsResult<bool> {
     match self.peek() {
       Some(&Ok(_)) => Ok(true),
       Some(&Err(ref err)) => Err(err.clone().into()),
@@ -215,7 +202,7 @@ impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
     }
   }
 
-  fn consume_remaining(&mut self) -> Result<()> {
+  fn consume_remaining(&mut self) -> MwsResult<()> {
     loop {
       match self.inner.next() {
         None => return Ok(()),
@@ -294,12 +281,12 @@ pub struct XmlElement {
 }
 
 /// Consume a `StartDocument` event
-pub fn start_document<S: XmlEventStream>(stream: &mut S) -> Result<()> {
+pub fn start_document<S: XmlEventStream>(stream: &mut S) -> MwsResult<()> {
   Ok(try_consume_event!(stream, XmlEvent::StartDocument { .. }))
 }
 
 /// Consume a `EndDocument` event
-pub fn end_document<S: XmlEventStream>(stream: &mut S) -> Result<()> {
+pub fn end_document<S: XmlEventStream>(stream: &mut S) -> MwsResult<()> {
   Ok(try_consume_event!(stream, XmlEvent::EndDocument))
 }
 
@@ -307,7 +294,7 @@ pub fn end_document<S: XmlEventStream>(stream: &mut S) -> Result<()> {
 pub fn start_element<S: XmlEventStream, N: AsRef<str>>(
   stream: &mut S,
   expected_name: N,
-) -> Result<XmlElement> {
+) -> MwsResult<XmlElement> {
   Ok(
     try_consume_event!(stream, XmlEvent::StartElement { name, attributes, .. } => {
     if name.local_name != expected_name.as_ref() {
@@ -324,29 +311,31 @@ pub fn start_element<S: XmlEventStream, N: AsRef<str>>(
 }
 
 /// Consume a `EndElement` event
-pub fn end_element<S: XmlEventStream>(stream: &mut S) -> Result<Name> {
+pub fn end_element<S: XmlEventStream>(stream: &mut S) -> MwsResult<Name> {
   Ok(try_consume_event!(stream, XmlEvent::EndElement { name } => name))
 }
 
 /// Consume a `Characters` event and parse it
-pub fn characters<S: XmlEventStream, E, T: FromStr<Err = E>>(stream: &mut S) -> Result<T>
+pub fn characters<S: XmlEventStream, E, T: FromStr<Err = E>>(stream: &mut S) -> MwsResult<T>
 where
   E: ::std::error::Error + Display,
 {
   if let None = stream.peek() {
-    return ""
-      .parse()
-      .map_err(|err| ErrorKind::ParseString("".to_owned(), format!("{}", err)).into());
+    return "".parse().map_err(|err| MwsError::ParseString {
+      what: "".to_owned(),
+      message: format!("{}", err),
+    });
   }
 
   let content = try_consume_event!(stream, XmlEvent::Characters(value) => value);
-  content
-    .parse()
-    .map_err(|err| ErrorKind::ParseString(content, format!("{}", err)).into())
+  content.parse().map_err(|err| MwsError::ParseString {
+    what: content,
+    message: format!("{}", err),
+  })
 }
 
 /// Consume an element and its children
-pub fn skip_element<S: XmlEventStream>(stream: &mut S) -> Result<()> {
+pub fn skip_element<S: XmlEventStream>(stream: &mut S) -> MwsResult<()> {
   let mut depth = 0;
   loop {
     match stream.next() {
@@ -355,7 +344,9 @@ pub fn skip_element<S: XmlEventStream>(stream: &mut S) -> Result<()> {
       Some(Ok(_)) => {}
       Some(Err(err)) => return Err(err.into()),
       None => {
-        return Err(ErrorKind::UnexpectedEndOfXml("expected end of element".to_string()).into())
+        return Err(MwsError::UnexpectedEndOfXml(
+          "expected end of element".to_string(),
+        ))
       }
     }
 
@@ -388,9 +379,9 @@ pub fn element<S: XmlEventStream, N: ElementNameSet, F, T>(
   stream: &mut S,
   expected_name: N,
   mut f: F,
-) -> Result<T>
+) -> MwsResult<T>
 where
-  F: FnMut(&mut ElementScopedStream<S>) -> Result<T>,
+  F: FnMut(&mut ElementScopedStream<S>) -> MwsResult<T>,
 {
   let mut ss = ElementScopedStream::new(stream)?;
   if !expected_name.contains_element_name(&ss.elem().name.local_name) {
@@ -408,9 +399,9 @@ where
 }
 
 /// Consume all events of a stream by calling a function repeatly
-pub fn all<S: XmlEventStream, F, T>(stream: &mut S, mut f: F) -> Result<Vec<T>>
+pub fn all<S: XmlEventStream, F, T>(stream: &mut S, mut f: F) -> MwsResult<Vec<T>>
 where
-  F: FnMut(&mut S) -> Result<T>,
+  F: FnMut(&mut S) -> MwsResult<T>,
 {
   let mut result = vec![];
   loop {
@@ -429,9 +420,9 @@ pub fn fold_elements<S: XmlEventStream, State, F>(
   stream: &mut S,
   state: State,
   mut f: F,
-) -> Result<State>
+) -> MwsResult<State>
 where
-  F: FnMut(&mut ElementScopedStream<S>, &mut State) -> Result<()>,
+  F: FnMut(&mut ElementScopedStream<S>, &mut State) -> MwsResult<()>,
 {
   let mut state = state;
   {

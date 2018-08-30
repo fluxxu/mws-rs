@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use result::MwsResult;
 use xmlhelper::decode;
 
 #[allow(non_snake_case)]
@@ -50,7 +51,7 @@ pub struct Order {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Order {
-  fn from_xml(s: &mut S) -> decode::Result<Order> {
+  fn from_xml(s: &mut S) -> MwsResult<Order> {
     use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "Order", |s| {
       fold_elements(s, Order::default(), |s, order| {
@@ -191,7 +192,7 @@ pub struct OrderItem {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for OrderItem {
-  fn from_xml(s: &mut S) -> decode::Result<OrderItem> {
+  fn from_xml(s: &mut S) -> MwsResult<OrderItem> {
     use xmlhelper::decode::{characters, element, fold_elements};
     element(s, "OrderItem", |s| {
       fold_elements(s, OrderItem::default(), |s, item| {

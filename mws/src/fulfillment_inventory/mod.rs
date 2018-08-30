@@ -9,14 +9,8 @@ pub use self::types::{
   Condition, InventorySupply, InventorySupplyDetail, SupplyType, Timepoint, TimepointType,
 };
 use super::types::ToIso8601;
+use result::MwsResult;
 use xmlhelper::decode;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-}
 
 static PATH: &'static str = "/FulfillmentInventory/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
@@ -86,7 +80,7 @@ pub struct ListInventorySupplyResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInventorySupplyResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListInventorySupplyResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListInventorySupplyResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -146,7 +140,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInventorySupply
 pub fn ListInventorySupply(
   client: &Client,
   parameters: ListInventorySupplyParameters,
-) -> Result<Response<ListInventorySupplyResponse>> {
+) -> MwsResult<Response<ListInventorySupplyResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -154,8 +148,7 @@ pub fn ListInventorySupply(
       VERSION,
       "ListInventorySupply",
       parameters,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Returns the next page of information about the availability of a seller's inventory using the NextToken parameter.
@@ -163,7 +156,7 @@ pub fn ListInventorySupply(
 pub fn ListInventorySupplyByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListInventorySupplyResponse>> {
+) -> MwsResult<Response<ListInventorySupplyResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -172,8 +165,7 @@ pub fn ListInventorySupplyByNextToken(
       VERSION,
       "ListInventorySupplyByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 // #[cfg(test)]

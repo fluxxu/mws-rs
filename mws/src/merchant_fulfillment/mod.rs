@@ -4,17 +4,10 @@
 
 pub use self::types::*;
 use client::{Client, Method, Response};
-use xmlhelper::decode;
 use SerializeMwsParams;
+use result::MwsResult;
 
 mod types;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-}
 
 static PATH: &'static str = "/MerchantFulfillment/2015-06-01";
 static VERSION: &'static str = "2015-06-01";
@@ -40,7 +33,7 @@ response_type!(
 pub fn GetEligibleShippingServices(
   client: &Client,
   details: ShipmentRequestDetails,
-) -> Result<Response<GetEligibleShippingServicesResponse>> {
+) -> MwsResult<Response<GetEligibleShippingServicesResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -76,7 +69,7 @@ pub fn CreateShipment(
   shipping_service_id: &str,
   shipping_service_offer_id: Option<&str>,
   hazmat_type: Option<HazmatType>,
-) -> Result<Response<CreateShipmentResponse>> {
+) -> MwsResult<Response<CreateShipmentResponse>> {
   let mut params = details.into_mws_params();
 
   params.push((
@@ -110,7 +103,7 @@ response_type!(
 );
 
 #[allow(non_snake_case)]
-pub fn GetShipment(client: &Client, id: &str) -> Result<Response<GetShipmentResponse>> {
+pub fn GetShipment(client: &Client, id: &str) -> MwsResult<Response<GetShipmentResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -135,7 +128,7 @@ response_type!(
 );
 
 #[allow(non_snake_case)]
-pub fn CancelShipment(client: &Client, id: &str) -> Result<Response<CancelShipmentResponse>> {
+pub fn CancelShipment(client: &Client, id: &str) -> MwsResult<Response<CancelShipmentResponse>> {
   client
     .request_xml(
       Method::Post,

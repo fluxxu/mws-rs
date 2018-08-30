@@ -46,8 +46,7 @@ pub fn derive_params(input: TokenStream) -> TokenStream {
 
         self.#ident.serialize_mws_params(&key, false, pairs);
       }
-    })
-    .collect();
+    }).collect();
 
   let expanded = quote! {
     impl ::SerializeMwsParams for #name {
@@ -139,14 +138,13 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
       quote! {
         #ident_str => record.#ident = ::xmlhelper::decode::FromXmlStream::from_xml(s)?,
       }
-    })
-    .collect();
+    }).collect();
 
   let expanded = quote! {
     impl<_S> ::xmlhelper::decode::FromXmlStream<_S> for #name
     where _S: ::xmlhelper::decode::XmlEventStream
     {
-      fn from_xml(s: &mut _S) -> ::xmlhelper::decode::Result<Self> {
+      fn from_xml(s: &mut _S) -> ::result::MwsResult<Self> {
         use ::xmlhelper::decode::fold_elements;
         fold_elements(s, Self::default(), |s, record| {
           match s.local_name() {
@@ -185,8 +183,7 @@ fn get_struct_meta(data: DataStruct) -> StructMeta {
         ident: ident.clone(),
         ty: field.ty.clone(),
       }
-    })
-    .collect();
+    }).collect();
 
   StructMeta { fields }
 }

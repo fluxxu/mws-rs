@@ -7,14 +7,8 @@ use client::{Client, Method, Response};
 mod types;
 pub use self::types::*;
 use super::types::ToIso8601;
+use result::MwsResult;
 use xmlhelper::decode;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-}
 
 static PATH: &'static str = "/FulfillmentOutboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
@@ -27,7 +21,7 @@ pub struct ListAllFulfillmentOrdersResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListAllFulfillmentOrdersResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListAllFulfillmentOrdersResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListAllFulfillmentOrdersResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -77,7 +71,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListAllFulfillmentO
 pub fn ListAllFulfillmentOrders(
   client: &Client,
   query_start_date_time: DateTime<Utc>,
-) -> Result<Response<ListAllFulfillmentOrdersResponse>> {
+) -> MwsResult<Response<ListAllFulfillmentOrdersResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -88,8 +82,7 @@ pub fn ListAllFulfillmentOrders(
         "QueryStartDateTime".to_string(),
         query_start_date_time.to_iso8601(),
       )],
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Returns the next page of fulfillment orders using the NextToken parameter.
@@ -99,7 +92,7 @@ pub fn ListAllFulfillmentOrders(
 pub fn ListAllFulfillmentOrdersByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListAllFulfillmentOrdersResponse>> {
+) -> MwsResult<Response<ListAllFulfillmentOrdersResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -108,8 +101,7 @@ pub fn ListAllFulfillmentOrdersByNextToken(
       VERSION,
       "ListAllFulfillmentOrdersByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -124,7 +116,7 @@ pub struct GetFulfillmentOrderResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentOrderResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetFulfillmentOrderResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "GetFulfillmentOrderResponse", |s| {
@@ -169,7 +161,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentOrder
 pub fn GetFulfillmentOrder(
   client: &Client,
   seller_fulfillment_order_id: String,
-) -> Result<Response<GetFulfillmentOrderResponse>> {
+) -> MwsResult<Response<GetFulfillmentOrderResponse>> {
   let params = vec![(
     "SellerFulfillmentOrderId".to_string(),
     seller_fulfillment_order_id,
@@ -187,7 +179,7 @@ pub struct GetPackageTrackingDetailsResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetPackageTrackingDetailsResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetPackageTrackingDetailsResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetPackageTrackingDetailsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "GetPackageTrackingDetailsResponse", |s| {
@@ -217,7 +209,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetPackageTrackingD
 pub fn GetPackageTrackingDetails(
   client: &Client,
   package_number: &str,
-) -> Result<Response<GetPackageTrackingDetailsResponse>> {
+) -> MwsResult<Response<GetPackageTrackingDetailsResponse>> {
   let params = vec![("PackageNumber".to_string(), package_number.to_owned())];
   client
     .request_xml(
@@ -226,8 +218,7 @@ pub fn GetPackageTrackingDetails(
       VERSION,
       "GetPackageTrackingDetails",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Item information for a fulfillment order preview.
@@ -340,7 +331,7 @@ pub struct GetFulfillmentPreviewResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentPreviewResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetFulfillmentPreviewResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetFulfillmentPreviewResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "GetFulfillmentPreviewResponse", |s| {
@@ -376,7 +367,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFulfillmentPrevi
 pub fn GetFulfillmentPreview(
   client: &Client,
   params: GetFulfillmentPreviewParameters,
-) -> Result<Response<GetFulfillmentPreviewResponse>> {
+) -> MwsResult<Response<GetFulfillmentPreviewResponse>> {
   client
     .request_xml(Method::Post, PATH, VERSION, "GetFulfillmentPreview", params)
     .map_err(|err| err.into())
@@ -545,7 +536,7 @@ pub struct CreateFulfillmentOrderResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CreateFulfillmentOrderResponse {
-  fn from_xml(s: &mut S) -> decode::Result<CreateFulfillmentOrderResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<CreateFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "CreateFulfillmentOrderResponse", |s| {
@@ -571,7 +562,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CreateFulfillmentOr
 pub fn CreateFulfillmentOrder(
   client: &Client,
   params: CreateFulfillmentOrderParameters,
-) -> Result<Response<CreateFulfillmentOrderResponse>> {
+) -> MwsResult<Response<CreateFulfillmentOrderResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -579,8 +570,7 @@ pub fn CreateFulfillmentOrder(
       VERSION,
       "CreateFulfillmentOrder",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -590,7 +580,7 @@ pub struct CancelFulfillmentOrderResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CancelFulfillmentOrderResponse {
-  fn from_xml(s: &mut S) -> decode::Result<CancelFulfillmentOrderResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<CancelFulfillmentOrderResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "CancelFulfillmentOrderResponse", |s| {
@@ -616,7 +606,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for CancelFulfillmentOr
 pub fn CancelFulfillmentOrder(
   client: &Client,
   seller_fulfillment_order_id: &str,
-) -> Result<Response<CancelFulfillmentOrderResponse>> {
+) -> MwsResult<Response<CancelFulfillmentOrderResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -627,8 +617,7 @@ pub fn CancelFulfillmentOrder(
         "SellerFulfillmentOrderId".to_owned(),
         seller_fulfillment_order_id.to_owned(),
       )],
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[cfg(test)]

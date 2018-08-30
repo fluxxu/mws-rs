@@ -7,14 +7,8 @@ use client::{Client, Method, Response};
 mod types;
 pub use self::types::*;
 use super::types::ToIso8601;
+use result::MwsResult;
 use xmlhelper::decode;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-}
 
 static PATH: &'static str = "/Orders/2013-09-01";
 static VERSION: &'static str = "2013-09-01";
@@ -124,7 +118,7 @@ pub struct ListOrdersResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListOrdersResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListOrdersResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ListOrdersResponse", |s| {
@@ -171,7 +165,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersResponse 
 pub fn ListOrders(
   client: &Client,
   parameters: ListOrdersParameters,
-) -> Result<Response<ListOrdersResponse>> {
+) -> MwsResult<Response<ListOrdersResponse>> {
   client
     .request_xml(Method::Post, PATH, VERSION, "ListOrders", parameters)
     .map_err(|err| err.into())
@@ -186,7 +180,7 @@ pub struct ListOrdersByNextTokenResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersByNextTokenResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListOrdersByNextTokenResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListOrdersByNextTokenResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ListOrdersByNextTokenResponse", |s| {
@@ -229,7 +223,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrdersByNextTok
 pub fn ListOrdersByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListOrdersByNextTokenResponse>> {
+) -> MwsResult<Response<ListOrdersByNextTokenResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(Method::Post, PATH, VERSION, "ListOrdersByNextToken", params)
@@ -245,7 +239,7 @@ pub struct ListOrderItemsResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrderItemsResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListOrderItemsResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ListOrderItemsResponse", |s| {
@@ -284,7 +278,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrderItemsRespo
 pub fn ListOrderItems(
   client: &Client,
   amazon_order_id: String,
-) -> Result<Response<ListOrderItemsResponse>> {
+) -> MwsResult<Response<ListOrderItemsResponse>> {
   let params = vec![("AmazonOrderId".to_string(), amazon_order_id)];
   client
     .request_xml(Method::Post, PATH, VERSION, "ListOrderItems", params)
@@ -304,7 +298,7 @@ pub struct ListOrderItemsByNextTokenResponse {
 pub fn ListOrderItemsByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListOrderItemsByNextTokenResponse>> {
+) -> MwsResult<Response<ListOrderItemsByNextTokenResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -313,12 +307,11 @@ pub fn ListOrderItemsByNextToken(
       VERSION,
       "ListOrderItemsByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListOrderItemsByNextTokenResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListOrderItemsByNextTokenResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListOrderItemsByNextTokenResponse> {
     use self::decode::{all, characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ListOrderItemsByNextTokenResponse", |s| {

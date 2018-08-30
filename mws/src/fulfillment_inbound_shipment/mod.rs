@@ -5,17 +5,11 @@
 use super::types::ToIso8601;
 use chrono::{DateTime, Utc};
 use client::{Client, Method, Response};
+use result::MwsResult;
 use xmlhelper::decode;
 
 mod types;
 pub use self::types::*;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-}
 
 static PATH: &'static str = "/FulfillmentInboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
@@ -63,7 +57,7 @@ pub struct ListInboundShipmentsResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentsResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentsResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListInboundShipmentsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -113,7 +107,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipment
 pub fn ListInboundShipments(
   client: &Client,
   parameters: ListInboundShipmentsParameters,
-) -> Result<Response<ListInboundShipmentsResponse>> {
+) -> MwsResult<Response<ListInboundShipmentsResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -121,8 +115,7 @@ pub fn ListInboundShipments(
       VERSION,
       "ListInboundShipments",
       parameters,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipments using the NextToken parameter.
@@ -132,7 +125,7 @@ pub fn ListInboundShipments(
 pub fn ListInboundShipmentsByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListInboundShipmentsResponse>> {
+) -> MwsResult<Response<ListInboundShipmentsResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -141,8 +134,7 @@ pub fn ListInboundShipmentsByNextToken(
       VERSION,
       "ListInboundShipmentsByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Parameters for `ListInboundShipments`
@@ -177,7 +169,7 @@ pub struct ListInboundShipmentItemsResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentItemsResponse {
-  fn from_xml(s: &mut S) -> decode::Result<ListInboundShipmentItemsResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<ListInboundShipmentItemsResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -227,7 +219,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipment
 pub fn ListInboundShipmentItems(
   client: &Client,
   parameters: ListInboundShipmentItemsParameters,
-) -> Result<Response<ListInboundShipmentItemsResponse>> {
+) -> MwsResult<Response<ListInboundShipmentItemsResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -235,8 +227,7 @@ pub fn ListInboundShipmentItems(
       VERSION,
       "ListInboundShipmentItems",
       parameters,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipment items using the NextToken parameter.
@@ -246,7 +237,7 @@ pub fn ListInboundShipmentItems(
 pub fn ListInboundShipmentItemsByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<ListInboundShipmentItemsResponse>> {
+) -> MwsResult<Response<ListInboundShipmentItemsResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -255,8 +246,7 @@ pub fn ListInboundShipmentItemsByNextToken(
       VERSION,
       "ListInboundShipmentItemsByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[cfg(test)]
@@ -265,7 +255,9 @@ mod tests {
 
   #[test]
   fn test_decode_list_inbound_shipments_response() {
-    test_decode!(ListInboundShipmentsResponse, r#"
+    test_decode!(
+      ListInboundShipmentsResponse,
+      r#"
     <ListInboundShipmentsResponse xmlns="http://mws.amazonaws.com/FulfillmentInboundShipment/2010-10-01/">
       <ListInboundShipmentsResult>
         <ShipmentData>
@@ -292,11 +284,11 @@ mod tests {
         <RequestId>04c87e79-f747-4da9-984f-5bc1f0b875e6</RequestId>
       </ResponseMetadata>
     </ListInboundShipmentsResponse>
-    "#, ListInboundShipmentsResponse {
-      next_token: None,
-      request_id: "04c87e79-f747-4da9-984f-5bc1f0b875e6".to_owned(),
-      shipment_data: vec![
-        InboundShipmentInfo {
+    "#,
+      ListInboundShipmentsResponse {
+        next_token: None,
+        request_id: "04c87e79-f747-4da9-984f-5bc1f0b875e6".to_owned(),
+        shipment_data: vec![InboundShipmentInfo {
           DestinationFulfillmentCenterId: "MDW2".to_owned(),
           LabelPrepType: Some(LabelPrepType::NO_LABEL),
           ShipFromAddress: Address {
@@ -316,14 +308,16 @@ mod tests {
           ShipmentStatus: ShipmentStatus::CLOSED,
           ConfirmedNeedByDate: None,
           EstimatedBoxContentsFee: None,
-        }
-      ],
-    });
+        }],
+      }
+    );
   }
 
   #[test]
   fn test_decode_list_inbound_shipment_items_response() {
-    test_decode!(ListInboundShipmentItemsResponse, r#"
+    test_decode!(
+      ListInboundShipmentItemsResponse,
+      r#"
     <ListInboundShipmentItemsResponse xmlns="http://mws.amazonaws.com/FulfillmentInboundShipment/2010-10-01/">
       <ListInboundShipmentItemsResult>
         <ItemData>
@@ -344,20 +338,20 @@ mod tests {
         <RequestId>70a60f01-d0df-4a29-b093-e1cb53bd8fc2</RequestId>
       </ResponseMetadata>
     </ListInboundShipmentItemsResponse>
-    "#, ListInboundShipmentItemsResponse {
-      next_token: None,
-      request_id: "70a60f01-d0df-4a29-b093-e1cb53bd8fc2".to_owned(),
-      item_data: vec![
-        InboundShipmentItem {
+    "#,
+      ListInboundShipmentItemsResponse {
+        next_token: None,
+        request_id: "70a60f01-d0df-4a29-b093-e1cb53bd8fc2".to_owned(),
+        item_data: vec![InboundShipmentItem {
           ShipmentId: "FBA3T68MQL".to_owned(),
           SellerSKU: "edifier-r1280t-fba".to_owned(),
           QuantityShipped: 60,
           QuantityInCase: Some(2),
           QuantityReceived: Some(50),
           FulfillmentNetworkSKU: "B016P9HJIA".to_owned(),
-        }
-      ],
-    });
+        }],
+      }
+    );
   }
 
 }

@@ -7,25 +7,9 @@ use client::{Client, Method, Response};
 mod types;
 pub use self::types::{ReportInfo, ReportProcessingStatus, ReportRequestInfo, SettlementReport};
 use super::types::ToIso8601;
+use result::{MwsError, MwsResult};
 use std::io::{self, Write};
 use xmlhelper::decode;
-
-error_chain! {
-  errors {
-    ContentMD5HeaderMissing
-  }
-
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    XmlDecode(decode::Error, decode::ErrorKind);
-    TdffDecode(super::tdff::Error, super::tdff::ErrorKind);
-  }
-
-  foreign_links {
-    Io(io::Error);
-    Utf8(::std::str::Utf8Error);
-  }
-}
 
 static PATH: &'static str = "/";
 static VERSION: &'static str = "2009-01-01";
@@ -86,7 +70,7 @@ pub struct GetReportListResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportListResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetReportListResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetReportListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -153,7 +137,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportListRespon
 pub fn GetReportList(
   client: &Client,
   params: GetReportListParameters,
-) -> Result<Response<GetReportListResponse>> {
+) -> MwsResult<Response<GetReportListResponse>> {
   client
     .request_xml(Method::Post, PATH, VERSION, "GetReportList", params)
     .map_err(|err| err.into())
@@ -165,7 +149,7 @@ pub fn GetReportList(
 pub fn GetReportListByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<GetReportListResponse>> {
+) -> MwsResult<Response<GetReportListResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -174,8 +158,7 @@ pub fn GetReportListByNextToken(
       VERSION,
       "GetReportListByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Returns the contents of a report and the Content-MD5 header for the returned report body.
@@ -184,13 +167,13 @@ pub fn GetReport<W: Write>(
   client: &Client,
   report_id: String,
   out: &mut W,
-) -> Result<(u64, String)> {
+) -> MwsResult<(u64, String)> {
   let params = vec![("ReportId".to_string(), report_id)];
   let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
   let content_md5 = resp
     .headers()
     .get_raw("Content-MD5")
-    .ok_or_else(|| -> Error { ErrorKind::ContentMD5HeaderMissing.into() })
+    .ok_or_else(|| MwsError::ContentMD5HeaderMissing)
     .and_then(|data| ::std::str::from_utf8(&data[0]).map_err(Into::into))?
     .to_owned();
   let size = io::copy(&mut resp, out)?;
@@ -258,7 +241,7 @@ pub struct GetReportRequestListResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportRequestListResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetReportRequestListResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetReportRequestListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -342,7 +325,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetReportRequestLis
 pub fn GetReportRequestList(
   client: &Client,
   params: GetReportRequestListParameters,
-) -> Result<Response<GetReportRequestListResponse>> {
+) -> MwsResult<Response<GetReportRequestListResponse>> {
   client
     .request_xml(Method::Post, PATH, VERSION, "GetReportRequestList", params)
     .map_err(|err| err.into())
@@ -354,7 +337,7 @@ pub fn GetReportRequestList(
 pub fn GetReportRequestListByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<GetReportRequestListResponse>> {
+) -> MwsResult<Response<GetReportRequestListResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -363,8 +346,7 @@ pub fn GetReportRequestListByNextToken(
       VERSION,
       "GetReportRequestListByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 /// Parameters for `RequestReport`
@@ -410,7 +392,7 @@ pub struct RequestReportResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for RequestReportResponse {
-  fn from_xml(s: &mut S) -> decode::Result<RequestReportResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<RequestReportResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "RequestReportResponse", |s| {
@@ -476,7 +458,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for RequestReportRespon
 pub fn RequestReport(
   client: &Client,
   params: RequestReportParameters,
-) -> Result<Response<RequestReportResponse>> {
+) -> MwsResult<Response<RequestReportResponse>> {
   client
     .request_xml(Method::Post, PATH, VERSION, "RequestReport", params)
     .map_err(|err| err.into())
@@ -487,7 +469,7 @@ pub fn RequestReport(
 pub fn GetFlatFileSettlementReport(
   client: &Client,
   report_id: String,
-) -> Result<Response<SettlementReport>> {
+) -> MwsResult<Response<SettlementReport>> {
   let params = vec![("ReportId".to_string(), report_id)];
   client
     .request_tdff(Method::Post, PATH, VERSION, "GetReport", params)

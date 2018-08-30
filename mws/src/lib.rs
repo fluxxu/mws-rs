@@ -4,11 +4,12 @@
 extern crate base64;
 extern crate chrono;
 extern crate crypto;
+extern crate failure;
 extern crate reqwest;
 extern crate url;
 extern crate xml;
 #[macro_use]
-extern crate error_chain;
+extern crate failure_derive;
 extern crate csv;
 extern crate serde;
 #[macro_use]
@@ -19,6 +20,7 @@ extern crate mws_derive;
 #[cfg(test)]
 extern crate dotenv;
 
+pub mod result;
 #[macro_use]
 pub mod xmlhelper;
 mod types;

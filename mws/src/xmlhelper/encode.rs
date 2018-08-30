@@ -2,11 +2,11 @@
 //!
 //! See [write_xml!](../macro.write_xml.html) for an example.
 
+use std::io::Write;
 #[doc(hidden)]
 pub use xml::writer::{EventWriter, Result, XmlEvent};
 #[doc(hidden)]
 pub use xml::EmitterConfig;
-use std::io::Write;
 
 #[doc(hidden)]
 pub trait XmlEventWriter {
@@ -29,13 +29,14 @@ pub trait XmlWrite<W: XmlEventWriter> {
 /// # Example
 /// ```
 /// # extern crate xml;
-/// # #[macro_use] extern crate xmlhelper;
+/// # #[macro_use] extern crate mws;
 /// # fn main() {
 /// use xml::{EventWriter, EmitterConfig};
+/// use mws::xmlhelper;
 /// let mut writer =
 ///   EventWriter::new_with_config(vec![], EmitterConfig::new().perform_indent(true));
 /// let context = vec!["context-value-0", "context-value-1"];
-/// 
+///
 /// {
 ///   let w = &mut writer;
 ///   write_xml!(w,

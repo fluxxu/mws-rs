@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use result::MwsResult;
 use xmlhelper::decode;
 
 /// The condition of the item.
@@ -75,7 +76,7 @@ pub struct Timepoint {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Timepoint {
-  fn from_xml(s: &mut S) -> decode::Result<Timepoint> {
+  fn from_xml(s: &mut S) -> MwsResult<Timepoint> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, Timepoint::default(), |s, record| {
       match s.local_name() {
@@ -114,7 +115,7 @@ pub struct InventorySupplyDetail {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InventorySupply {
-  fn from_xml(s: &mut S) -> decode::Result<InventorySupply> {
+  fn from_xml(s: &mut S) -> MwsResult<InventorySupply> {
     use xmlhelper::decode::{characters, fold_elements};
     fold_elements(s, InventorySupply::default(), |s, record| {
       match s.local_name() {
@@ -195,7 +196,7 @@ mod tests {
           TimepointType: TimepointType::Immediately,
           DateTime: None,
         },
-        SupplyDetail: None,
+        SupplyDetail: Some(vec![]),
       }
     );
   }

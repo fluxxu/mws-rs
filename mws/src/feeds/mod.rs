@@ -5,21 +5,11 @@
 use super::types::ToIso8601;
 use chrono::{DateTime, Utc};
 use client::{Client, ContentType, Method, Response};
+use result::MwsResult;
 use std::io::{Read, Write};
 use xmlhelper::{decode, encode};
 
 mod inventory;
-
-error_chain! {
-  links {
-    Client(super::client::Error, super::client::ErrorKind);
-    Decode(decode::Error, decode::ErrorKind);
-  }
-
-  foreign_links {
-    Io(::std::io::Error);
-  }
-}
 
 static PATH: &'static str = "/";
 static VERSION: &'static str = "2009-01-01";
@@ -149,7 +139,7 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<inventory::Inve
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, SerializeMwsParams)]
 pub struct SubmitFeedParameters {
   pub FeedType: String,
 
@@ -195,7 +185,7 @@ pub struct SubmitFeedResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for SubmitFeedResponse {
-  fn from_xml(s: &mut S) -> decode::Result<SubmitFeedResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<SubmitFeedResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "SubmitFeedResponse", |s| {
@@ -243,7 +233,7 @@ pub fn SubmitFeed<R>(
   content: R,
   content_md5: String,
   content_type: String,
-) -> Result<Response<SubmitFeedResponse>>
+) -> MwsResult<Response<SubmitFeedResponse>>
 where
   R: Read + Send + 'static,
 {
@@ -257,8 +247,7 @@ where
       content,
       content_md5,
       ContentType(content_type.parse().unwrap()),
-    )
-    .map_err(Into::into)
+    ).map_err(Into::into)
 }
 
 #[allow(non_snake_case)]
@@ -266,7 +255,7 @@ pub fn GetFeedSubmissionResult<W: Write>(
   client: &Client,
   FeedSubmissionId: String,
   out: &mut W,
-) -> Result<u64> {
+) -> MwsResult<u64> {
   let params = vec![("FeedSubmissionId".to_string(), FeedSubmissionId)];
   let mut resp = client.request(
     Method::Post,
@@ -348,7 +337,7 @@ pub struct GetFeedSubmissionListResponse {
 }
 
 impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFeedSubmissionListResponse {
-  fn from_xml(s: &mut S) -> decode::Result<GetFeedSubmissionListResponse> {
+  fn from_xml(s: &mut S) -> MwsResult<GetFeedSubmissionListResponse> {
     use self::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(
@@ -419,7 +408,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for GetFeedSubmissionLi
 pub fn GetFeedSubmissionList(
   client: &Client,
   parameters: GetFeedSubmissionListParameters,
-) -> Result<Response<GetFeedSubmissionListResponse>> {
+) -> MwsResult<Response<GetFeedSubmissionListResponse>> {
   client
     .request_xml(
       Method::Post,
@@ -427,15 +416,14 @@ pub fn GetFeedSubmissionList(
       VERSION,
       "GetFeedSubmissionList",
       parameters,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[allow(non_snake_case)]
 pub fn GetFeedSubmissionListByNextToken(
   client: &Client,
   next_token: String,
-) -> Result<Response<GetFeedSubmissionListResponse>> {
+) -> MwsResult<Response<GetFeedSubmissionListResponse>> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -444,8 +432,7 @@ pub fn GetFeedSubmissionListByNextToken(
       VERSION,
       "GetFeedSubmissionListByNextToken",
       params,
-    )
-    .map_err(|err| err.into())
+    ).map_err(|err| err.into())
 }
 
 #[cfg(test)]
@@ -481,7 +468,9 @@ mod tests {
     }
 
     let xml = String::from_utf8(writer.into_inner()).unwrap();
-    assert_eq!(xml, r#"<?xml version="1.0" encoding="utf-8"?>
+    assert_eq!(
+      xml,
+      r#"<?xml version="1.0" encoding="utf-8"?>
 <AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amznenvelope.xsd">
   <Header>
     <DocumentVersion>1.01</DocumentVersion>
@@ -500,6 +489,7 @@ mod tests {
       <FulfillmentLatency>0</FulfillmentLatency>
     </Message>
   </Messages>
-</AmazonEnvelope>"#);
+</AmazonEnvelope>"#
+    );
   }
 }

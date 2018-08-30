@@ -1,6 +1,6 @@
 macro_rules! str_enum {
   (
-    pub enum $name:ident { $($item:tt)* } 
+    pub enum $name:ident { $($item:tt)* }
   ) => {
     str_enum!($name, $($item)*);
   };
@@ -10,7 +10,7 @@ macro_rules! str_enum {
   ) => {
     str_enum!($name, $($item)*);
   };
-  
+
   (
     $name:ident, $($item:tt)*
   ) => {
@@ -98,7 +98,7 @@ macro_rules! str_enum {
     impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
     where S: ::xmlhelper::decode::XmlEventStream
     {
-      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+      fn from_xml(s: &mut S) -> ::result::MwsResult<Self> {
         use xmlhelper::decode::characters;
         characters(s)
       }
@@ -108,7 +108,7 @@ macro_rules! str_enum {
 
 macro_rules! string_map_enum {
   (
-    pub enum $name:ident { 
+    pub enum $name:ident {
       $($variant:ident = $value:expr),+
       $(,)*
     }
@@ -172,7 +172,7 @@ macro_rules! string_map_enum {
     impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
     where S: ::xmlhelper::decode::XmlEventStream
     {
-      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+      fn from_xml(s: &mut S) -> ::result::MwsResult<Self> {
         use xmlhelper::decode::characters;
         characters(s)
       }
@@ -188,7 +188,7 @@ macro_rules! response_type {
     where
       S: ::xmlhelper::decode::XmlEventStream,
     {
-      fn from_xml(s: &mut S) -> ::xmlhelper::decode::Result<Self> {
+      fn from_xml(s: &mut S) -> ::result::MwsResult<Self> {
         use xmlhelper::decode::{characters, element, fold_elements, start_document};
         start_document(s)?;
         element(s, $response_tag, |s| {

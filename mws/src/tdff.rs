@@ -1,25 +1,11 @@
 //! Tab-delimited flat file helpers
 
-use std::io::Read;
 use csv::Reader;
+use result::{MwsError, MwsResult};
+use std::io::Read;
 
-error_chain! {
-  foreign_links {
-    ParseFile(::csv::Error);
-  }
-
-  errors {
-    InvalidHeaderSize
-
-    ParseString(what: String, message: String) {
-      description("parse string error")
-      display("parse string error: {} : {}", what, message)
-    }
-  }
-}
-
-pub trait FromTdff<R: Read> : Sized {
-  fn from_tdff(source: R) -> Result<Self>;
+pub trait FromTdff<R: Read>: Sized {
+  fn from_tdff(source: R) -> MwsResult<Self>;
 }
 
 pub struct TdffScanner<R: Read> {
@@ -28,7 +14,7 @@ pub struct TdffScanner<R: Read> {
 }
 
 impl<R: Read> TdffScanner<R> {
-  pub fn new(source: R) -> Result<TdffScanner<R>> {
+  pub fn new(source: R) -> MwsResult<TdffScanner<R>> {
     let mut reader = Reader::from_reader(source).delimiter(b'\t');
     Ok(TdffScanner {
       headers: reader.headers()?,
@@ -40,15 +26,18 @@ impl<R: Read> TdffScanner<R> {
 pub type TdffRow<'a> = Vec<(&'a str, String)>;
 
 impl<R: Read> TdffScanner<R> {
-  pub fn for_each_row<'a, F>(&'a mut self, mut f: F) -> Result<()> where F: FnMut(usize, TdffRow<'a>) -> Result<()> + 'a {
+  pub fn for_each_row<'a, F>(&'a mut self, mut f: F) -> MwsResult<()>
+  where
+    F: FnMut(usize, TdffRow<'a>) -> MwsResult<()> + 'a,
+  {
     let size = self.headers.len();
     for (row_i, row) in self.reader.records().enumerate() {
-      let mut row_container = Vec::with_capacity(size);      
+      let mut row_container = Vec::with_capacity(size);
       for (i, value) in row?.into_iter().enumerate() {
         match self.headers.get(i) {
           Some(key) => {
             row_container.push((key.as_ref() as &str, value));
-          },
+          }
           None => {}
         }
       }
@@ -59,22 +48,26 @@ impl<R: Read> TdffScanner<R> {
 }
 
 pub trait FromTdffField: Sized {
-  fn parse_tdff_field(key: &str, v: &str) -> Result<Self>;
+  fn parse_tdff_field(key: &str, v: &str) -> MwsResult<Self>;
 }
 
-impl<T, Err> FromTdffField for T 
-  where T: ::std::str::FromStr<Err = Err>,
-        Err: ::std::error::Error
+impl<T, Err> FromTdffField for T
+where
+  T: ::std::str::FromStr<Err = Err>,
+  Err: ::std::error::Error,
 {
-  fn parse_tdff_field(key: &str, v: &str) -> Result<Self> {
+  fn parse_tdff_field(key: &str, v: &str) -> MwsResult<Self> {
     let trimmed = v.trim();
     if !trimmed.is_empty() {
-      trimmed.parse()
-        .map_err(|err| -> Error {
-          ErrorKind::ParseString(key.to_string(), format!("{}: '{}'", err, v)).into()
-        })
+      trimmed.parse().map_err(|err| MwsError::ParseString {
+        what: key.to_string(),
+        message: format!("{}: '{}'", err, v),
+      })
     } else {
-      Err(ErrorKind::ParseString(key.to_string(), "value is empty".to_string()).into())
+      Err(MwsError::ParseString {
+        what: key.to_string(),
+        message: "value is empty".to_string(),
+      })
     }
   }
 }
@@ -94,13 +87,28 @@ mod test {
 "#);
     let mut scanner = TdffScanner::new(source).expect("new scanner");
     let mut rows = vec![];
-    scanner.for_each_row(|_, row| {
-      rows.push(row.into_iter().map(|(k, v)| (k.to_string(), v.clone())).collect::<Vec<_>>());
-      Ok(())
-    }).expect("for_each_row");
+    scanner
+      .for_each_row(|_, row| {
+        rows.push(
+          row
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect::<Vec<_>>(),
+        );
+        Ok(())
+      }).expect("for_each_row");
     assert_eq!(rows.len(), 4);
-    assert_eq!(rows[0][0], ("settlement-id".to_string(), "6016502941".to_string()));
-    assert_eq!(rows[1][6], ("transaction-type".to_string(), "Order".to_string()));
-    assert_eq!(rows[3].iter().find(|t| t.0 == "sku").expect("sku column").1, "edifier-p270-gold".to_string());
+    assert_eq!(
+      rows[0][0],
+      ("settlement-id".to_string(), "6016502941".to_string())
+    );
+    assert_eq!(
+      rows[1][6],
+      ("transaction-type".to_string(), "Order".to_string())
+    );
+    assert_eq!(
+      rows[3].iter().find(|t| t.0 == "sku").expect("sku column").1,
+      "edifier-p270-gold".to_string()
+    );
   }
 }

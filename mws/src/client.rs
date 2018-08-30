@@ -1,30 +1,11 @@
 use reqwest;
 pub use reqwest::header::ContentType;
 pub use reqwest::{Method, StatusCode};
+use result::MwsResult;
 use sign::SignatureV2;
 use std::io::Read;
 use tdff::FromTdff;
 use xmlhelper::decode::{FromXmlStream, Stream};
-
-error_chain! {
-  foreign_links {
-    Io(::std::io::Error);
-    Request(reqwest::Error);
-  }
-
-  links {
-    XmlDecode(::xmlhelper::decode::Error, ::xmlhelper::decode::ErrorKind);
-    TdffDecode(::tdff::Error, ::tdff::ErrorKind);
-    Sign(super::sign::Error, super::sign::ErrorKind);
-  }
-
-  errors {
-    ErrorResponse(resp: ErrorResponse) {
-      description("MWS request is unsuccessful")
-      display("MWS request is unsuccessful: {:?}", resp)
-    }
-  }
-}
 
 #[derive(Debug)]
 pub enum Response<T> {
@@ -54,9 +35,7 @@ pub struct ErrorResponseError {
 }
 
 impl ErrorResponseInfo {
-  fn from_xml_stream<R: ::std::io::Read>(
-    s: &mut Stream<R>,
-  ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+  fn from_xml_stream<R: ::std::io::Read>(s: &mut Stream<R>) -> MwsResult<ErrorResponseInfo> {
     use xmlhelper::decode::{characters, element, fold_elements, start_document};
     start_document(s)?;
     element(s, "ErrorResponse", |s| {
@@ -95,15 +74,13 @@ impl ErrorResponseInfo {
 }
 
 impl FromXmlStream<Stream<reqwest::Response>> for ErrorResponseInfo {
-  fn from_xml(s: &mut Stream<reqwest::Response>) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+  fn from_xml(s: &mut Stream<reqwest::Response>) -> MwsResult<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
   }
 }
 
 impl FromXmlStream<Stream<::std::io::Cursor<String>>> for ErrorResponseInfo {
-  fn from_xml(
-    s: &mut Stream<::std::io::Cursor<String>>,
-  ) -> ::xmlhelper::decode::Result<ErrorResponseInfo> {
+  fn from_xml(s: &mut Stream<::std::io::Cursor<String>>) -> MwsResult<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
   }
 }
@@ -130,7 +107,7 @@ pub struct Client {
 }
 
 impl Client {
-  pub fn new(options: ClientOptions) -> Result<Client> {
+  pub fn new(options: ClientOptions) -> MwsResult<Client> {
     Ok(Client {
       options: options,
       http_client: reqwest::Client::new(),
@@ -151,7 +128,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> Result<reqwest::Response>
+  ) -> MwsResult<reqwest::Response>
   where
     P: Into<Vec<(String, String)>>,
   {
@@ -186,7 +163,7 @@ impl Client {
     body: R,
     content_md5: String,
     content_type: ContentType,
-  ) -> Result<reqwest::Response>
+  ) -> MwsResult<reqwest::Response>
   where
     P: Into<Vec<(String, String)>>,
     R: Read + Send + 'static,
@@ -223,7 +200,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> Result<Response<T>>
+  ) -> MwsResult<Response<T>>
   where
     P: Into<Vec<(String, String)>>,
     T: FromXmlStream<Stream<reqwest::Response>>,
@@ -264,7 +241,7 @@ impl Client {
     body: R,
     content_md5: String,
     content_type: ContentType,
-  ) -> Result<Response<T>>
+  ) -> MwsResult<Response<T>>
   where
     P: Into<Vec<(String, String)>>,
     T: FromXmlStream<Stream<reqwest::Response>>,
@@ -312,7 +289,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> Result<Response<T>>
+  ) -> MwsResult<Response<T>>
   where
     P: Into<Vec<(String, String)>>,
     T: FromTdff<reqwest::Response>,
@@ -350,7 +327,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> Result<(StatusCode, String)>
+  ) -> MwsResult<(StatusCode, String)>
   where
     P: Into<Vec<(String, String)>>,
   {
@@ -402,8 +379,7 @@ mod tests {
         "2013-09-01",
         "GetServiceStatus",
         vec![],
-      )
-      .expect("send request");
+      ).expect("send request");
     assert!(status.is_success());
     assert!(body.starts_with("<?xml"));
 
@@ -415,8 +391,7 @@ mod tests {
         "2013-09-01",
         "GetServiceStatus",
         vec![],
-      )
-      .expect("send request");
+      ).expect("send request");
     assert!(!status.is_success());
     let source = Cursor::new(body);
     let mut s = Stream::new(source);
