@@ -2,11 +2,9 @@
 //!
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inbound/FBAInbound_Overview.html)
 
-use super::types::ToIso8601;
 use chrono::{DateTime, Utc};
-use client::{Client, Method, Response};
+use client::{Client, Method};
 use result::MwsResult;
-use xmlhelper::decode;
 
 mod types;
 pub use self::types::*;
@@ -15,90 +13,33 @@ static PATH: &'static str = "/FulfillmentInboundShipment/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
 /// Parameters for `ListInboundShipments`
-#[derive(Debug, Default, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, SerializeMwsParams)]
 pub struct ListInboundShipmentsParameters {
-  pub shipment_status_list: Vec<ShipmentStatus>,
-  pub shipment_id_list: Vec<String>,
-  pub last_updated_after: Option<DateTime<Utc>>,
-  pub last_updated_before: Option<DateTime<Utc>>,
+  pub ShipmentStatusList: Vec<ShipmentStatus>,
+  pub ShipmentIdList: Vec<String>,
+  pub LastUpdatedAfter: Option<DateTime<Utc>>,
+  pub LastUpdatedBefore: Option<DateTime<Utc>>,
 }
 
-impl Into<Vec<(String, String)>> for ListInboundShipmentsParameters {
-  fn into(self) -> Vec<(String, String)> {
-    let mut result = vec![];
-    for (i, s) in self.shipment_status_list.into_iter().enumerate() {
-      result.push((
-        format!("ShipmentStatusList.member.{}", i + 1),
-        s.to_string(),
-      ));
-    }
-
-    for (i, id) in self.shipment_id_list.into_iter().enumerate() {
-      result.push((format!("ShipmentIdList.member.{}", i + 1), id.to_string()));
-    }
-
-    if let Some(date) = self.last_updated_after {
-      result.push(("LastUpdatedAfter".to_string(), date.to_iso8601()));
-    }
-
-    if let Some(date) = self.last_updated_before {
-      result.push(("LastUpdatedBefore".to_string(), date.to_iso8601()));
-    }
-
-    result
-  }
-}
-
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct ListInboundShipmentsResponse {
-  pub request_id: String,
-  pub shipment_data: Vec<InboundShipmentInfo>,
-  pub next_token: Option<String>,
+  pub ShipmentData: Vec<InboundShipmentInfo>,
+  pub NextToken: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentsResponse {
-  fn from_xml(s: &mut S) -> MwsResult<ListInboundShipmentsResponse> {
-    use self::decode::{characters, element, fold_elements, start_document};
-    start_document(s)?;
-    element(
-      s,
-      vec![
-        "ListInboundShipmentsResponse",
-        "ListInboundShipmentsByNextTokenResponse",
-      ],
-      |s| {
-        fold_elements(
-          s,
-          ListInboundShipmentsResponse::default(),
-          |s, response| match s.local_name() {
-            "ListInboundShipmentsResult" | "ListInboundShipmentsByNextTokenResult" => {
-              fold_elements(s, (), |s, _| {
-                match s.local_name() {
-                  "ShipmentData" => {
-                    response.shipment_data = fold_elements(s, vec![], |s, list| {
-                      list.push(InboundShipmentInfo::from_xml(s)?);
-                      Ok(())
-                    })?;
-                  }
-                  "NextToken" => {
-                    response.next_token = Some(characters(s)?);
-                  }
-                  _ => {}
-                }
-                Ok(())
-              })
-            }
-            "ResponseMetadata" => {
-              response.request_id = element(s, "RequestId", |s| characters(s))?;
-              Ok(())
-            }
-            _ => Ok(()),
-          },
-        )
-      },
-    )
-  }
-}
+response_envelope_type!(
+  ListInboundShipmentsEnvelope<ListInboundShipmentsResponse>,
+  "ListInboundShipmentsResponse",
+  "ListInboundShipmentsResult"
+);
+
+response_envelope_type!(
+  ListInboundShipmentsByNextTokenEnvelope<ListInboundShipmentsResponse>,
+  "ListInboundShipmentsByNextTokenResponse",
+  "ListInboundShipmentsByNextTokenResult"
+);
 
 /// Returns a list of inbound shipments based on criteria that you specify.
 ///
@@ -107,7 +48,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipment
 pub fn ListInboundShipments(
   client: &Client,
   parameters: ListInboundShipmentsParameters,
-) -> MwsResult<Response<ListInboundShipmentsResponse>> {
+) -> MwsResult<ListInboundShipmentsResponse> {
   client
     .request_xml(
       Method::Post,
@@ -115,7 +56,8 @@ pub fn ListInboundShipments(
       VERSION,
       "ListInboundShipments",
       parameters,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInboundShipmentsEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipments using the NextToken parameter.
@@ -125,7 +67,7 @@ pub fn ListInboundShipments(
 pub fn ListInboundShipmentsByNextToken(
   client: &Client,
   next_token: String,
-) -> MwsResult<Response<ListInboundShipmentsResponse>> {
+) -> MwsResult<ListInboundShipmentsResponse> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -134,83 +76,37 @@ pub fn ListInboundShipmentsByNextToken(
       VERSION,
       "ListInboundShipmentsByNextToken",
       params,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInboundShipmentsByNextTokenEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 /// Parameters for `ListInboundShipments`
-#[derive(Debug, Default, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, SerializeMwsParams)]
 pub struct ListInboundShipmentItemsParameters {
-  pub shipment_id: String,
-  pub last_updated_after: Option<DateTime<Utc>>,
-  pub last_updated_before: Option<DateTime<Utc>>,
+  pub ShipmentId: String,
+  pub LastUpdatedAfter: Option<DateTime<Utc>>,
+  pub LastUpdatedBefore: Option<DateTime<Utc>>,
 }
 
-impl Into<Vec<(String, String)>> for ListInboundShipmentItemsParameters {
-  fn into(self) -> Vec<(String, String)> {
-    let mut result = vec![("ShipmentId".to_owned(), self.shipment_id)];
-
-    if let Some(date) = self.last_updated_after {
-      result.push(("LastUpdatedAfter".to_string(), date.to_iso8601()));
-    }
-
-    if let Some(date) = self.last_updated_before {
-      result.push(("LastUpdatedBefore".to_string(), date.to_iso8601()));
-    }
-
-    result
-  }
-}
-
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct ListInboundShipmentItemsResponse {
-  pub request_id: String,
-  pub item_data: Vec<InboundShipmentItem>,
-  pub next_token: Option<String>,
+  pub ItemData: Vec<InboundShipmentItem>,
+  pub NextToken: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipmentItemsResponse {
-  fn from_xml(s: &mut S) -> MwsResult<ListInboundShipmentItemsResponse> {
-    use self::decode::{characters, element, fold_elements, start_document};
-    start_document(s)?;
-    element(
-      s,
-      vec![
-        "ListInboundShipmentItemsResponse",
-        "ListInboundShipmentItemsByNextTokenResponse",
-      ],
-      |s| {
-        fold_elements(
-          s,
-          ListInboundShipmentItemsResponse::default(),
-          |s, response| match s.local_name() {
-            "ListInboundShipmentItemsResult" | "ListInboundShipmentItemsByNextTokenResult" => {
-              fold_elements(s, (), |s, _| {
-                match s.local_name() {
-                  "ItemData" => {
-                    response.item_data = fold_elements(s, vec![], |s, list| {
-                      list.push(InboundShipmentItem::from_xml(s)?);
-                      Ok(())
-                    })?;
-                  }
-                  "NextToken" => {
-                    response.next_token = Some(characters(s)?);
-                  }
-                  _ => {}
-                }
-                Ok(())
-              })
-            }
-            "ResponseMetadata" => {
-              response.request_id = element(s, "RequestId", |s| characters(s))?;
-              Ok(())
-            }
-            _ => Ok(()),
-          },
-        )
-      },
-    )
-  }
-}
+response_envelope_type!(
+  ListInboundShipmentItemsEnvelope<ListInboundShipmentItemsResponse>,
+  "ListInboundShipmentItemsResponse",
+  "ListInboundShipmentItemsResult"
+);
+
+response_envelope_type!(
+  ListInboundShipmentItemsByNextTokenEnvelope<ListInboundShipmentItemsResponse>,
+  "ListInboundShipmentItemsByNextTokenResponse",
+  "ListInboundShipmentItemsByNextTokenResult"
+);
 
 /// Returns a list of items in a specified inbound shipment, or a list of items that were updated within a specified time frame.
 ///
@@ -219,7 +115,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInboundShipment
 pub fn ListInboundShipmentItems(
   client: &Client,
   parameters: ListInboundShipmentItemsParameters,
-) -> MwsResult<Response<ListInboundShipmentItemsResponse>> {
+) -> MwsResult<ListInboundShipmentItemsResponse> {
   client
     .request_xml(
       Method::Post,
@@ -227,7 +123,8 @@ pub fn ListInboundShipmentItems(
       VERSION,
       "ListInboundShipmentItems",
       parameters,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInboundShipmentItemsEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of inbound shipment items using the NextToken parameter.
@@ -237,7 +134,7 @@ pub fn ListInboundShipmentItems(
 pub fn ListInboundShipmentItemsByNextToken(
   client: &Client,
   next_token: String,
-) -> MwsResult<Response<ListInboundShipmentItemsResponse>> {
+) -> MwsResult<ListInboundShipmentItemsResponse> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -246,17 +143,44 @@ pub fn ListInboundShipmentItemsByNextToken(
       VERSION,
       "ListInboundShipmentItemsByNextToken",
       params,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInboundShipmentItemsByNextTokenEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use types::SerializeMwsParams;
+
+  #[test]
+  fn test_encode_list_inbound_shipments_params() {
+    let params = ListInboundShipmentsParameters {
+      ShipmentStatusList: vec![ShipmentStatus::WORKING, ShipmentStatus::DELETED],
+      ShipmentIdList: vec!["001".to_owned(), "002".to_owned()],
+      LastUpdatedAfter: None,
+      LastUpdatedBefore: None,
+    };
+    assert_eq!(
+      params.into_mws_params(),
+      vec![
+        (
+          "ShipmentStatusList.member.1".to_owned(),
+          "WORKING".to_owned()
+        ),
+        (
+          "ShipmentStatusList.member.2".to_owned(),
+          "DELETED".to_owned()
+        ),
+        ("ShipmentIdList.member.1".to_owned(), "001".to_owned()),
+        ("ShipmentIdList.member.2".to_owned(), "002".to_owned()),
+      ]
+    )
+  }
 
   #[test]
   fn test_decode_list_inbound_shipments_response() {
-    test_decode!(
-      ListInboundShipmentsResponse,
+    test_decode_envelope!(
+      ListInboundShipmentsEnvelope,
       r#"
     <ListInboundShipmentsResponse xmlns="http://mws.amazonaws.com/FulfillmentInboundShipment/2010-10-01/">
       <ListInboundShipmentsResult>
@@ -286,9 +210,8 @@ mod tests {
     </ListInboundShipmentsResponse>
     "#,
       ListInboundShipmentsResponse {
-        next_token: None,
-        request_id: "04c87e79-f747-4da9-984f-5bc1f0b875e6".to_owned(),
-        shipment_data: vec![InboundShipmentInfo {
+        NextToken: None,
+        ShipmentData: vec![InboundShipmentInfo {
           DestinationFulfillmentCenterId: "MDW2".to_owned(),
           LabelPrepType: Some(LabelPrepType::NO_LABEL),
           ShipFromAddress: Address {
@@ -315,8 +238,8 @@ mod tests {
 
   #[test]
   fn test_decode_list_inbound_shipment_items_response() {
-    test_decode!(
-      ListInboundShipmentItemsResponse,
+    test_decode_envelope!(
+      ListInboundShipmentItemsEnvelope,
       r#"
     <ListInboundShipmentItemsResponse xmlns="http://mws.amazonaws.com/FulfillmentInboundShipment/2010-10-01/">
       <ListInboundShipmentItemsResult>
@@ -340,9 +263,8 @@ mod tests {
     </ListInboundShipmentItemsResponse>
     "#,
       ListInboundShipmentItemsResponse {
-        next_token: None,
-        request_id: "70a60f01-d0df-4a29-b093-e1cb53bd8fc2".to_owned(),
-        item_data: vec![InboundShipmentItem {
+        NextToken: None,
+        ItemData: vec![InboundShipmentItem {
           ShipmentId: "FBA3T68MQL".to_owned(),
           SellerSKU: "edifier-r1280t-fba".to_owned(),
           QuantityShipped: 60,

@@ -1,6 +1,6 @@
 [package]
 name = "mws"
-version = "0.9.0"
+version = "0.10.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 license = "MIT"
 description = "Client library for Amazon Marketplace Web Service (Amazon MWS)"
@@ -23,3 +23,4 @@ mws-derive = "0.9.0"
 
 [dev-dependencies]
 dotenv = "0.8.0"
+pretty_assertions = "0.5.1"

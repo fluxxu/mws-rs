@@ -2,7 +2,9 @@
 extern crate mws_derive;
 #[macro_use]
 extern crate mws;
+extern crate chrono;
 
+use chrono::{DateTime, Utc};
 pub use mws::{result, xmlhelper};
 
 #[test]
@@ -11,6 +13,7 @@ fn derive_struct() {
   struct S {
     a: String,
     b: i32,
+    date: Option<DateTime<Utc>>,
   }
 
   test_decode!(
@@ -18,10 +21,12 @@ fn derive_struct() {
     r#"
       <a>AAA</a>
       <b>777</b>
+      <date>2016-11-03T00:09:40Z</date>
     "#,
     S {
       a: "AAA".to_owned(),
       b: 777,
+      date: Some("2016-11-03T00:09:40Z".parse().unwrap())
     }
   );
 }

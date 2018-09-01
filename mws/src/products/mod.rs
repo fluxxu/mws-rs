@@ -20,7 +20,8 @@ use self::types::product::{Id, Product};
 /// - The operation always returns product information when IdType input is SellerSKU and the seller has not deleted the offer. The offer can be inactive or active, but must exist.
 ///
 /// [Reference](http://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProductForId.html)
-pub fn get_matching_product_for_id<T: AsRef<str>>(
+#[allow(non_snake_case)]
+pub fn GetMatchingProductForId<T: AsRef<str>>(
   id_type: Id,
   id_list: &[T],
 ) -> MwsResult<Vec<Product>> {

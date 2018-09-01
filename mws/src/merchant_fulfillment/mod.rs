@@ -3,8 +3,7 @@
 //! [Documentation](http://docs.developer.amazonservices.com/en_US/merch_fulfill/MerchFulfill_Overview.html)
 
 pub use self::types::*;
-use client::{Client, Method, Response};
-use SerializeMwsParams;
+use client::{Client, Method};
 use result::MwsResult;
 
 mod types;
@@ -14,17 +13,23 @@ static VERSION: &'static str = "2015-06-01";
 
 #[derive(FromXmlStream, Default, Debug)]
 #[allow(non_snake_case)]
-pub struct GetEligibleShippingServicesPayload {
+pub struct GetEligibleShippingServicesResponse {
   pub ShippingServiceList: Vec<ShippingService>,
   pub TermsAndConditionsNotAcceptedCarrierList: Vec<Carrier>,
   pub TemporarilyUnavailableCarrierList: Vec<Carrier>,
 }
 
-response_type!(
-  GetEligibleShippingServicesResponse<GetEligibleShippingServicesPayload>,
+response_envelope_type!(
+  GetEligibleShippingServicesEnvelope<GetEligibleShippingServicesResponse>,
   "GetEligibleShippingServicesResponse",
   "GetEligibleShippingServicesResult"
 );
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, SerializeMwsParams)]
+pub struct GetEligibleShippingServicesParameters {
+  pub ShipmentRequestDetails: ShipmentRequestDetails,
+}
 
 /// Returns a list of shipping service offers.
 ///
@@ -32,30 +37,39 @@ response_type!(
 #[allow(non_snake_case)]
 pub fn GetEligibleShippingServices(
   client: &Client,
-  details: ShipmentRequestDetails,
-) -> MwsResult<Response<GetEligibleShippingServicesResponse>> {
+  params: GetEligibleShippingServicesParameters,
+) -> MwsResult<GetEligibleShippingServicesResponse> {
   client
     .request_xml(
       Method::Post,
       PATH,
       VERSION,
       "GetEligibleShippingServices",
-      details.into_mws_params(),
-    )
+      params,
+    ).map(|e: GetEligibleShippingServicesEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
 #[derive(FromXmlStream, Default, Debug)]
 #[allow(non_snake_case)]
-pub struct CreateShipmentPayload {
+pub struct CreateShipmentResponse {
   pub Shipment: Shipment,
 }
 
-response_type!(
-  CreateShipmentResponse<CreateShipmentPayload>,
+response_envelope_type!(
+  CreateShipmentEnvelope<CreateShipmentResponse>,
   "CreateShipmentResponse",
   "CreateShipmentResult"
 );
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, SerializeMwsParams)]
+pub struct CreateShipmentParameters {
+  pub ShipmentRequestDetails: ShipmentRequestDetails,
+  pub ShippingServiceId: String,
+  pub ShippingServiceOfferId: Option<String>,
+  pub HazmatType: Option<HazmatType>,
+}
 
 /// The CreateShipment operation purchases shipping and
 /// returns PDF, PNG, or ZPL document data for a shipping
@@ -65,45 +79,28 @@ response_type!(
 #[allow(non_snake_case)]
 pub fn CreateShipment(
   client: &Client,
-  details: ShipmentRequestDetails,
-  shipping_service_id: &str,
-  shipping_service_offer_id: Option<&str>,
-  hazmat_type: Option<HazmatType>,
-) -> MwsResult<Response<CreateShipmentResponse>> {
-  let mut params = details.into_mws_params();
-
-  params.push((
-    "ShippingServiceId".to_string(),
-    shipping_service_id.to_string(),
-  ));
-
-  if let Some(v) = shipping_service_offer_id {
-    params.push(("ShippingServiceOfferId".to_string(), v.to_string()));
-  }
-
-  if let Some(v) = hazmat_type {
-    params.push(("HazmatType".to_string(), v.to_string()));
-  }
-
+  params: CreateShipmentParameters,
+) -> MwsResult<CreateShipmentResponse> {
   client
     .request_xml(Method::Post, PATH, VERSION, "CreateShipment", params)
+    .map(|e: CreateShipmentEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
 #[derive(FromXmlStream, Default, Debug)]
 #[allow(non_snake_case)]
-pub struct GetShipmentPayload {
+pub struct GetShipmentResponse {
   pub Shipment: Shipment,
 }
 
-response_type!(
-  GetShipmentResponse<GetShipmentPayload>,
+response_envelope_type!(
+  GetShipmentEnvelope<GetShipmentResponse>,
   "GetShipmentResponse",
   "GetShipmentResult"
 );
 
 #[allow(non_snake_case)]
-pub fn GetShipment(client: &Client, id: &str) -> MwsResult<Response<GetShipmentResponse>> {
+pub fn GetShipment(client: &Client, id: &str) -> MwsResult<GetShipmentResponse> {
   client
     .request_xml(
       Method::Post,
@@ -111,24 +108,24 @@ pub fn GetShipment(client: &Client, id: &str) -> MwsResult<Response<GetShipmentR
       VERSION,
       "GetShipment",
       vec![("ShipmentId".to_string(), id.to_string())],
-    )
+    ).map(|e: GetShipmentEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
 #[derive(FromXmlStream, Default, Debug)]
 #[allow(non_snake_case)]
-pub struct CancelShipmentPayload {
+pub struct CancelShipmentResponse {
   pub Shipment: Shipment,
 }
 
-response_type!(
-  CancelShipmentResponse<CancelShipmentPayload>,
+response_envelope_type!(
+  CancelShipmentEnvelope<CancelShipmentResponse>,
   "CancelShipmentResponse",
   "CancelShipmentResult"
 );
 
 #[allow(non_snake_case)]
-pub fn CancelShipment(client: &Client, id: &str) -> MwsResult<Response<CancelShipmentResponse>> {
+pub fn CancelShipment(client: &Client, id: &str) -> MwsResult<CancelShipmentResponse> {
   client
     .request_xml(
       Method::Post,
@@ -136,7 +133,7 @@ pub fn CancelShipment(client: &Client, id: &str) -> MwsResult<Response<CancelShi
       VERSION,
       "CancelShipment",
       vec![("ShipmentId".to_string(), id.to_string())],
-    )
+    ).map(|e: CancelShipmentEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -198,13 +195,13 @@ mod tests {
     let c = get_test_client();
     let details = get_test_details();
 
-    let res = GetEligibleShippingServices(&c, details).expect("GetEligibleShippingServices");
-    match res {
-      Response::Error(e) => panic!("request error: {:?}", e),
-      Response::Success(res) => {
-        println!("res = {:#?}", res.payload);
-      }
-    }
+    let res = GetEligibleShippingServices(
+      &c,
+      GetEligibleShippingServicesParameters {
+        ShipmentRequestDetails: details,
+      },
+    ).expect("GetEligibleShippingServices");
+    println!("res = {:#?}", res);
   }
 
   #[test]
@@ -212,21 +209,14 @@ mod tests {
   fn test_create_shipment() {
     dotenv().ok();
     let c = get_test_client();
-    let details = get_test_details();
-
-    let res = CreateShipment(
-      &c, 
-      details, 
-      "USPS_PTP_EXP",
-      Some("o0OaoPEue25v0FBaYQ4JvRD9LalsRiwurLkVNk98ZPM73yL/Li9qEHtleIqHfOMDvCc7GjsyOgGtNpOlSVAsomTnIG/TVBerhIEScCCmgKWlY4+TPJIZatfyq3y2BBNOTH9JEXpRj9TLkJLsmf6A23X8FWpeUtWYcS8e2A0019o="), 
-      Some(HazmatType::None)
-    ).expect("CreateShipment");
-    match res {
-      Response::Error(e) => panic!("request error: {:?}", e),
-      Response::Success(res) => {
-        println!("res = {:#?}", res.payload);
-      }
-    }
+    let params = CreateShipmentParameters {
+      ShipmentRequestDetails: get_test_details(),
+      ShippingServiceId: "USPS_PTP_EXP".to_owned(),
+      ShippingServiceOfferId: Some("o0OaoPEue25v0FBaYQ4JvRD9LalsRiwurLkVNk98ZPM73yL/Li9qEHtleIqHfOMDvCc7GjsyOgGtNpOlSVAsomTnIG/TVBerhIEScCCmgKWlY4+TPJIZatfyq3y2BBNOTH9JEXpRj9TLkJLsmf6A23X8FWpeUtWYcS8e2A0019o=".to_owned()),
+      HazmatType: Some(HazmatType::None),
+    };
+    let res = CreateShipment(&c, params).expect("CreateShipment");
+    println!("res = {:#?}", res);
   }
 
   #[test]
@@ -235,16 +225,8 @@ mod tests {
     dotenv().ok();
     let c = get_test_client();
 
-    let res = GetShipment(
-      &c, 
-      "a4062ca8-faa0-49d4-bb0b-b32433ebdb3a"
-    ).expect("GetShipment");
-    match res {
-      Response::Error(e) => panic!("request error: {:?}", e),
-      Response::Success(res) => {
-        println!("res = {:#?}", res.payload);
-      }
-    }
+    let res = GetShipment(&c, "a4062ca8-faa0-49d4-bb0b-b32433ebdb3a").expect("GetShipment");
+    println!("res = {:#?}", res);
   }
 
   #[test]
@@ -253,15 +235,7 @@ mod tests {
     dotenv().ok();
     let c = get_test_client();
 
-    let res = CancelShipment(
-      &c, 
-      "a4062ca8-faa0-49d4-bb0b-b32433ebdb3a"
-    ).expect("CancelShipment");
-    match res {
-      Response::Error(e) => panic!("request error: {:?}", e),
-      Response::Success(res) => {
-        println!("res = {:#?}", res.payload);
-      }
-    }
+    let res = CancelShipment(&c, "a4062ca8-faa0-49d4-bb0b-b32433ebdb3a").expect("CancelShipment");
+    println!("res = {:#?}", res);
   }
 }

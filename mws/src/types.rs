@@ -10,18 +10,54 @@ impl<Tz: TimeZone> ToIso8601 for DateTime<Tz> {
   }
 }
 
+#[derive(Default, Clone)]
+pub struct SerializeMwsParamsFieldConfig {
+  /// When serialize list, MWS uses `ListFieldName.ItemTypeName.Index` as key
+  pub list_item_type_name: Option<&'static str>,
+}
+
+#[derive(Default, Clone)]
+pub struct SerializeMwsParamsContext {
+  pub path: Option<String>,
+  pub field_config: SerializeMwsParamsFieldConfig,
+}
+
 pub trait SerializeMwsParams {
-  fn serialize_mws_params(&self, path: &str, include_name: bool, pairs: &mut Vec<(String, String)>);
+  fn serialize_mws_params(
+    &self,
+    ctx: &SerializeMwsParamsContext,
+    pairs: &mut Vec<(String, String)>,
+  );
   fn into_mws_params(self) -> Vec<(String, String)>
   where
     Self: Sized,
   {
     let mut pairs = vec![];
-    self.serialize_mws_params("", true, &mut pairs);
+    let ctx = Default::default();
+    self.serialize_mws_params(&ctx, &mut pairs);
     pairs
       .into_iter()
       .filter(|(_, ref v)| !v.is_empty())
       .collect()
+  }
+}
+
+impl SerializeMwsParams for Vec<(String, String)> {
+  fn serialize_mws_params(
+    &self,
+    _ctx: &SerializeMwsParamsContext,
+    pairs: &mut Vec<(String, String)>,
+  ) {
+    pairs.append(&mut self.clone());
+  }
+}
+
+impl SerializeMwsParams for () {
+  fn serialize_mws_params(
+    &self,
+    _ctx: &SerializeMwsParamsContext,
+    _pairs: &mut Vec<(String, String)>,
+  ) {
   }
 }
 
@@ -30,11 +66,16 @@ macro_rules! impl_serialize_mws_params_to_string {
     impl<'a> SerializeMwsParams for &'a $ty {
       fn serialize_mws_params(
         &self,
-        path: &str,
-        _include_name: bool,
+        ctx: &SerializeMwsParamsContext,
         pairs: &mut Vec<(String, String)>,
       ) {
-        pairs.push((path.to_string(), self.to_string()))
+        let value = self.to_string();
+        if !value.is_empty() {
+          pairs.push((
+            ctx.path.clone().expect("mws param type should be struct"),
+            value,
+          ))
+        }
       }
     }
   };
@@ -43,11 +84,13 @@ macro_rules! impl_serialize_mws_params_to_string {
     impl SerializeMwsParams for $ty {
       fn serialize_mws_params(
         &self,
-        path: &str,
-        _include_name: bool,
+        ctx: &SerializeMwsParamsContext,
         pairs: &mut Vec<(String, String)>,
       ) {
-        pairs.push((path.to_string(), self.to_string()))
+        pairs.push((
+          ctx.path.clone().expect("mws param type should be struct"),
+          self.to_string(),
+        ))
       }
     }
   };
@@ -65,13 +108,22 @@ where
 {
   fn serialize_mws_params(
     &self,
-    path: &str,
-    _include_name: bool,
+    ctx: &SerializeMwsParamsContext,
     pairs: &mut Vec<(String, String)>,
   ) {
+    let path = ctx.path.clone().expect("mws param type should be struct");
     for (i, v) in self.iter().enumerate() {
-      let path = format!("{}.{}", path, i + 1);
-      v.serialize_mws_params(&path, true, pairs);
+      let field_path = match ctx.field_config.list_item_type_name.clone() {
+        None => format!("{}.{}", path, i + 1),
+        Some(item_type_name) => format!("{}.{}.{}", path, item_type_name, i + 1),
+      };
+      v.serialize_mws_params(
+        &SerializeMwsParamsContext {
+          path: Some(field_path),
+          ..ctx.clone()
+        },
+        pairs,
+      );
     }
   }
 }
@@ -82,12 +134,11 @@ where
 {
   fn serialize_mws_params(
     &self,
-    path: &str,
-    _include_name: bool,
+    ctx: &SerializeMwsParamsContext,
     pairs: &mut Vec<(String, String)>,
   ) {
     if let &Some(ref v) = self {
-      v.serialize_mws_params(&path, false, pairs);
+      v.serialize_mws_params(ctx, pairs);
     }
   }
 }
@@ -95,16 +146,16 @@ where
 impl<Tz: TimeZone> SerializeMwsParams for DateTime<Tz> {
   fn serialize_mws_params(
     &self,
-    path: &str,
-    _include_name: bool,
+    ctx: &SerializeMwsParamsContext,
     pairs: &mut Vec<(String, String)>,
   ) {
+    let path = ctx.path.clone().expect("mws param type should be struct");
     pairs.push((path.to_string(), self.to_iso8601()))
   }
 }
 
 #[derive(Default)]
-pub struct GenericResponse<T: Default> {
+pub struct ResponseEnvelope<T: Default> {
   pub payload: T,
   pub request_id: String,
 }

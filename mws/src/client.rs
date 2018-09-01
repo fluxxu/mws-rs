@@ -1,17 +1,12 @@
 use reqwest;
 pub use reqwest::header::ContentType;
 pub use reqwest::{Method, StatusCode};
-use result::MwsResult;
+use result::{MwsError, MwsResult};
 use sign::SignatureV2;
 use std::io::Read;
 use tdff::FromTdff;
 use xmlhelper::decode::{FromXmlStream, Stream};
-
-#[derive(Debug)]
-pub enum Response<T> {
-  Success(T),
-  Error(ErrorResponse),
-}
+use SerializeMwsParams;
 
 #[derive(Debug)]
 pub struct ErrorResponse {
@@ -130,14 +125,14 @@ impl Client {
     parameters: P,
   ) -> MwsResult<reqwest::Response>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
   {
     let mut sign = SignatureV2::new(
       self.options.endpoint.clone(),
       self.options.aws_access_key_id.clone(),
       self.options.secret_key.clone(),
     );
-    for (k, v) in parameters.into() {
+    for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
@@ -165,7 +160,7 @@ impl Client {
     content_type: ContentType,
   ) -> MwsResult<reqwest::Response>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
     R: Read + Send + 'static,
   {
     let mut sign = SignatureV2::new(
@@ -173,7 +168,7 @@ impl Client {
       self.options.aws_access_key_id.clone(),
       self.options.secret_key.clone(),
     );
-    for (k, v) in parameters.into() {
+    for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
     sign.add("SellerId", self.options.seller_id.as_ref());
@@ -200,16 +195,16 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> MwsResult<Response<T>>
+  ) -> MwsResult<T>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
     T: FromXmlStream<Stream<reqwest::Response>>,
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;
-      Ok(Response::Success(v))
+      Ok(v)
     } else {
       use std::io::{Cursor, Read};
 
@@ -217,12 +212,12 @@ impl Client {
       resp.read_to_string(&mut body)?;
       let mut s = Stream::new(Cursor::new(body.clone()));
       match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Ok(Response::Error(ErrorResponse {
+        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: Some(info),
         })),
-        Err(_) => Ok(Response::Error(ErrorResponse {
+        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: None,
@@ -241,9 +236,9 @@ impl Client {
     body: R,
     content_md5: String,
     content_type: ContentType,
-  ) -> MwsResult<Response<T>>
+  ) -> MwsResult<T>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
     T: FromXmlStream<Stream<reqwest::Response>>,
     R: Read + Send + 'static,
   {
@@ -260,7 +255,7 @@ impl Client {
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;
-      Ok(Response::Success(v))
+      Ok(v)
     } else {
       use std::io::{Cursor, Read};
 
@@ -268,12 +263,12 @@ impl Client {
       resp.read_to_string(&mut body)?;
       let mut s = Stream::new(Cursor::new(body.clone()));
       match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Ok(Response::Error(ErrorResponse {
+        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: Some(info),
         })),
-        Err(_) => Ok(Response::Error(ErrorResponse {
+        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: None,
@@ -289,15 +284,15 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> MwsResult<Response<T>>
+  ) -> MwsResult<T>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
     T: FromTdff<reqwest::Response>,
   {
     let mut resp = self.request(method, path, version, action, parameters)?;
     if resp.status().is_success() {
       let v = T::from_tdff(resp)?;
-      Ok(Response::Success(v))
+      Ok(v)
     } else {
       use std::io::{Cursor, Read};
 
@@ -305,12 +300,12 @@ impl Client {
       resp.read_to_string(&mut body)?;
       let mut s = Stream::new(Cursor::new(body.clone()));
       match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Ok(Response::Error(ErrorResponse {
+        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: Some(info),
         })),
-        Err(_) => Ok(Response::Error(ErrorResponse {
+        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
           status: resp.status().clone(),
           raw: body,
           info: None,
@@ -329,7 +324,7 @@ impl Client {
     parameters: P,
   ) -> MwsResult<(StatusCode, String)>
   where
-    P: Into<Vec<(String, String)>>,
+    P: SerializeMwsParams,
   {
     use std::io::Read;
 
@@ -338,7 +333,7 @@ impl Client {
       self.options.aws_access_key_id.clone(),
       self.options.secret_key.clone(),
     );
-    for (k, v) in parameters.into() {
+    for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
     let url = sign
@@ -378,7 +373,7 @@ mod tests {
         "/Orders/2013-09-01",
         "2013-09-01",
         "GetServiceStatus",
-        vec![],
+        (),
       ).expect("send request");
     assert!(status.is_success());
     assert!(body.starts_with("<?xml"));
@@ -390,7 +385,7 @@ mod tests {
         "/Fake/2013-09-01",
         "2013-09-01",
         "GetServiceStatus",
-        vec![],
+        (),
       ).expect("send request");
     assert!(!status.is_success());
     let source = Cursor::new(body);

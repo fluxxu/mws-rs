@@ -102,6 +102,15 @@ impl_characters!(i32);
 impl_characters!(i64);
 impl_characters!(bool);
 
+impl<S> FromXmlStream<S> for ()
+where
+  S: XmlEventStream,
+{
+  fn from_xml(_stream: &mut S) -> MwsResult<Self> {
+    Ok(())
+  }
+}
+
 // error[E0477]: the type `mws::xmlhelper::decode::ElementScopedStream<'_, _S>` does not fulfill the required lifetime
 // implemented in mws-derive
 // impl<S, T> FromXmlStream<S> for Vec<T>
@@ -448,11 +457,24 @@ where
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! test_decode {
   ($decoder:ident, $xml:expr, $result:expr) => {{
     let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
     let result =
       <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s).expect("decode");
+    assert_eq!(result, $result);
+  }};
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! test_decode_envelope {
+  ($decoder:ident, $xml:expr, $result:expr) => {{
+    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
+    let result = <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s)
+      .expect("decode")
+      .into_inner();
     assert_eq!(result, $result);
   }};
 }

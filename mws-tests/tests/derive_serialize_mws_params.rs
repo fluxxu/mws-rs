@@ -2,7 +2,7 @@
 extern crate mws_derive;
 extern crate mws;
 
-use mws::SerializeMwsParams;
+use mws::{SerializeMwsParams, SerializeMwsParamsContext};
 
 #[test]
 fn derive_struct() {
@@ -20,8 +20,8 @@ fn derive_struct() {
   assert_eq!(
     pairs,
     vec![
-      ("S.a".to_owned(), "value of a".to_owned()),
-      ("S.b".to_owned(), "888".to_owned()),
+      ("a".to_owned(), "value of a".to_owned()),
+      ("b".to_owned(), "888".to_owned()),
     ]
   )
 }
@@ -36,7 +36,7 @@ fn derive_option_field() {
   assert_eq!(S { v: None }.into_mws_params(), vec![]);
   assert_eq!(
     S { v: Some(1) }.into_mws_params(),
-    vec![("S.v".to_string(), "1".to_string())]
+    vec![("v".to_string(), "1".to_string())]
   );
 }
 
@@ -67,10 +67,10 @@ fn derive_nested_struct() {
   assert_eq!(
     pairs,
     vec![
-      ("S.a".to_owned(), "value of a".to_owned()),
-      ("S.b".to_owned(), "888".to_owned()),
-      ("S.inner.c".to_owned(), "value of c".to_owned()),
-      ("S.inner.d".to_owned(), "999".to_owned()),
+      ("a".to_owned(), "value of a".to_owned()),
+      ("b".to_owned(), "888".to_owned()),
+      ("inner.c".to_owned(), "value of c".to_owned()),
+      ("inner.d".to_owned(), "999".to_owned()),
     ]
   )
 }
@@ -96,11 +96,40 @@ fn derive_vec() {
   assert_eq!(
     pairs,
     vec![
-      ("S.v".to_owned(), "1".to_owned()),
-      ("S.items.1.SS.v".to_owned(), "111".to_owned()),
-      ("S.items.2.SS.v".to_owned(), "222".to_owned()),
-      ("S.items.3.SS.v".to_owned(), "333".to_owned()),
-      ("S.items.4.SS.v".to_owned(), "444".to_owned()),
+      ("v".to_owned(), "1".to_owned()),
+      ("items.member.1.v".to_owned(), "111".to_owned()),
+      ("items.member.2.v".to_owned(), "222".to_owned()),
+      ("items.member.3.v".to_owned(), "333".to_owned()),
+      ("items.member.4.v".to_owned(), "444".to_owned()),
+    ]
+  )
+}
+
+#[test]
+fn derive_vec_config() {
+  #[derive(SerializeMwsParams)]
+  struct S {
+    v: i32,
+    #[mws_param(list_item_type_name = "Item")]
+    items: Vec<SS>,
+  }
+
+  #[derive(SerializeMwsParams)]
+  struct SS {
+    #[mws_param(list_item_type_name = "Inner")]
+    vv: Vec<i32>,
+  }
+
+  let pairs = S {
+    v: 1,
+    items: vec![SS { vv: vec![111] }],
+  }.into_mws_params();
+
+  assert_eq!(
+    pairs,
+    vec![
+      ("v".to_owned(), "1".to_owned()),
+      ("items.Item.1.vv.Inner.1".to_owned(), "111".to_owned()),
     ]
   )
 }

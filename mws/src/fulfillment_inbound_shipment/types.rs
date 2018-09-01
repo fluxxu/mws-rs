@@ -1,6 +1,3 @@
-use result::MwsResult;
-use xmlhelper::decode;
-
 str_enum! {
   pub enum ShipmentStatus  {
     WORKING,    // - The shipment was created by the seller, but has not yet shipped.
@@ -27,48 +24,19 @@ string_map_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Amount {
   pub CurrencyCode: String,
-  pub Value: f64,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Amount {
-  fn from_xml(s: &mut S) -> MwsResult<Amount> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Amount::default(), |s, record| {
-      match s.local_name() {
-        "CurrencyCode" => record.CurrencyCode = characters(s)?,
-        "Value" => record.Value = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
+  pub Value: String,
 }
 
 /// The manual processing fee per unit and total fee for a shipment.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct BoxContentsFeeDetails {
   pub TotalUnits: i32,
   pub FeePerUnit: Option<Amount>,
   pub TotalFee: Option<Amount>,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for BoxContentsFeeDetails {
-  fn from_xml(s: &mut S) -> MwsResult<BoxContentsFeeDetails> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, BoxContentsFeeDetails::default(), |s, record| {
-      match s.local_name() {
-        "TotalUnits" => record.TotalUnits = characters(s)?,
-        "FeePerUnit" => record.FeePerUnit = Amount::from_xml(s).map(Some)?,
-        "TotalFee" => record.TotalFee = Amount::from_xml(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 str_enum! {
@@ -81,7 +49,7 @@ str_enum! {
 
 /// Postal address information.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Address {
   /// The name or business name.
   pub Name: String,
@@ -101,29 +69,9 @@ pub struct Address {
   pub PostalCode: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Address {
-  fn from_xml(s: &mut S) -> MwsResult<Address> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Address::default(), |s, record| {
-      match s.local_name() {
-        "Name" => record.Name = characters(s)?,
-        "AddressLine1" => record.AddressLine1 = characters(s)?,
-        "AddressLine2" => record.AddressLine2 = characters(s)?,
-        "City" => record.City = characters(s)?,
-        "DistrictOrCounty" => record.DistrictOrCounty = characters(s)?,
-        "StateOrProvinceCode" => record.StateOrProvinceCode = characters(s)?,
-        "CountryCode" => record.CountryCode = characters(s)?,
-        "PostalCode" => record.PostalCode = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Information about your inbound shipments. Returned by the `ListInboundShipments` operation.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct InboundShipmentInfo {
   /// The ShipmentId submitted in the request.
   pub ShipmentId: String,
@@ -153,33 +101,9 @@ pub struct InboundShipmentInfo {
   pub EstimatedBoxContentsFee: Option<BoxContentsFeeDetails>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentInfo {
-  fn from_xml(s: &mut S) -> MwsResult<InboundShipmentInfo> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, InboundShipmentInfo::default(), |s, record| {
-      match s.local_name() {
-        "ShipmentId" => record.ShipmentId = characters(s)?,
-        "ShipmentName" => record.ShipmentName = characters(s)?,
-        "ShipFromAddress" => record.ShipFromAddress = Address::from_xml(s)?,
-        "DestinationFulfillmentCenterId" => record.DestinationFulfillmentCenterId = characters(s)?,
-        "LabelPrepType" => record.LabelPrepType = characters(s).map(Some)?,
-        "ShipmentStatus" => record.ShipmentStatus = characters(s)?,
-        "AreCasesRequired" => record.AreCasesRequired = characters(s)?,
-        "ConfirmedNeedByDate" => record.ConfirmedNeedByDate = characters(s).map(Some)?,
-        "BoxContentsSource" => record.BoxContentsSource = characters(s).map(Some)?,
-        "EstimatedBoxContentsFee" => {
-          record.EstimatedBoxContentsFee = BoxContentsFeeDetails::from_xml(s).map(Some)?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Item information for an inbound shipment. Submitted with a call to the CreateInboundShipment or UpdateInboundShipment operation.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct InboundShipmentItem {
   pub ShipmentId: String,
   pub SellerSKU: String,
@@ -189,24 +113,6 @@ pub struct InboundShipmentItem {
   pub QuantityInCase: Option<i32>,
   // PrepDetailsList: List of PrepDetails
   // ReleaseDate: xs:string,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InboundShipmentItem {
-  fn from_xml(s: &mut S) -> MwsResult<InboundShipmentItem> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, InboundShipmentItem::default(), |s, record| {
-      match s.local_name() {
-        "ShipmentId" => record.ShipmentId = characters(s)?,
-        "SellerSKU" => record.SellerSKU = characters(s)?,
-        "FulfillmentNetworkSKU" => record.FulfillmentNetworkSKU = characters(s)?,
-        "QuantityShipped" => record.QuantityShipped = characters(s)?,
-        "QuantityReceived" => record.QuantityReceived = characters(s).map(Some)?,
-        "QuantityInCase" => record.QuantityInCase = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 #[cfg(test)]
@@ -275,11 +181,11 @@ mod tests {
           TotalUnits: 10,
           FeePerUnit: Some(Amount {
             CurrencyCode: "USD".to_owned(),
-            Value: 0.10,
+            Value: "0.10".to_owned(),
           }),
           TotalFee: Some(Amount {
             CurrencyCode: "USD".to_owned(),
-            Value: 10.0,
+            Value: "10.0".to_owned(),
           })
         }),
         AreCasesRequired: false,

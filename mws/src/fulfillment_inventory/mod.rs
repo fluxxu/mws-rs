@@ -3,128 +3,63 @@
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/fba_inventory/FBAInventory_Overview.html)
 
 use chrono::{DateTime, Utc};
-use client::{Client, Method, Response};
+use client::{Client, Method};
 mod types;
 pub use self::types::{
   Condition, InventorySupply, InventorySupplyDetail, SupplyType, Timepoint, TimepointType,
 };
-use super::types::ToIso8601;
 use result::MwsResult;
-use xmlhelper::decode;
 
 static PATH: &'static str = "/FulfillmentInventory/2010-10-01";
 static VERSION: &'static str = "2010-10-01";
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, SerializeMwsParams)]
 pub enum ResponseGroup {
   Basic,
   Detailed,
 }
 
 /// Parameters for `ListInventorySupply`
-#[derive(Debug, Default, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, SerializeMwsParams)]
 pub struct ListInventorySupplyParameters {
   // Optional API Parameters
-  pub seller_sku_list: Vec<String>,
-  pub query_start_datetime: Option<DateTime<Utc>>,
-  pub response_group: Option<ResponseGroup>,
-  pub marketplace_id: Option<String>,
+  pub SellerSkus: Option<Vec<String>>,
+  pub QueryStartDateTime: Option<DateTime<Utc>>,
+  pub ResponseGroup: Option<ResponseGroup>,
+  pub MarketplaceId: Option<String>,
 }
 
-impl Into<Vec<(String, String)>> for ListInventorySupplyParameters {
-  fn into(self) -> Vec<(String, String)> {
-    let mut result = vec![];
-    for (i, id) in self.seller_sku_list.into_iter().enumerate() {
-      result.push((format!("SellerSkus.member.{}", i + 1), id));
-    }
-
-    if let Some(date) = self.query_start_datetime {
-      result.push(("QueryStartDateTime".to_string(), date.to_iso8601()));
-    }
-
-    if let Some(group) = self.response_group {
-      result.push((
-        "ResponseGroup".to_string(),
-        match group {
-          ResponseGroup::Basic => "Basic".to_owned(),
-          ResponseGroup::Detailed => "Detailed".to_owned(),
-        },
-      ));
-    }
-
-    if let Some(id) = self.marketplace_id {
-      result.push(("MarketplaceId".to_string(), id));
-    }
-
-    result
-  }
-}
-
-#[derive(Debug, Default, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, FromXmlStream)]
 pub struct ListInventorySupplyResponse {
-  pub request_id: String,
   /// Indicates the specific marketplace to which the Inventory details apply.
   /// The element will only be included in the response if the corresponding
   /// request included a MarketplaceId. The value of the response MarketplaceId
   /// should match the corresponding request MarketplaceId.
-  pub marketplace_id: String,
+  pub MarketplaceId: String,
   /// A structured list of items that are or soon will be available for fulfillment
   /// by the Amazon Fulfillment Network. Each item is either currently in the Amazon
   /// Fulfillment Network or is in an inbound shipment to an Amazon fulfillment center.
   /// SKU, ASIN, condition, quantity, and availability information is included with each item.
-  pub inventory_supply_list: Vec<InventorySupply>,
+  pub InventorySupplyList: Vec<InventorySupply>,
   /// A generated string used to pass information to your next request. If NextToken is returned,
   /// pass the value of NextToken to ListInventorySupplyByNextToken. If NextToken is not returned,
   /// there is no more inventory availability information to return.
-  pub next_token: Option<String>,
+  pub NextToken: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInventorySupplyResponse {
-  fn from_xml(s: &mut S) -> MwsResult<ListInventorySupplyResponse> {
-    use self::decode::{characters, element, fold_elements, start_document};
-    start_document(s)?;
-    element(
-      s,
-      vec![
-        "ListInventorySupplyResponse",
-        "ListInventorySupplyByNextTokenResponse",
-      ],
-      |s| {
-        fold_elements(
-          s,
-          ListInventorySupplyResponse::default(),
-          |s, response| match s.local_name() {
-            "ListInventorySupplyResult" | "ListInventorySupplyByNextTokenResult" => {
-              fold_elements(s, (), |s, _| {
-                match s.local_name() {
-                  "InventorySupplyList" => {
-                    response.inventory_supply_list = fold_elements(s, vec![], |s, list| {
-                      list.push(InventorySupply::from_xml(s)?);
-                      Ok(())
-                    })?;
-                  }
-                  "MarketplaceId" => {
-                    response.marketplace_id = characters(s)?;
-                  }
-                  "NextToken" => {
-                    response.next_token = Some(characters(s)?);
-                  }
-                  _ => {}
-                }
-                Ok(())
-              })
-            }
-            "ResponseMetadata" => {
-              response.request_id = element(s, "RequestId", |s| characters(s))?;
-              Ok(())
-            }
-            _ => Ok(()),
-          },
-        )
-      },
-    )
-  }
-}
+response_envelope_type!(
+  ListInventorySupplyResponseEnvelope<ListInventorySupplyResponse>,
+  "ListInventorySupplyResponse",
+  "ListInventorySupplyResult"
+);
+
+response_envelope_type!(
+  ListInventorySupplyByNextTokenResponseEnvelope<ListInventorySupplyResponse>,
+  "ListInventorySupplyByNextTokenResponse",
+  "ListInventorySupplyByNextTokenResult"
+);
 
 /// The ListInventorySupply operation returns information about the availability of
 /// inventory that a seller has in the Amazon Fulfillment Network and in current inbound shipments.
@@ -140,7 +75,7 @@ impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ListInventorySupply
 pub fn ListInventorySupply(
   client: &Client,
   parameters: ListInventorySupplyParameters,
-) -> MwsResult<Response<ListInventorySupplyResponse>> {
+) -> MwsResult<ListInventorySupplyResponse> {
   client
     .request_xml(
       Method::Post,
@@ -148,7 +83,8 @@ pub fn ListInventorySupply(
       VERSION,
       "ListInventorySupply",
       parameters,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInventorySupplyResponseEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 /// Returns the next page of information about the availability of a seller's inventory using the NextToken parameter.
@@ -156,7 +92,7 @@ pub fn ListInventorySupply(
 pub fn ListInventorySupplyByNextToken(
   client: &Client,
   next_token: String,
-) -> MwsResult<Response<ListInventorySupplyResponse>> {
+) -> MwsResult<ListInventorySupplyResponse> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
@@ -165,7 +101,8 @@ pub fn ListInventorySupplyByNextToken(
       VERSION,
       "ListInventorySupplyByNextToken",
       params,
-    ).map_err(|err| err.into())
+    ).map(|e: ListInventorySupplyByNextTokenResponseEnvelope| e.into_inner())
+    .map_err(|err| err.into())
 }
 
 // #[cfg(test)]

@@ -1,6 +1,4 @@
 use chrono::{DateTime, Utc};
-use result::MwsResult;
-use xmlhelper::decode;
 
 /// The FulfillmentPolicy value that you chose when
 /// you submitted the CreateFulfillmentOrder operation.
@@ -27,7 +25,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentOrder {
   pub SellerFulfillmentOrderId: String,
   pub DestinationAddress: DestinationAddress,
@@ -45,39 +43,8 @@ pub struct FulfillmentOrder {
   pub NotificationEmailList: Vec<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentOrder {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentOrder> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentOrder::default(), |s, record| {
-      match s.local_name() {
-        "SellerFulfillmentOrderId" => record.SellerFulfillmentOrderId = characters(s)?,
-        "DestinationAddress" => record.DestinationAddress = DestinationAddress::from_xml(s)?,
-        "DisplayableOrderDateTime" => record.DisplayableOrderDateTime = characters(s).map(Some)?,
-        "ShippingSpeedCategory" => record.ShippingSpeedCategory = characters(s)?,
-        "FulfillmentMethod" => record.FulfillmentMethod = characters(s)?,
-        "FulfillmentOrderStatus" => record.FulfillmentOrderStatus = characters(s)?,
-        "StatusUpdatedDateTime" => record.StatusUpdatedDateTime = characters(s).map(Some)?,
-        "FulfillmentPolicy" => record.FulfillmentPolicy = characters(s)?,
-        "ReceivedDateTime" => record.ReceivedDateTime = characters(s).map(Some)?,
-        "DisplayableOrderId" => record.DisplayableOrderId = characters(s)?,
-        "DisplayableOrderComment" => record.DisplayableOrderComment = characters(s)?,
-        "MarketplaceId" => record.MarketplaceId = characters(s).map(Some)?,
-        "FulfillmentAction" => record.FulfillmentAction = characters(s).map(Some)?,
-        "NotificationEmailList" => {
-          record.NotificationEmailList = fold_elements(s, vec![], |s, v| {
-            v.push(characters(s)?);
-            Ok(())
-          })?;
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, SerializeMwsParams, FromXmlStream)]
 pub struct Currency {
   /// Three-digit currency code.
   pub CurrencyCode: String,
@@ -85,22 +52,8 @@ pub struct Currency {
   pub Value: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Currency {
-  fn from_xml(s: &mut S) -> MwsResult<Currency> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Currency::default(), |s, record| {
-      match s.local_name() {
-        "CurrencyCode" => record.CurrencyCode = characters(s)?,
-        "Value" => record.Value = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 #[allow(non_snake_case)]
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, FromXmlStream)]
 pub struct FulfillmentOrderItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -145,33 +98,8 @@ pub struct FulfillmentOrderItem {
   pub PerUnitTax: Option<Currency>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentOrderItem {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentOrderItem> {
-    use xmlhelper::decode::{characters, fold_elements};
-
-    fold_elements(s, FulfillmentOrderItem::default(), |s, record| {
-      match s.local_name() {
-        "SellerSKU" => record.SellerSKU = characters(s)?,
-        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
-        "Quantity" => record.Quantity = characters(s)?,
-        "GiftMessage" => record.GiftMessage = characters(s).map(Some)?,
-        "DisplayableComment" => record.DisplayableComment = characters(s).map(Some)?,
-        "FulfillmentNetworkSKU" => record.FulfillmentNetworkSKU = characters(s).map(Some)?,
-        "CancelledQuantity" => record.CancelledQuantity = characters(s)?,
-        "UnfulfillableQuantity" => record.UnfulfillableQuantity = characters(s)?,
-        "EstimatedShipDateTime" => record.EstimatedShipDateTime = characters(s).map(Some)?,
-        "PerUnitDeclaredValue" => record.PerUnitDeclaredValue = Currency::from_xml(s).map(Some)?,
-        "PerUnitPrice" => record.PerUnitPrice = Currency::from_xml(s).map(Some)?,
-        "PerUnitTax" => record.PerUnitTax = Currency::from_xml(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, SerializeMwsParams, FromXmlStream)]
 pub struct DestinationAddress {
   pub PhoneNumber: String,
   pub City: String,
@@ -185,33 +113,11 @@ pub struct DestinationAddress {
   pub Line3: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for DestinationAddress {
-  fn from_xml(s: &mut S) -> MwsResult<DestinationAddress> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, DestinationAddress::default(), |s, record| {
-      match s.local_name() {
-        "PhoneNumber" => record.PhoneNumber = characters(s)?,
-        "City" => record.City = characters(s)?,
-        "CountryCode" => record.CountryCode = characters(s)?,
-        "PostalCode" => record.PostalCode = characters(s)?,
-        "StateOrProvinceCode" => record.StateOrProvinceCode = characters(s)?,
-        "DistrictOrCounty" => record.DistrictOrCounty = characters(s)?,
-        "Name" => record.Name = characters(s)?,
-        "Line1" => record.Line1 = characters(s)?,
-        "Line2" => record.Line2 = characters(s)?,
-        "Line3" => record.Line3 = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
+// #[derive(Debug, Default, Serialize)]
+// pub struct ReturnItemList;
 
-#[derive(Debug, Default, Serialize)]
-pub struct ReturnItemList;
-
-#[derive(Debug, Default, Serialize)]
-pub struct ReturnAuthorizationList;
+// #[derive(Debug, Default, Serialize)]
+// pub struct ReturnAuthorizationList;
 
 /// The current status of the shipment.
 str_enum! {
@@ -225,7 +131,7 @@ str_enum! {
 
 /// Delivery and item information for a shipment in a fulfillment order.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, FromXmlStream)]
 pub struct FulfillmentShipment {
   /// A shipment identifier assigned by Amazon.
   pub AmazonShipmentId: String,
@@ -260,38 +166,9 @@ pub struct FulfillmentShipment {
   pub FulfillmentShipmentPackage: Vec<FulfillmentShipmentPackage>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipment {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentShipment> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentShipment::default(), |s, record| {
-      match s.local_name() {
-        "AmazonShipmentId" => record.AmazonShipmentId = characters(s)?,
-        "FulfillmentCenterId" => record.FulfillmentCenterId = characters(s)?,
-        "FulfillmentShipmentStatus" => record.FulfillmentShipmentStatus = characters(s)?,
-        "ShippingDateTime" => record.ShippingDateTime = characters(s).map(Some)?,
-        "EstimatedArrivalDateTime" => record.EstimatedArrivalDateTime = characters(s).map(Some)?,
-        "FulfillmentShipmentItem" => {
-          record.FulfillmentShipmentItem = fold_elements(s, vec![], |s, v| {
-            v.push(FulfillmentShipmentItem::from_xml(s)?);
-            Ok(())
-          })?
-        }
-        "FulfillmentShipmentPackage" => {
-          record.FulfillmentShipmentPackage = fold_elements(s, vec![], |s, v| {
-            v.push(FulfillmentShipmentPackage::from_xml(s)?);
-            Ok(())
-          })?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Item information for a shipment in a fulfillment order.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentShipmentItem {
   /// The seller SKU of the item.
   pub SellerSKU: Option<String>,
@@ -305,24 +182,8 @@ pub struct FulfillmentShipmentItem {
   pub PackageNumber: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipmentItem {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentShipmentItem> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentShipmentItem::default(), |s, record| {
-      match s.local_name() {
-        "SellerSKU" => record.SellerSKU = characters(s).map(Some)?,
-        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
-        "Quantity" => record.Quantity = characters(s)?,
-        "PackageNumber" => record.PackageNumber = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentShipmentPackage {
   /// Identifies a package in a shipment.
   pub PackageNumber: String,
@@ -334,22 +195,6 @@ pub struct FulfillmentShipmentPackage {
   pub TrackingNumber: Option<String>,
   /// The estimated arrival time of the package.
   pub EstimatedArrivalDateTime: Option<DateTime<Utc>>,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentShipmentPackage {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentShipmentPackage> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentShipmentPackage::default(), |s, record| {
-      match s.local_name() {
-        "PackageNumber" => record.PackageNumber = characters(s)?,
-        "CarrierCode" => record.CarrierCode = characters(s)?,
-        "TrackingNumber" => record.TrackingNumber = characters(s).map(Some)?,
-        "EstimatedArrivalDateTime" => record.EstimatedArrivalDateTime = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 /// The current status of the fulfillment order.
@@ -367,49 +212,19 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct TrackingAddress {
   pub City: String,
   pub State: String,
   pub Country: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for TrackingAddress {
-  fn from_xml(s: &mut S) -> MwsResult<TrackingAddress> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, TrackingAddress::default(), |s, record| {
-      match s.local_name() {
-        "City" => record.City = characters(s)?,
-        "State" => record.State = characters(s)?,
-        "Country" => record.Country = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct TrackingEvent {
   pub EventDate: Option<DateTime<Utc>>,
   pub EventAddress: Option<TrackingAddress>,
   pub EventCode: String,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for TrackingEvent {
-  fn from_xml(s: &mut S) -> MwsResult<TrackingEvent> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, TrackingEvent::default(), |s, record| {
-      match s.local_name() {
-        "EventDate" => record.EventDate = characters(s).map(Some)?,
-        "EventAddress" => record.EventAddress = TrackingAddress::from_xml(s).map(Some)?,
-        "EventCode" => record.EventCode = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 impl TrackingEvent {
@@ -459,7 +274,7 @@ impl TrackingEvent {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct PackageTrackingDetails {
   /// The package identifier.
   pub PackageNumber: String,
@@ -487,35 +302,6 @@ pub struct PackageTrackingDetails {
   pub AdditionalLocationInfo: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for PackageTrackingDetails {
-  fn from_xml(s: &mut S) -> MwsResult<PackageTrackingDetails> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, PackageTrackingDetails::default(), |s, record| {
-      match s.local_name() {
-        "PackageNumber" => record.PackageNumber = characters(s)?,
-        "TrackingNumber" => record.TrackingNumber = characters(s).map(Some)?,
-        "CarrierCode" => record.CarrierCode = characters(s).map(Some)?,
-        "CarrierPhoneNumber" => record.CarrierPhoneNumber = characters(s).map(Some)?,
-        "CarrierURL" => record.CarrierURL = characters(s).map(Some)?,
-        "ShipDate" => record.ShipDate = characters(s).map(Some)?,
-        "ShipToAddress" => record.ShipToAddress = TrackingAddress::from_xml(s).map(Some)?,
-        "CurrentStatus" => record.CurrentStatus = characters(s)?,
-        "SignedForBy" => record.SignedForBy = characters(s).map(Some)?,
-        "EstimatedArrivalDate" => record.EstimatedArrivalDate = characters(s).map(Some)?,
-        "TrackingEvents" => {
-          record.TrackingEvents = fold_elements(s, vec![], |s, v| {
-            v.push(TrackingEvent::from_xml(s)?);
-            Ok(())
-          })?
-        }
-        "AdditionalLocationInfo" => record.AdditionalLocationInfo = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// The shipping method for your fulfillment order.
 str_enum! {
   pub enum ShippingSpeedCategory {
@@ -537,7 +323,7 @@ str_enum! {
 
 /// Weight unit and amount.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Weight {
   /// Indicates the unit of weight.
   pub Unit: String,
@@ -545,23 +331,9 @@ pub struct Weight {
   pub Value: String,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Weight {
-  fn from_xml(s: &mut S) -> MwsResult<Weight> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Weight::default(), |s, record| {
-      match s.local_name() {
-        "Unit" => record.Unit = characters(s)?,
-        "Value" => record.Value = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Fee type and cost.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Fee {
   /// The type of fee.
   pub Name: String,
@@ -569,23 +341,9 @@ pub struct Fee {
   pub Amount: Currency,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Fee {
-  fn from_xml(s: &mut S) -> MwsResult<Fee> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Fee::default(), |s, record| {
-      match s.local_name() {
-        "Name" => record.Name = characters(s)?,
-        "Amount" => record.Amount = Currency::from_xml(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Item information for a shipment in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentPreviewItem {
   /// The seller SKU of the item.
   pub SellerSKU: String,
@@ -603,30 +361,9 @@ pub struct FulfillmentPreviewItem {
   pub ShippingWeightCalculationMethod: Option<String>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreviewItem {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentPreviewItem> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentPreviewItem::default(), |s, record| {
-      match s.local_name() {
-        "SellerSKU" => record.SellerSKU = characters(s)?,
-        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
-        "Quantity" => record.Quantity = characters(s)?,
-        "EstimatedShippingWeight" => {
-          record.EstimatedShippingWeight = Weight::from_xml(s).map(Some)?
-        }
-        "ShippingWeightCalculationMethod" => {
-          record.ShippingWeightCalculationMethod = characters(s).map(Some)?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Delivery and item information for a shipment in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentPreviewShipment {
   /// The earliest date that the shipment is expected to
   /// be sent from the fulfillment center.
@@ -644,31 +381,9 @@ pub struct FulfillmentPreviewShipment {
   pub FulfillmentPreviewItems: Vec<FulfillmentPreviewItem>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreviewShipment {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentPreviewShipment> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentPreviewShipment::default(), |s, record| {
-      match s.local_name() {
-        "EarliestShipDate" => record.EarliestShipDate = characters(s).map(Some)?,
-        "LatestShipDate" => record.LatestShipDate = characters(s).map(Some)?,
-        "EarliestArrivalDate" => record.EarliestArrivalDate = characters(s).map(Some)?,
-        "LatestArrivalDate" => record.LatestArrivalDate = characters(s).map(Some)?,
-        "FulfillmentPreviewItems" => {
-          record.FulfillmentPreviewItems = fold_elements(s, vec![], |s, v| {
-            v.push(FulfillmentPreviewItem::from_xml(s)?);
-            Ok(())
-          })?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Information about unfulfillable items in a fulfillment order preview.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct UnfulfillablePreviewItem {
   pub SellerSKU: String,
   pub SellerFulfillmentOrderItemId: String,
@@ -678,80 +393,26 @@ pub struct UnfulfillablePreviewItem {
   pub ItemUnfulfillableReasons: Option<Vec<String>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for UnfulfillablePreviewItem {
-  fn from_xml(s: &mut S) -> MwsResult<UnfulfillablePreviewItem> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, UnfulfillablePreviewItem::default(), |s, record| {
-      match s.local_name() {
-        "SellerSKU" => record.SellerSKU = characters(s)?,
-        "SellerFulfillmentOrderItemId" => record.SellerFulfillmentOrderItemId = characters(s)?,
-        "Quantity" => record.Quantity = characters(s)?,
-        "ItemUnfulfillableReasons" => {
-          record.ItemUnfulfillableReasons = fold_elements(s, vec![], |s, v| {
-            v.push(characters(s)?);
-            Ok(())
-          }).map(Some)?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// The time range within which your Scheduled Delivery fulfillment order should be delivered.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct DeliveryWindow {
   pub StartDateTime: Option<DateTime<Utc>>,
   pub EndDateTime: Option<DateTime<Utc>>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for DeliveryWindow {
-  fn from_xml(s: &mut S) -> MwsResult<DeliveryWindow> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, DeliveryWindow::default(), |s, record| {
-      match s.local_name() {
-        "StartDateTime" => record.StartDateTime = characters(s).map(Some)?,
-        "EndDateTime" => record.EndDateTime = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Delivery information for a Scheduled Delivery.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct ScheduledDeliveryInfo {
   pub DeliveryTimeZone: String,
   pub DeliveryWindows: Vec<DeliveryWindow>,
 }
 
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for ScheduledDeliveryInfo {
-  fn from_xml(s: &mut S) -> MwsResult<ScheduledDeliveryInfo> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, ScheduledDeliveryInfo::default(), |s, record| {
-      match s.local_name() {
-        "DeliveryTimeZone" => record.DeliveryTimeZone = characters(s)?,
-        "DeliveryWindows" => {
-          record.DeliveryWindows = fold_elements(s, vec![], |s, v| {
-            v.push(DeliveryWindow::from_xml(s)?);
-            Ok(())
-          })?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
-}
-
 /// Information about a fulfillment order preview,
 /// including delivery and fee information based on shipping method.
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentPreview {
   /// The shipping method for your fulfillment order.
   pub ShippingSpeedCategory: String,
@@ -775,52 +436,6 @@ pub struct FulfillmentPreview {
   pub OrderUnfulfillableReasons: Option<Vec<String>>,
   /// Delivery information for a Scheduled Delivery.
   pub ScheduledDeliveryInfo: Option<ScheduledDeliveryInfo>,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for FulfillmentPreview {
-  fn from_xml(s: &mut S) -> MwsResult<FulfillmentPreview> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, FulfillmentPreview::default(), |s, record| {
-      match s.local_name() {
-        "ShippingSpeedCategory" => record.ShippingSpeedCategory = characters(s)?,
-        "IsFulfillable" => record.IsFulfillable = characters(s)?,
-        "IsCODCapable" => record.IsCODCapable = characters(s)?,
-        "MarketplaceId" => record.MarketplaceId = characters(s)?,
-        "EstimatedShippingWeight" => {
-          record.EstimatedShippingWeight = Weight::from_xml(s).map(Some)?
-        }
-        "EstimatedFees" => {
-          record.EstimatedFees = fold_elements(s, vec![], |s, v| {
-            v.push(Fee::from_xml(s)?);
-            Ok(())
-          }).map(Some)?
-        }
-        "FulfillmentPreviewShipments" => {
-          record.FulfillmentPreviewShipments = fold_elements(s, vec![], |s, v| {
-            v.push(FulfillmentPreviewShipment::from_xml(s)?);
-            Ok(())
-          }).map(Some)?
-        }
-        "UnfulfillablePreviewItems" => {
-          record.UnfulfillablePreviewItems = fold_elements(s, vec![], |s, v| {
-            v.push(UnfulfillablePreviewItem::from_xml(s)?);
-            Ok(())
-          }).map(Some)?
-        }
-        "OrderUnfulfillableReasons" => {
-          record.OrderUnfulfillableReasons = fold_elements(s, vec![], |s, v| {
-            v.push(characters(s)?);
-            Ok(())
-          }).map(Some)?
-        }
-        "ScheduledDeliveryInfo" => {
-          record.ScheduledDeliveryInfo = ScheduledDeliveryInfo::from_xml(s).map(Some)?
-        }
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 #[cfg(test)]

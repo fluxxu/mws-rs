@@ -6,3 +6,4 @@ authors = ["Flux Xu <fluxxu@gmail.com>"]
 [dependencies]
 mws = { path = "../mws" }
 mws-derive = { path = "../mws-derive" }
+chrono = { version = "0.4", features = ["serde"] }

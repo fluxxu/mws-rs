@@ -7,6 +7,7 @@ use xmlhelper::decode;
 pub struct ShipmentRequestDetails {
   pub AmazonOrderId: String,
   pub SellerOrderId: Option<String>,
+  #[mws_param(list_item_type_name = "Item")]
   pub ItemList: Vec<Item>,
   pub ShipFromAddress: Address,
   pub PackageDimensions: PackageDimensions,

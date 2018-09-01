@@ -1,6 +1,4 @@
 use chrono::{DateTime, Utc};
-use result::MwsResult;
-use xmlhelper::decode;
 
 /// The condition of the item.
 str_enum! {
@@ -27,7 +25,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct InventorySupply {
   /// The Seller SKU of the item.
   pub SellerSKU: String,
@@ -67,26 +65,12 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Timepoint {
   pub TimepointType: TimepointType,
   /// The date and time by which inventory is expected
   /// to be available for picking, in ISO 8601 date time format.
   pub DateTime: Option<DateTime<Utc>>,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for Timepoint {
-  fn from_xml(s: &mut S) -> MwsResult<Timepoint> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, Timepoint::default(), |s, record| {
-      match s.local_name() {
-        "TimepointType" => record.TimepointType = characters(s)?,
-        "DateTime" => record.DateTime = characters(s).map(Some)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 /// The current inventory status for a specific item.
@@ -99,7 +83,7 @@ str_enum! {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 /// Specific information about the availability of inventory for a single SKU,
 /// including the number of units that are in an Amazon fulfillment center, in an inbound shipment,
 /// or being transferred between Amazon fulfillment centers.
@@ -112,49 +96,6 @@ pub struct InventorySupplyDetail {
   pub EarliestAvailableToPick: Timepoint,
   /// The latest date that your inventory is expected to be available for picking.
   pub LatestAvailableToPick: Timepoint,
-}
-
-impl<S: decode::XmlEventStream> decode::FromXmlStream<S> for InventorySupply {
-  fn from_xml(s: &mut S) -> MwsResult<InventorySupply> {
-    use xmlhelper::decode::{characters, fold_elements};
-    fold_elements(s, InventorySupply::default(), |s, record| {
-      match s.local_name() {
-        "Condition" => record.Condition = characters(s).map(Some)?,
-        "SupplyDetail" => {
-          if s.has_next()? {
-            record.SupplyDetail = fold_elements(s, vec![], |s, list| {
-              let item = fold_elements(s, InventorySupplyDetail::default(), |s, detail| {
-                match s.local_name() {
-                  "Quantity" => detail.Quantity = characters(s)?,
-                  "SupplyType" => detail.SupplyType = characters(s)?,
-                  "EarliestAvailableToPick" => {
-                    detail.EarliestAvailableToPick = Timepoint::from_xml(s)?
-                  }
-                  "LatestAvailableToPick" => detail.LatestAvailableToPick = Timepoint::from_xml(s)?,
-                  _ => {}
-                };
-                Ok(())
-              })?;
-              list.push(item);
-              Ok(())
-            }).map(Some)?;
-          } else {
-            // if an item has an empty <SupplyDetail />
-            // it's still a valid item
-            record.SupplyDetail = Some(vec![]);
-          }
-        }
-        "TotalSupplyQuantity" => record.TotalSupplyQuantity = characters(s)?,
-        "EarliestAvailability" => record.EarliestAvailability = Timepoint::from_xml(s)?,
-        "FNSKU" => record.FNSKU = characters(s)?,
-        "InStockSupplyQuantity" => record.InStockSupplyQuantity = characters(s)?,
-        "ASIN" => record.ASIN = characters(s)?,
-        "SellerSKU" => record.SellerSKU = characters(s)?,
-        _ => {}
-      }
-      Ok(())
-    })
-  }
 }
 
 #[cfg(test)]

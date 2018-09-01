@@ -90,8 +90,8 @@ macro_rules! str_enum {
     }
 
     impl ::SerializeMwsParams for $name {
-      fn serialize_mws_params(&self, path: &str, _include_name: bool, pairs: &mut Vec<(String, String)>) {
-        self.as_ref().serialize_mws_params(path, false, pairs);
+      fn serialize_mws_params(&self, ctx: &::types::SerializeMwsParamsContext, pairs: &mut Vec<(String, String)>) {
+        self.as_ref().serialize_mws_params(ctx, pairs);
       }
     }
 
@@ -164,8 +164,8 @@ macro_rules! string_map_enum {
     }
 
     impl ::SerializeMwsParams for $name {
-      fn serialize_mws_params(&self, path: &str, _include_name: bool, pairs: &mut Vec<(String, String)>) {
-        self.as_ref().serialize_mws_params(path, false, pairs);
+      fn serialize_mws_params(&self, ctx: &::types::SerializeMwsParamsContext, pairs: &mut Vec<(String, String)>) {
+        self.as_ref().serialize_mws_params(ctx, pairs);
       }
     }
 
@@ -180,11 +180,18 @@ macro_rules! string_map_enum {
   )
 }
 
-macro_rules! response_type {
+macro_rules! response_envelope_type {
   ($name:ident < $payload_ty:ty > , $response_tag:expr, $result_tag:expr) => {
-    pub type $name = ::types::GenericResponse<$payload_ty>;
+    #[derive(Default)]
+    struct $name(::types::ResponseEnvelope<$payload_ty>);
 
-    impl<S> ::xmlhelper::decode::FromXmlStream<S> for ::types::GenericResponse<$payload_ty>
+    impl $name {
+      fn into_inner(self) -> $payload_ty {
+        self.0.payload
+      }
+    }
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
     where
       S: ::xmlhelper::decode::XmlEventStream,
     {
@@ -194,7 +201,7 @@ macro_rules! response_type {
         element(s, $response_tag, |s| {
           fold_elements(
             s,
-            ::types::GenericResponse::<$payload_ty>::default(),
+            ::types::ResponseEnvelope::<$payload_ty>::default(),
             |s, response| {
               if s.local_name() == $result_tag {
                 response.payload = ::xmlhelper::decode::FromXmlStream::from_xml(s)?;
@@ -204,7 +211,7 @@ macro_rules! response_type {
               Ok(())
             },
           )
-        })
+        }).map($name)
       }
     }
   };

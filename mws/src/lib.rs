@@ -1,6 +1,8 @@
 //! Client library for Amazon Marketplace Web Service (Amazon MWS)
 //!
 
+#![deny(warnings)]
+
 extern crate base64;
 extern crate chrono;
 extern crate crypto;
@@ -19,6 +21,9 @@ extern crate mws_derive;
 
 #[cfg(test)]
 extern crate dotenv;
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
 
 pub mod result;
 #[macro_use]
@@ -40,4 +45,4 @@ pub mod merchant_fulfillment;
 pub mod orders;
 pub mod reports;
 
-pub use self::types::SerializeMwsParams;
+pub use self::types::{ResponseEnvelope, SerializeMwsParams, SerializeMwsParamsContext};

@@ -3,14 +3,15 @@ use result::{MwsError, MwsResult};
 use std::io::Read;
 use tdff;
 
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct ReportInfo {
-  pub report_type: String,
-  pub acknowledged: bool,
-  pub acknowledged_date: Option<DateTime<Utc>>,
-  pub report_id: String,
-  pub available_date: Option<DateTime<Utc>>,
-  pub report_request_id: String,
+  pub ReportType: String,
+  pub Acknowledged: bool,
+  pub AcknowledgedDate: Option<DateTime<Utc>>,
+  pub ReportId: String,
+  pub AvailableDate: Option<DateTime<Utc>>,
+  pub ReportRequestId: String,
 }
 
 str_enum! {
@@ -23,18 +24,19 @@ str_enum! {
   }
 }
 
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[allow(non_snake_case)]
+#[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct ReportRequestInfo {
-  pub report_request_id: String,
-  pub report_type: String,
-  pub start_date: Option<DateTime<Utc>>,
-  pub end_date: Option<DateTime<Utc>>,
-  pub scheduled: bool,
-  pub submitted_date: Option<DateTime<Utc>>,
-  pub report_processing_status: ReportProcessingStatus,
-  pub generated_report_id: Option<String>,
-  pub started_processing_date: Option<DateTime<Utc>>,
-  pub completed_date: Option<DateTime<Utc>>,
+  pub ReportRequestId: String,
+  pub ReportType: String,
+  pub StartDate: Option<DateTime<Utc>>,
+  pub EndDate: Option<DateTime<Utc>>,
+  pub Scheduled: bool,
+  pub SubmittedDate: Option<DateTime<Utc>>,
+  pub ReportProcessingStatus: ReportProcessingStatus,
+  pub GeneratedReportId: Option<String>,
+  pub StartedProcessingDate: Option<DateTime<Utc>>,
+  pub CompletedDate: Option<DateTime<Utc>>,
 }
 
 /// FlatFileSettlementReport
