@@ -247,6 +247,66 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
   expanded.into()
 }
 
+#[proc_macro_derive(FromTdffRow, attributes(from_tdff_row))]
+pub fn derive_from_diff_row(input: TokenStream) -> TokenStream {
+  let input: DeriveInput = syn::parse(input).unwrap();
+
+  let name = input.ident;
+
+  let meta = if let Data::Struct(data) = input.data {
+    get_struct_meta(data, "from_tdff_row", &["key"])
+  } else {
+    panic!("only struct is supported.");
+  };
+
+  let fields: Vec<_> = meta
+    .fields
+    .iter()
+    .map(|f| {
+      let ident = &f.ident;
+      match f.config_list.iter().find(|(k, _)| k == "key") {
+        Some(&(_, Some(ref v))) => {
+          quote! {
+            #v => record.#ident = FromTdffField::parse_tdff_field(k, &v)?,
+          }
+        }
+        _ => {
+          let ident_str = format!("{}", ident);
+          let ident_underscore_str = ident_str.replace("-", "_");
+          if ident_str == ident_underscore_str {
+            quote! {
+              #ident_str => record.#ident = FromTdffField::parse_tdff_field(k, v)?,
+            }
+          } else {
+            quote! {
+              #ident_str => record.#ident = FromTdffField::parse_tdff_field(k, v)?,
+            }
+          }
+        }
+      }
+    }).collect();
+
+  let expanded = quote! {
+    impl ::tdff::FromTdffRow for #name
+    {
+      fn from_tdff_row(pairs: &::tdff::TdffRow) -> ::result::MwsResult<Self> {
+        use ::tdff::FromTdffField;
+        let mut record = #name::default();
+        for (k, v) in pairs {
+          let k = k as &str;
+          match k {
+            #(#fields)*
+            _ => {},
+          }
+        }
+        Ok(record)
+      }
+    }
+  };
+
+  expanded.into()
+}
+
 struct StructMeta {
   fields: Vec<StructFieldMeta>,
 }

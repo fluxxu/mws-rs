@@ -5,7 +5,7 @@
 use chrono::{DateTime, Utc};
 use client::{Client, Method};
 mod types;
-pub use self::types::{ReportInfo, ReportProcessingStatus, ReportRequestInfo, SettlementReport};
+pub use self::types::{ReportInfo, ReportProcessingStatus, ReportRequestInfo};
 use result::{MwsError, MwsResult};
 use std::io::{self, Write};
 
@@ -196,18 +196,6 @@ pub fn RequestReport(
   client
     .request_xml(Method::Post, PATH, VERSION, "RequestReport", params)
     .map(|e: RequestReportEnvelope| e.into_inner())
-    .map_err(|err| err.into())
-}
-
-#[deprecated]
-#[allow(non_snake_case)]
-pub fn GetFlatFileSettlementReport(
-  client: &Client,
-  report_id: String,
-) -> MwsResult<SettlementReport> {
-  let params = vec![("ReportId".to_string(), report_id)];
-  client
-    .request_tdff(Method::Post, PATH, VERSION, "GetReport", params)
     .map_err(|err| err.into())
 }
 

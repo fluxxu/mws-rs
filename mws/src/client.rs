@@ -4,7 +4,6 @@ pub use reqwest::{Method, StatusCode};
 use result::{MwsError, MwsResult};
 use sign::SignatureV2;
 use std::io::Read;
-use tdff::FromTdff;
 use xmlhelper::decode::{FromXmlStream, Stream};
 use SerializeMwsParams;
 
@@ -255,43 +254,6 @@ impl Client {
     if resp.status().is_success() {
       let mut stream = Stream::new(resp);
       let v = T::from_xml(&mut stream)?;
-      Ok(v)
-    } else {
-      use std::io::{Cursor, Read};
-
-      let mut body = String::new();
-      resp.read_to_string(&mut body)?;
-      let mut s = Stream::new(Cursor::new(body.clone()));
-      match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: Some(info),
-        })),
-        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: None,
-        })),
-      }
-    }
-  }
-
-  pub fn request_tdff<P, T>(
-    &self,
-    method: Method,
-    path: &str,
-    version: &str,
-    action: &str,
-    parameters: P,
-  ) -> MwsResult<T>
-  where
-    P: SerializeMwsParams,
-    T: FromTdff<reqwest::Response>,
-  {
-    let mut resp = self.request(method, path, version, action, parameters)?;
-    if resp.status().is_success() {
-      let v = T::from_tdff(resp)?;
       Ok(v)
     } else {
       use std::io::{Cursor, Read};

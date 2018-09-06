@@ -1,7 +1,7 @@
 //! Client library for Amazon Marketplace Web Service (Amazon MWS)
 //!
 
-#![deny(warnings)]
+// #![deny(warnings)]
 
 extern crate base64;
 extern crate chrono;
