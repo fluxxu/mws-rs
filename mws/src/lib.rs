@@ -19,6 +19,8 @@ extern crate serde_derive;
 #[macro_use]
 extern crate mws_derive;
 
+pub use mws_derive::FromTdffRow;
+
 #[cfg(test)]
 extern crate dotenv;
 #[cfg(test)]

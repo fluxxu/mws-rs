@@ -1,6 +1,6 @@
 //! Tab-delimited flat file helpers
 
-use csv::Reader;
+use csv::{Reader, ReaderBuilder};
 use result::{MwsError, MwsResult};
 use std::io::Read;
 
@@ -11,9 +11,13 @@ pub struct TdffParser<R: Read> {
 
 impl<R: Read> TdffParser<R> {
   pub fn new(source: R) -> MwsResult<TdffParser<R>> {
-    let mut reader = Reader::from_reader(source).delimiter(b'\t');
+    let mut reader = ReaderBuilder::new().delimiter(b'\t').from_reader(source);
     Ok(TdffParser {
-      headers: reader.headers()?,
+      headers: reader
+        .headers()?
+        .into_iter()
+        .map(ToString::to_string)
+        .collect(),
       reader: reader,
     })
   }
@@ -26,7 +30,7 @@ pub trait FromTdffRow: Default + Sized {
 }
 
 impl<R: Read> TdffParser<R> {
-  pub fn parse<'a, T>(&'a mut self) -> MwsResult<Vec<T>>
+  pub fn parse_all<T>(mut self) -> MwsResult<Vec<T>>
   where
     T: FromTdffRow,
   {
@@ -38,7 +42,7 @@ impl<R: Read> TdffParser<R> {
       for (i, value) in row?.into_iter().enumerate() {
         match self.headers.get(i) {
           Some(key) => {
-            row_container.push((key.as_ref() as &str, value));
+            row_container.push((key.as_ref() as &str, value.to_string()));
           }
           None => {}
         }

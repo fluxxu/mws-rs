@@ -1,4 +1,4 @@
-use client::ErrorResponse;
+pub use client::ErrorResponse as MwsErrorResponse;
 
 #[derive(Fail, Debug)]
 pub enum MwsError {
@@ -15,7 +15,7 @@ pub enum MwsError {
   #[fail(display = "utf8 error: {}", _0)]
   Utf8(#[cause] ::std::str::Utf8Error),
   #[fail(display = "MWS request is unsuccessful: {:?}", _0)]
-  ErrorResponse(ErrorResponse),
+  ErrorResponse(MwsErrorResponse),
   #[fail(display = "unexpected end of xml: {}", _0)]
   UnexpectedEndOfXml(String),
   #[fail(
@@ -32,6 +32,21 @@ pub enum MwsError {
   ContentMD5HeaderMissing,
   #[fail(display = "{}", _0)]
   Msg(String),
+}
+
+impl MwsError {
+  /// The common response to a 500 or 503 service error is
+  /// to try the request again. Such service errors are
+  /// usually only temporary and will resolve themselves.
+  pub fn should_try_again(&self) -> bool {
+    match *self {
+      MwsError::ErrorResponse(ref res) => {
+        let code = res.status.as_u16();
+        code >= 500 && code < 600
+      }
+      _ => false,
+    }
+  }
 }
 
 macro_rules! impl_from {

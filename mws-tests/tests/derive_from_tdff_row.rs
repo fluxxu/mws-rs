@@ -2,15 +2,14 @@
 extern crate mws_derive;
 extern crate mws;
 
-use mws::*;
-
 #[test]
 fn derive_struct() {
   use mws::tdff::TdffParser;
   use std::io::Cursor;
   #[derive(Default, FromTdffRow)]
   struct S {
-    sku: String,
+    #[from_tdff_row(key = "sku,seller_sku")]
+    sku_: String,
     asin: String,
     price: String,
     quantity: i32,
@@ -18,7 +17,7 @@ fn derive_struct() {
 
   impl S {
     fn as_tuple(&self) -> (&str, &str, &str, i32) {
-      (&self.sku, &self.asin, &self.price, self.quantity)
+      (&self.sku_, &self.asin, &self.price, self.quantity)
     }
   }
   let bytes: Vec<u8> = include_bytes!("./fixtures/report.tdff")
@@ -26,7 +25,7 @@ fn derive_struct() {
     .cloned()
     .collect();
   let r = Cursor::new(bytes);
-  let rows = TdffParser::new(r).unwrap().parse::<S>().unwrap();
+  let rows = TdffParser::new(r).unwrap().parse_all::<S>().unwrap();
   let tuples: Vec<_> = rows.iter().map(S::as_tuple).collect();
 
   assert_eq!(
