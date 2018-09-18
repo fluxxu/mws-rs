@@ -192,7 +192,9 @@ pub fn GetFulfillmentPreview(
 #[derive(Debug, Default, Serialize, SerializeMwsParams)]
 pub struct CreateFulfillmentOrderItem {
   /// The seller SKU of the item.
-  pub SellerSKU: String,
+  pub SellerSKU: Option<String>,
+  /// Amazon's fulfillment network SKU of the item.
+  pub FulfillmentNetworkSKU: Option<String>,
   /// A fulfillment order item identifier that you
   /// created with a call to the
   /// GetFulfillmentPreview operation.
@@ -204,8 +206,6 @@ pub struct CreateFulfillmentOrderItem {
   /// Item-specific text that displays in recipient-facing
   /// materials such as the outbound shipment packing slip.
   pub DisplayableComment: Option<String>,
-  /// Amazon's fulfillment network SKU of the item.
-  pub FulfillmentNetworkSKU: Option<String>,
   /// The monetary value assigned by the seller to this item.
   pub PerUnitDeclaredValue: Option<Currency>,
   /// The amount to be collected from the customer
