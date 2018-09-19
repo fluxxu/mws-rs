@@ -192,7 +192,7 @@ pub fn GetFulfillmentPreview(
 #[derive(Debug, Default, Serialize, SerializeMwsParams)]
 pub struct CreateFulfillmentOrderItem {
   /// The seller SKU of the item.
-  pub SellerSKU: Option<String>,
+  pub SellerSKU: String,
   /// Amazon's fulfillment network SKU of the item.
   pub FulfillmentNetworkSKU: Option<String>,
   /// A fulfillment order item identifier that you
