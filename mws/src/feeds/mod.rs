@@ -179,7 +179,8 @@ where
       content,
       content_md5,
       ContentType(content_type.parse().unwrap()),
-    ).map(|e: SubmitFeedEnvelope| e.into_inner())
+    )
+    .map(|e: SubmitFeedEnvelope| e.into_inner())
     .map_err(Into::into)
 }
 
@@ -228,6 +229,7 @@ pub struct FeedSubmissionInfo {
 #[derive(Debug, Default, Serialize, FromXmlStream)]
 pub struct GetFeedSubmissionListResponse {
   pub RequestId: String,
+  #[from_xml_stream(no_list_wrapper)]
   pub FeedSubmissionInfo: Vec<FeedSubmissionInfo>,
   pub NextToken: Option<String>,
 }
@@ -256,7 +258,8 @@ pub fn GetFeedSubmissionList(
       VERSION,
       "GetFeedSubmissionList",
       parameters,
-    ).map(|e: GetFeedSubmissionListEnvelope| e.into_inner())
+    )
+    .map(|e: GetFeedSubmissionListEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -273,7 +276,8 @@ pub fn GetFeedSubmissionListByNextToken(
       VERSION,
       "GetFeedSubmissionListByNextToken",
       params,
-    ).map(|e: GetFeedSubmissionListByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: GetFeedSubmissionListByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -298,7 +302,8 @@ mod tests {
           FulfillmentLatency: 0,
         },
         Some(OperationType::PartialUpdate),
-      ).add_message(
+      )
+      .add_message(
         inventory::InventoryMessage {
           SKU: "p2".to_owned(),
           Quantity: 200,
