@@ -1,6 +1,6 @@
-use super::Envelope;
-use super::Message;
 use chrono::{DateTime, Utc};
+use feeds::Envelope;
+use feeds::Message;
 use types::ToIso8601;
 use xmlhelper::encode;
 
@@ -85,9 +85,9 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<OrderFulfillmen
 
 #[cfg(test)]
 mod tests {
-  use super::super::OperationType;
   use super::*;
   use chrono::FixedOffset;
+  use feeds::OperationType;
   use xmlhelper::encode::XmlWrite;
   use xmlhelper::encode::{EmitterConfig, EventWriter};
 

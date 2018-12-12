@@ -1,5 +1,5 @@
-use super::Envelope;
-use super::Message;
+use feeds::Envelope;
+use feeds::Message;
 use xmlhelper::encode;
 
 #[allow(non_snake_case)]
@@ -54,8 +54,8 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessag
 
 #[cfg(test)]
 mod tests {
-  use super::super::OperationType;
   use super::*;
+  use feeds::OperationType;
   use xmlhelper::encode::XmlWrite;
   use xmlhelper::encode::{EmitterConfig, EventWriter};
 

@@ -8,8 +8,7 @@ use result::MwsResult;
 use std::io::{Read, Write};
 use xmlhelper::encode;
 
-mod inventory;
-mod order_fulfillment_data;
+pub mod message;
 
 static PATH: &'static str = "/";
 static VERSION: &'static str = "2009-01-01";
@@ -113,6 +112,17 @@ impl<M: Message> Envelope<M> {
     )?;
 
     w.write(encode::XmlEvent::end_element().into())
+  }
+
+  pub fn to_xml_string(&self) -> MwsResult<String>
+  where
+    Self: encode::XmlWrite<encode::EventWriter<Vec<u8>>>,
+  {
+    use xmlhelper::encode::*;
+    let mut writer =
+      EventWriter::new_with_config(vec![], EmitterConfig::new().perform_indent(true));
+    self.write_xml(&mut writer)?;
+    String::from_utf8(writer.into_inner()).map_err(|err| err.utf8_error().into())
   }
 }
 
