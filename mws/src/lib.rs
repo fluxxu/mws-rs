@@ -26,6 +26,8 @@ extern crate dotenv;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
+#[macro_use]
+extern crate lazy_static;
 
 pub mod result;
 #[macro_use]
@@ -36,6 +38,7 @@ mod macros;
 #[macro_use]
 pub mod tdff;
 pub mod client;
+pub mod constants;
 mod sign;
 
 // pub mod products;

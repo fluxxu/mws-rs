@@ -92,8 +92,8 @@ str_enum! {
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq, Serialize, SerializeMwsParams, FromXmlStream)]
 pub struct CurrencyAmount {
-  CurrencyCode: String,
-  Amount: String,
+  pub CurrencyCode: String,
+  pub Amount: String,
 }
 
 #[allow(non_snake_case)]

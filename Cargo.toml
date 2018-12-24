@@ -2,7 +2,8 @@
 members = [
   "./mws",
   "./mws-derive",
-  "./mws-tests"
+  "./mws-tests",
+  "./mws-cli"
 ]
 
 [patch.crates-io]
