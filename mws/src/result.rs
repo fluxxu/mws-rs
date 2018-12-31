@@ -20,8 +20,7 @@ pub enum MwsError {
   UnexpectedEndOfXml(String),
   #[fail(
     display = "unexpected xml event: expected '{}', found '{}'",
-    expected,
-    found
+    expected, found
   )]
   UnexpectedXmlEvent { expected: String, found: String },
   #[fail(display = "parse string error: {} : {}", what, message)]
@@ -44,6 +43,7 @@ impl MwsError {
         let code = res.status.as_u16();
         code >= 500 && code < 600
       }
+      MwsError::Io(_) => true,
       _ => false,
     }
   }
