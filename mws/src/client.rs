@@ -63,7 +63,8 @@ impl ErrorResponseInfo {
         }
         Ok(())
       })
-    }).into()
+    })
+    .into()
   }
 }
 
@@ -317,7 +318,8 @@ pub fn get_test_client() -> Client {
     mws_auth_token: None,
     aws_access_key_id: env::var("AWSAccessKeyId").expect("get AWSAccessKeyId"),
     secret_key: env::var("SecretKey").expect("get SecretKey"),
-  }).expect("create client")
+  })
+  .expect("create client")
 }
 
 #[cfg(test)]
@@ -336,7 +338,8 @@ mod tests {
         "2013-09-01",
         "GetServiceStatus",
         (),
-      ).expect("send request");
+      )
+      .expect("send request");
     assert!(status.is_success());
     assert!(body.starts_with("<?xml"));
 
@@ -348,7 +351,8 @@ mod tests {
         "2013-09-01",
         "GetServiceStatus",
         (),
-      ).expect("send request");
+      )
+      .expect("send request");
     assert!(!status.is_success());
     let source = Cursor::new(body);
     let mut s = Stream::new(source);

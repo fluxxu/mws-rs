@@ -23,29 +23,115 @@ pub struct CurrencyAmount {
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct Order {
-  pub LatestShipDate: Option<DateTime<Utc>>,
-  pub OrderType: String,
-  pub PurchaseDate: Option<DateTime<Utc>>,
+  /// An Amazon-defined order identifier, in 3-7-7 format.
   pub AmazonOrderId: String,
-  pub LastUpdateDate: Option<DateTime<Utc>>,
-  pub ShipServiceLevel: String,
-  pub NumberOfItemsShipped: i32,
-  pub OrderStatus: OrderStatus,
-  pub SalesChannel: String,
-  pub IsBusinessOrder: bool,
-  pub NumberOfItemsUnshipped: i32,
-  pub IsPremiumOrder: bool,
-  pub EarliestShipDate: Option<DateTime<Utc>>,
-  pub MarketplaceId: String,
-  pub FulfillmentChannel: FulfillmentChannel,
-  pub PaymentMethod: PaymentMethod,
-  pub IsPrime: bool,
-  pub ShipmentServiceLevelCategory: String,
+  /// A seller-defined order identifier.
   pub SellerOrderId: String,
-  pub BuyerEmail: String,
-  pub BuyerName: String,
-  pub OrderTotal: Option<CurrencyAmount>,
+  /// The date when the order was created.
+  pub PurchaseDate: Option<DateTime<Utc>>,
+  /// The date when the order was last updated.
+  pub LastUpdateDate: Option<DateTime<Utc>>,
+  /// The current order status.
+  pub OrderStatus: OrderStatus,
+  /// How the order was fulfilled: by Amazon (AFN) or by the seller (MFN).
+  pub FulfillmentChannel: FulfillmentChannel,
+  /// The sales channel of the first item in the order.
+  pub SalesChannel: String,
+  /// The order channel of the first item in the order.
+  pub OrderChannel: String,
+  /// The shipment service level of the order.
+  pub ShipServiceLevel: String,
+  /// The shipping address for the order.
   pub ShippingAddress: Option<ShippingAddress>,
+  /// The total charge for the order.
+  pub OrderTotal: Option<CurrencyAmount>,
+  /// The number of items shipped.
+  pub NumberOfItemsShipped: i32,
+  /// The number of items unshipped.
+  pub NumberOfItemsUnshipped: i32,
+
+  // pub PaymentExecutionDetail: ?
+  /// The payment method for the order.
+  /// This response element is limited to Cash On Delivery (COD)
+  /// and Convenience Store (CVS) payment methods.
+  /// Unless you need the specific COD payment information provided
+  /// by the PaymentExecutionDetailItem element, we recommend using
+  /// the PaymentMethodDetails response element to get payment
+  /// method information.
+  pub PaymentMethod: PaymentMethod,
+
+  // pub PaymentMethodDetails: ?
+  /// true if this is a replacement order.
+  pub IsReplacementOrder: bool,
+  /// The AmazonOrderId value for the order that is being replaced.
+  pub ReplacedOrderId: String,
+  /// The anonymized identifier for the Marketplace where the order was placed.
+  pub MarketplaceId: String,
+  /// The anonymized e-mail address of the buyer.
+  pub BuyerEmail: String,
+  /// The name of the buyer.
+  pub BuyerName: String,
+  /// The county of the buyer.
+  /// This element is used only in the Brazil marketplace.
+  pub BuyerCounty: String,
+
+  // pub BuyerTaxInfo: ?
+  /// The shipment service level category of the order.
+  /// ShipmentServiceLevelCategory values: Expedited, FreeEconomy, NextDay, SameDay, SecondDay, Scheduled, Standard
+  pub ShipmentServiceLevelCategory: String,
+  /// true if the order was shipped by the Amazon Transportation for Merchants (Amazon TFM) service.
+  /// Amazon TFM is available only in the China marketplace.
+  pub ShippedByAmazonTFM: bool,
+  /// The status of the Amazon TFM order. Returned only if
+  /// ShippedByAmazonTFM = True. Note that even if ShippedByAmazonTFM = True,
+  /// TFMShipmentStatus will not be returned if you have
+  /// not yet created the shipment.
+  /// TFMShipmentStatus values: PendingPickUp, LabelCanceled, PickedUp,
+  /// AtDestinationFC, Delivered, RejectedByBuyer, Undeliverable,
+  /// ReturnedToSeller
+  /// Amazon TFM is available only in the China marketplace.
+  pub TFMShipmentStatus: String,
+  /// The status of the Amazon Easy Ship order.
+  /// This element is included only for Amazon Easy Ship orders.
+  /// EasyShipShipmentStatus values: PendingPickUp, LabelCanceled,
+  /// PickedUp, OutForDelivery, Damaged, Delivered, RejectedByBuyer,
+  /// Undeliverable, ReturnedToSeller
+  /// Amazon Easy Ship is available only in the India marketplace.
+  pub EasyShipShipmentStatus: String,
+  /// The type of the order.
+  pub OrderType: String,
+  /// The start of the time period that you have committed to
+  /// ship the order. In ISO 8601 date time format.
+  pub EarliestShipDate: Option<DateTime<Utc>>,
+  /// The end of the time period that you have committed to ship
+  /// the order. In ISO 8601 date time format.
+  pub LatestShipDate: Option<DateTime<Utc>>,
+  /// The start of the time period that you have commited to fulfill
+  /// the order. In ISO 8601 date time format.
+  pub EarliestDeliveryDate: Option<DateTime<Utc>>,
+  /// The end of the time period that you have commited to fulfill the order.
+  /// In ISO 8601 date time format.
+  pub LatestDeliveryDate: Option<DateTime<Utc>>,
+  /// true if the order is an Amazon Business order.
+  /// An Amazon Business order is an order where the buyer is a
+  /// Verified Business Buyer and the seller is an Amazon Business Seller.
+  /// For more information about the Amazon Business Seller Program,
+  /// see the Amazon Business website.
+  pub IsBusinessOrder: bool,
+  /// The purchase order (PO) number entered by the buyer at checkout.
+  pub PurchaseOrderNumber: String,
+  /// true if the order is a seller-fulfilled Amazon Prime order.
+  pub IsPrime: bool,
+  /// true if the order has a Premium Shipping Service Level Agreement.
+  /// For more information about Premium Shipping orders,
+  /// see "Premium Shipping Options" in the Seller Central Help for
+  /// your marketplace.
+  pub IsPremiumOrder: bool,
+  /// Indicates the date by which the seller must respond to the buyer
+  /// with an Estimated Ship Date.
+  pub PromiseResponseDueDate: Option<DateTime<Utc>>,
+  /// true if the Estimated Ship Date is set for the order.
+  pub IsEstimatedShipDateSet: bool,
 }
 
 /// A list of OrderStatus values. Used to select orders with a current status that matches
