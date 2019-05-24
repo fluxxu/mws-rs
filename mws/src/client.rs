@@ -135,7 +135,7 @@ impl Client {
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
-    sign.add("SellerId", self.options.seller_id.as_ref());
+    sign.add("SellerId", &self.options.seller_id);
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign
       .generate_url(method.clone(), path, version, action)?
@@ -171,7 +171,7 @@ impl Client {
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
-    sign.add("SellerId", self.options.seller_id.as_ref());
+    sign.add("SellerId", &self.options.seller_id);
     sign.add("ContentMD5Value", content_md5);
     //sign.add("Merchant", self.options.seller_id.as_ref());
     let url = sign

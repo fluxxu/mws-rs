@@ -141,7 +141,7 @@ impl SignatureV2 {
     SignatureV2::set_param(
       &mut params,
       "AWSAccessKeyId",
-      self.aws_access_key_id.as_ref(),
+      &self.aws_access_key_id,
     );
     SignatureV2::set_param(&mut params, "SignatureMethod", "HmacSHA256");
     SignatureV2::set_param(&mut params, "SignatureVersion", "2");

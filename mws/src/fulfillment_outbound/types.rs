@@ -27,19 +27,44 @@ str_enum! {
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct FulfillmentOrder {
+  /// The fulfillment order identifier that you created and
+  /// submitted using the CreateFulfillmentOrder operation.
   pub SellerFulfillmentOrderId: String,
+  /// The destination address that you created when you submitted
+  /// the CreateFulfillmentOrder operation.
   pub DestinationAddress: DestinationAddress,
+  /// A date that you created when you submitted the CreateFulfillmentOrder
+  /// operation. Displays as the order date in recipient-facing materials such
+  /// as the packing slip.
   pub DisplayableOrderDateTime: Option<DateTime<Utc>>,
+  /// The shipping method that you selected when you submitted the
+  /// CreateFulfillmentOrder operation.
   pub ShippingSpeedCategory: ShippingSpeedCategory,
   pub FulfillmentMethod: String,
+  /// The current status of the fulfillment order.
   pub FulfillmentOrderStatus: FulfillmentOrderStatus,
+  /// The date that the status of the fulfillment order last changed.
   pub StatusUpdatedDateTime: Option<DateTime<Utc>>,
+  /// The FulfillmentPolicy value that you chose when you submitted
+  /// the CreateFulfillmentOrder operation.
   pub FulfillmentPolicy: FulfillmentPolicy,
+  /// The date that the fulfillment order was received by an Amazon
+  /// fulfillment center.
   pub ReceivedDateTime: Option<DateTime<Utc>>,
+  /// A fulfillment order identifier that you created when you submitted
+  /// the CreateFulfillmentOrder operation. Displays as the order identifier
+  /// in recipient-facing materials such as the packing slip.
   pub DisplayableOrderId: String,
+  /// A text block that you created when you submitted the CreateFulfillmentOrder
+  /// operation. Displays in recipient-facing materials such as the packing slip.
   pub DisplayableOrderComment: String,
+  /// The marketplace the fulfillment order is placed against.
   pub MarketplaceId: Option<String>,
+  /// Specifies whether an order was created to ship immediately or to be held
+  /// for later. Only returned by GetFulfillmentOrder.
   pub FulfillmentAction: Option<String>,
+  /// The NotificationEmailList value that you created when you submitted the
+  /// CreateFulfillmentOrder operation.
   pub NotificationEmailList: Vec<String>,
 }
 

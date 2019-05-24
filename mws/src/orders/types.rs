@@ -223,54 +223,67 @@ mod tests {
     test_decode!(
       Order,
       r#"
-        <LatestShipDate>2016-11-03T00:09:40Z</LatestShipDate>
+        <LatestShipDate>2018-12-18T07:59:59Z</LatestShipDate>
         <OrderType>StandardOrder</OrderType>
-        <PurchaseDate>2016-11-01T05:01:22Z</PurchaseDate>
-        <BuyerEmail>test@marketplace.amazon.com</BuyerEmail>
-        <AmazonOrderId>104-8343004-0000000</AmazonOrderId>
-        <LastUpdateDate>2016-11-03T00:12:39Z</LastUpdateDate>
-        <ShipServiceLevel>SecondDay</ShipServiceLevel>
+        <SellerOrderId>666</SellerOrderId>
+        <PurchaseDate>2018-12-16T18:53:45.856Z</PurchaseDate>
+        <AmazonOrderId>111-3081581-6666666</AmazonOrderId>
+        <BuyerEmail>666@marketplace.amazon.com</BuyerEmail>
+        <IsReplacementOrder>false</IsReplacementOrder>
+        <LastUpdateDate>2018-12-17T16:50:11.820Z</LastUpdateDate>
         <NumberOfItemsShipped>1</NumberOfItemsShipped>
+        <ShipServiceLevel>Std US D2D Dom</ShipServiceLevel>
         <OrderStatus>Shipped</OrderStatus>
         <SalesChannel>Amazon.com</SalesChannel>
+        <ShippedByAmazonTFM>false</ShippedByAmazonTFM>
         <IsBusinessOrder>false</IsBusinessOrder>
+        <LatestDeliveryDate>2018-12-27T07:59:59Z</LatestDeliveryDate>
         <NumberOfItemsUnshipped>0</NumberOfItemsUnshipped>
+        <PaymentMethodDetails>
+          <PaymentMethodDetail>Standard</PaymentMethodDetail>
+        </PaymentMethodDetails>
         <BuyerName>First Last</BuyerName>
+        <EarliestDeliveryDate>2018-12-20T08:00:00Z</EarliestDeliveryDate>
         <OrderTotal>
           <CurrencyCode>USD</CurrencyCode>
-          <Amount>249.99</Amount>
+          <Amount>666.66</Amount>
         </OrderTotal>
         <IsPremiumOrder>false</IsPremiumOrder>
-        <EarliestShipDate>2016-11-03T00:09:40Z</EarliestShipDate>
-        <MarketplaceId>MMMMMMMMMMMMM</MarketplaceId>
-        <FulfillmentChannel>AFN</FulfillmentChannel>
+        <EarliestShipDate>2018-12-17T08:00:00Z</EarliestShipDate>
+        <MarketplaceId>ATVPDKIKX0DER</MarketplaceId>
+        <FulfillmentChannel>MFN</FulfillmentChannel>
         <PaymentMethod>Other</PaymentMethod>
         <ShippingAddress>
-          <StateOrRegion>CA</StateOrRegion>
           <City>SAN MATEO</City>
+          <AddressType>Residential</AddressType>
+          <PostalCode>92683-4617</PostalCode>
+          <isAddressSharingConfidential>false</isAddressSharingConfidential>
+          <StateOrRegion>CA</StateOrRegion>
           <CountryCode>US</CountryCode>
-          <PostalCode>88888-7777</PostalCode>
           <Name>First Last</Name>
-          <AddressLine1>2 RANDOM ROAD APT 001</AddressLine1>
+          <AddressLine1>8888 J AVE</AddressLine1>
         </ShippingAddress>
-        <IsPrime>false</IsPrime>
-        <ShipmentServiceLevelCategory>SecondDay</ShipmentServiceLevelCategory>
-        <SellerOrderId>104-8343004-0000000</SellerOrderId>"#,
+        <IsPrime>true</IsPrime>
+        <ShipmentServiceLevelCategory>Standard</ShipmentServiceLevelCategory>"#,
       Order {
         LatestShipDate: Some(
-          "2016-11-03T00:09:40Z"
+          "2018-12-18T07:59:59Z"
             .parse()
             .expect("parse LatestShipDate",)
         ),
         OrderType: "StandardOrder".to_string(),
-        PurchaseDate: Some("2016-11-01T05:01:22Z".parse().expect("parse PurchaseDate")),
-        AmazonOrderId: "104-8343004-0000000".to_string(),
+        PurchaseDate: Some(
+          "2018-12-16T18:53:45.856Z"
+            .parse()
+            .expect("parse PurchaseDate")
+        ),
+        AmazonOrderId: "111-3081581-6666666".to_string(),
         LastUpdateDate: Some(
-          "2016-11-03T00:12:39Z"
+          "2018-12-17T16:50:11.820Z"
             .parse()
             .expect("parse LastUpdateDate",)
         ),
-        ShipServiceLevel: "SecondDay".to_string(),
+        ShipServiceLevel: "Std US D2D Dom".to_string(),
         NumberOfItemsShipped: 1,
         OrderStatus: OrderStatus::Shipped,
         SalesChannel: "Amazon.com".to_string(),
@@ -278,32 +291,44 @@ mod tests {
         NumberOfItemsUnshipped: 0,
         IsPremiumOrder: false,
         EarliestShipDate: Some(
-          "2016-11-03T00:09:40Z"
+          "2018-12-17T08:00:00Z"
             .parse()
             .expect("parse EarliestShipDate",)
         ),
-        MarketplaceId: "MMMMMMMMMMMMM".to_string(),
-        FulfillmentChannel: FulfillmentChannel::AFN,
+        MarketplaceId: "ATVPDKIKX0DER".to_string(),
+        FulfillmentChannel: FulfillmentChannel::MFN,
         PaymentMethod: PaymentMethod::Other,
-        IsPrime: false,
-        ShipmentServiceLevelCategory: "SecondDay".to_string(),
-        SellerOrderId: "104-8343004-0000000".to_string(),
-        BuyerEmail: "test@marketplace.amazon.com".to_string(),
+        IsPrime: true,
+        ShipmentServiceLevelCategory: "Standard".to_string(),
+        SellerOrderId: "666".to_string(),
+        BuyerEmail: "666@marketplace.amazon.com".to_string(),
         BuyerName: "First Last".to_string(),
         OrderTotal: Some(CurrencyAmount {
           CurrencyCode: "USD".to_string(),
-          Amount: "249.99".to_owned(),
+          Amount: "666.66".to_owned(),
         }),
         ShippingAddress: Some(ShippingAddress {
           Phone: None,
           StateOrRegion: "CA".to_string(),
           City: "SAN MATEO".to_string(),
           CountryCode: "US".to_string(),
-          PostalCode: "88888-7777".to_string(),
+          PostalCode: "92683-4617".to_string(),
           Name: "First Last".to_string(),
-          AddressLine1: "2 RANDOM ROAD APT 001".to_string(),
+          AddressLine1: "8888 J AVE".to_string(),
           AddressLine2: "".to_string(),
         }),
+        BuyerCounty: "".to_string(),
+        EarliestDeliveryDate: Some("2018-12-20T08:00:00Z".parse().unwrap()),
+        LatestDeliveryDate: Some("2018-12-27T07:59:59Z".parse().unwrap()),
+        EasyShipShipmentStatus: "".to_owned(),
+        IsEstimatedShipDateSet: false,
+        IsReplacementOrder: false,
+        ReplacedOrderId: "".to_owned(),
+        OrderChannel: "".to_owned(),
+        PromiseResponseDueDate: None,
+        PurchaseOrderNumber: "".to_owned(),
+        ShippedByAmazonTFM: false,
+        TFMShipmentStatus: "".to_owned(),
       }
     );
   }
