@@ -40,7 +40,11 @@ fn main() {
 
   let client = get_client(&env);
 
-  if let Some(_) = matches.subcommand_matches("test") {}
+  if let Some(_) = matches.subcommand_matches("test") {
+    use mws::fulfillment_inventory;
+    let res = fulfillment_inventory::ListInventorySupply(&client, Default::default()).unwrap();
+    println!("{:#?}", res);
+  }
 
   if let Some(matches) = matches.subcommand_matches("report") {
     use mws::reports;
@@ -63,7 +67,7 @@ fn get_client(env: &Env) -> Client {
   let opts = ClientOptions {
     endpoint: region.endpoint.to_string(),
     seller_id: env.seller_id.clone(),
-    mws_auth_token: None,
+    mws_auth_token: env.auth_token.clone(),
     aws_access_key_id: env.access_key_id.clone(),
     secret_key: env.secret_key.clone(),
   };

@@ -128,9 +128,10 @@ impl Client {
     P: SerializeMwsParams,
   {
     let mut sign = SignatureV2::new(
-      self.options.endpoint.clone(),
-      self.options.aws_access_key_id.clone(),
-      self.options.secret_key.clone(),
+      &self.options.endpoint,
+      &self.options.aws_access_key_id,
+      &self.options.secret_key,
+      self.options.mws_auth_token.as_ref().map(AsRef::as_ref)
     );
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
@@ -164,9 +165,10 @@ impl Client {
     R: Read + Send + 'static,
   {
     let mut sign = SignatureV2::new(
-      self.options.endpoint.clone(),
-      self.options.aws_access_key_id.clone(),
-      self.options.secret_key.clone(),
+      &self.options.endpoint,
+      &self.options.aws_access_key_id,
+      &self.options.secret_key,
+      self.options.mws_auth_token.as_ref().map(AsRef::as_ref),
     );
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
@@ -206,7 +208,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(v)
     } else {
-      use std::io::{Cursor, Read};
+      use std::io::{Cursor};
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
@@ -257,7 +259,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(v)
     } else {
-      use std::io::{Cursor, Read};
+      use std::io::{Cursor};
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
