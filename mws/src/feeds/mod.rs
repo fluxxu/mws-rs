@@ -130,7 +130,7 @@ impl<M: Message> Envelope<M> {
 #[derive(Debug, Default, SerializeMwsParams)]
 pub struct SubmitFeedParameters {
   pub FeedType: String,
-
+  #[mws_param(list_item_type_name = "Id")]
   pub MarketplaceIdList: Option<Vec<String>>,
   pub PurgeAndReplace: Option<bool>,
 }
