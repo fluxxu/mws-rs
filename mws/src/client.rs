@@ -206,7 +206,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(v)
     } else {
-      use std::io::{Cursor, Read};
+      use std::io::Cursor;
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;
@@ -257,7 +257,7 @@ impl Client {
       let v = T::from_xml(&mut stream)?;
       Ok(v)
     } else {
-      use std::io::{Cursor, Read};
+      use std::io::Cursor;
 
       let mut body = String::new();
       resp.read_to_string(&mut body)?;

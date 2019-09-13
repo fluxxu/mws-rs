@@ -130,7 +130,6 @@ impl SignatureV2 {
     version: T,
     action: T,
   ) -> MwsResult<SignedUrl<'a>> {
-    use base64;
     use crypto::hmac::Hmac;
     use crypto::mac::Mac;
     use crypto::sha2::Sha256;
@@ -138,11 +137,7 @@ impl SignatureV2 {
     let mut params = self.pairs.clone();
     let mut qs = String::with_capacity(255);
 
-    SignatureV2::set_param(
-      &mut params,
-      "AWSAccessKeyId",
-      &self.aws_access_key_id,
-    );
+    SignatureV2::set_param(&mut params, "AWSAccessKeyId", &self.aws_access_key_id);
     SignatureV2::set_param(&mut params, "SignatureMethod", "HmacSHA256");
     SignatureV2::set_param(&mut params, "SignatureVersion", "2");
     SignatureV2::set_param(&mut params, "Version", version.as_ref());
@@ -216,7 +211,8 @@ mod tests {
         "/Products/2011-10-01",
         "2011-10-01",
         "GetMatchingProduct",
-      ).expect("generate url");
+      )
+      .expect("generate url");
 
     assert_eq!(
       url.signature,
