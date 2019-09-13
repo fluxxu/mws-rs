@@ -91,16 +91,23 @@ pub struct SignatureV2 {
   host: String,
   aws_access_key_id: String,
   secret_key: String,
+  auth_token: Option<String>,
   pairs: Vec<Param>,
 }
 
 impl SignatureV2 {
   /// Constructs a new, empty generator
-  pub fn new<T: Into<String>>(host: T, aws_access_key_id: T, secret_key: T) -> SignatureV2 {
+  pub fn new(
+    host: &str,
+    aws_access_key_id: &str,
+    secret_key: &str,
+    auth_token: Option<&str>,
+  ) -> SignatureV2 {
     SignatureV2 {
       host: host.into(),
-      aws_access_key_id: aws_access_key_id.into(),
-      secret_key: secret_key.into(),
+      aws_access_key_id: aws_access_key_id.to_string(),
+      secret_key: secret_key.to_string(),
+      auth_token: auth_token.map(ToString::to_string),
       pairs: Vec::new(),
     }
   }
@@ -138,6 +145,9 @@ impl SignatureV2 {
     let mut qs = String::with_capacity(255);
 
     SignatureV2::set_param(&mut params, "AWSAccessKeyId", &self.aws_access_key_id);
+    if let Some(auth_token) = self.auth_token.as_ref() {
+      SignatureV2::set_param(&mut params, "MWSAuthToken", auth_token);
+    }
     SignatureV2::set_param(&mut params, "SignatureMethod", "HmacSHA256");
     SignatureV2::set_param(&mut params, "SignatureVersion", "2");
     SignatureV2::set_param(&mut params, "Version", version.as_ref());
