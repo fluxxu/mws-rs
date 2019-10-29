@@ -39,7 +39,8 @@ pub fn derive_params(input: TokenStream) -> TokenStream {
                 } else {
                   None
                 }
-              }).collect();
+              })
+              .collect();
             quote! {
               let mut next_ctx = ctx.clone();
               next_ctx.field_config.list_item_type_name = Some("member");
@@ -63,7 +64,8 @@ pub fn derive_params(input: TokenStream) -> TokenStream {
               self.#ident.serialize_mws_params(&next_ctx, pairs);
             }
           }
-        }).collect();
+        })
+        .collect();
 
       quote! {
         impl ::SerializeMwsParams for #name {
@@ -88,7 +90,8 @@ pub fn derive_params(input: TokenStream) -> TokenStream {
           quote! {
             #name::#variant_ident => #variant_ident_string,
           }
-        }).collect();
+        })
+        .collect();
       quote! {
         impl ::SerializeMwsParams for #name {
           fn serialize_mws_params(&self, ctx: &::SerializeMwsParamsContext, pairs: &mut Vec<(String, String)>) {
@@ -134,8 +137,7 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
         ..
       }) = f.ty
       {
-        let last = segments.last().unwrap();
-        let last_node = last.value();
+        let last_node = segments.last().unwrap();
 
         if last_node.ident == "Option" || last_node.ident == "Vec" {
           if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
@@ -143,8 +145,7 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
           }) = last_node.arguments
           {
             if args.len() == 1 {
-              let first = args.first().unwrap();
-              let first_node = first.value();
+              let first_node = args.first().unwrap();
               if let &GenericArgument::Type(Type::Path(TypePath {
                 path: Path { ref segments, .. },
                 ..
@@ -156,19 +157,19 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
                     let no_list_wrapper = cl.iter().find(|(k, _)| k == "no_list_wrapper").is_some();
                     let expr = match (optional, no_list_wrapper) {
                       (true, true) => {
-                        quote!{
+                        quote! {
                           record.#ident.get_or_insert_with(|| vec![])
                             .push(::xmlhelper::decode::FromXmlStream::from_xml(s)?)
                         }
                       }
                       (false, true) => {
-                        quote!{
+                        quote! {
                           record.#ident
                             .push(::xmlhelper::decode::FromXmlStream::from_xml(s)?)
                         }
                       }
                       (true, false) => {
-                        quote!{
+                        quote! {
                           record.#ident = ::xmlhelper::decode::fold_elements(s, vec![], |s, v| {
                             v.push(::xmlhelper::decode::FromXmlStream::from_xml(s)?);
                             Ok(())
@@ -176,7 +177,7 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
                         }
                       }
                       (false, false) => {
-                        quote!{
+                        quote! {
                           record.#ident = ::xmlhelper::decode::fold_elements(s, vec![], |s, v| {
                             v.push(::xmlhelper::decode::FromXmlStream::from_xml(s)?);
                             Ok(())
@@ -190,7 +191,7 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
                     }
                   };
 
-                if let Some(arg_ident) = segments.last().map(|node| node.value().ident.clone()) {
+                if let Some(arg_ident) = segments.last().map(|node| node.ident.clone()) {
                   // `DateTime<_>` does not impl `Default`
                   // So generic impl FromXmlStream for Option<T> won't work
                   if last_node.ident == "Option" {
@@ -225,7 +226,8 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
       quote! {
         #ident_str => record.#ident = ::xmlhelper::decode::FromXmlStream::from_xml(s)?,
       }
-    }).collect();
+    })
+    .collect();
 
   let expanded = quote! {
     impl<_S> ::xmlhelper::decode::FromXmlStream<_S> for #name
@@ -291,7 +293,8 @@ pub fn derive_from_diff_row(input: TokenStream) -> TokenStream {
           }
         }
       }
-    }).collect();
+    })
+    .collect();
 
   let expanded = quote! {
     impl ::mws::tdff::FromTdffRow for #name
@@ -339,7 +342,8 @@ fn get_struct_meta(data: DataStruct, config_attr_name: &str, config_key_wl: &[&s
         ty: field.ty.clone(),
         config_list: get_config_items(config_attr_name, field, config_key_wl),
       }
-    }).collect();
+    })
+    .collect();
 
   StructMeta { fields }
 }
@@ -349,54 +353,58 @@ fn get_config_items(attr_name: &str, field: &Field, wl: &[&str]) -> Vec<(String,
     .attrs
     .iter()
     .filter_map(|a| {
-      a.interpret_meta().and_then(|meta| match meta {
-        Meta::List(list) => if list.ident == attr_name {
-          Some(
-            list
-              .nested
-              .iter()
-              .filter_map(|m| match m {
-                NestedMeta::Meta(meta) => {
-                  let kv = match meta {
-                    Meta::NameValue(MetaNameValue {
-                      ident,
-                      lit: Lit::Str(lit_str),
-                      ..
-                    }) => {
-                      let k = ident.to_string();
-                      let v = lit_str.value();
-                      (k, Some(v))
-                    }
-                    Meta::Word(ident) => {
-                      let k = ident.to_string();
-                      (k, None)
-                    }
-                    _ => {
-                      panic!("only `key = \"value\"` or `key` is allowed in config attrbute.");
-                    }
-                  };
+      a.parse_meta().ok().and_then(|meta| match meta {
+        Meta::List(list) => {
+          if list.path.is_ident(attr_name) {
+            Some(
+              list
+                .nested
+                .iter()
+                .filter_map(|m| match m {
+                  NestedMeta::Meta(meta) => {
+                    let kv = match meta {
+                      Meta::NameValue(MetaNameValue {
+                        path,
+                        lit: Lit::Str(lit_str),
+                        ..
+                      }) => {
+                        let k = path.get_ident().unwrap().to_string();
+                        let v = lit_str.value();
+                        (k, Some(v))
+                      }
+                      Meta::Path(path) => {
+                        let k = path.get_ident().unwrap().to_string();
+                        (k, None)
+                      }
+                      _ => {
+                        panic!("only `key = \"value\"` or `key` is allowed in config attrbute.");
+                      }
+                    };
 
-                  if !wl.contains(&kv.0.as_ref()) {
-                    panic!(
-                      "unknown config key: `{}`. expecting {}",
-                      kv.0,
-                      wl.iter()
-                        .map(|k| format!("`{}`", k))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                    );
+                    if !wl.contains(&kv.0.as_ref()) {
+                      panic!(
+                        "unknown config key: `{}`. expecting {}",
+                        kv.0,
+                        wl.iter()
+                          .map(|k| format!("`{}`", k))
+                          .collect::<Vec<_>>()
+                          .join(", ")
+                      );
+                    }
+
+                    Some(kv)
                   }
-
-                  Some(kv)
-                }
-                _ => None,
-              }).collect::<Vec<_>>(),
-          )
-        } else {
-          None
-        },
+                  _ => None,
+                })
+                .collect::<Vec<_>>(),
+            )
+          } else {
+            None
+          }
+        }
         _ => None,
       })
-    }).flat_map(|i| i)
+    })
+    .flat_map(|i| i)
     .collect()
 }

@@ -13,8 +13,8 @@ str_enum! {
   }
 }
 
-/// Where the seller provided box contents information for a shipment. This is only returned for shipments to US fulfillment centers.
 string_map_enum! {
+  /// Where the seller provided box contents information for a shipment. This is only returned for shipments to US fulfillment centers.
   pub enum BoxContentsSource {
     NONE = "NONE",
     FEED = "FEED",

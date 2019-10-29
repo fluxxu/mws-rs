@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 
-/// The FulfillmentPolicy value that you chose when
-/// you submitted the CreateFulfillmentOrder operation.
 str_enum! {
+  /// The FulfillmentPolicy value that you chose when
+  /// you submitted the CreateFulfillmentOrder operation.
   pub enum FulfillmentPolicy {
     FillOrKill,
     FillAll,
@@ -10,8 +10,8 @@ str_enum! {
   }
 }
 
-/// The current status of the fulfillment order.
 str_enum! {
+  /// The current status of the fulfillment order.
   pub enum FulfillmentOrderStatus {
     RECEIVED,
     INVALID,
@@ -144,8 +144,8 @@ pub struct DestinationAddress {
 // #[derive(Debug, Default, Serialize)]
 // pub struct ReturnAuthorizationList;
 
-/// The current status of the shipment.
 str_enum! {
+  /// The current status of the shipment.
   pub enum FulfillmentShipmentStatus {
     PENDING,
     SHIPPED,
@@ -222,8 +222,8 @@ pub struct FulfillmentShipmentPackage {
   pub EstimatedArrivalDateTime: Option<DateTime<Utc>>,
 }
 
-/// The current status of the fulfillment order.
 str_enum! {
+  /// The current status of the fulfillment order.
   pub enum PackageStatus {
     IN_TRANSIT,
     DELIVERED,
@@ -327,8 +327,8 @@ pub struct PackageTrackingDetails {
   pub AdditionalLocationInfo: Option<String>,
 }
 
-/// The shipping method for your fulfillment order.
 str_enum! {
+  /// The shipping method for your fulfillment order.
   pub enum ShippingSpeedCategory {
     Standard,
     Expedited,
@@ -337,9 +337,9 @@ str_enum! {
   }
 }
 
-/// Specifies whether the fulfillment order should
-/// ship now or have an order hold put on it.
 str_enum! {
+  /// Specifies whether the fulfillment order should
+  /// ship now or have an order hold put on it.
   pub enum FulfillmentAction {
     Ship,
     Hold,

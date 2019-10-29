@@ -13,8 +13,8 @@ pub mod message;
 static PATH: &'static str = "/";
 static VERSION: &'static str = "2009-01-01";
 
-/// Enumerates all the feed types that are available through the Feeds API section.
 string_map_enum! {
+  /// Enumerates all the feed types that are available through the Feeds API section.
   pub enum FeedType {
     Product = "_POST_PRODUCT_DATA_",
     Inventory = "_POST_INVENTORY_AVAILABILITY_DATA_",

@@ -134,14 +134,14 @@ pub struct Order {
   pub IsEstimatedShipDateSet: bool,
 }
 
-/// A list of OrderStatus values. Used to select orders with a current status that matches
-/// one of the status values that you specify.
-///
-/// Unshipped and PartiallyShipped must be used together in this version of the Orders API
-/// section. Using one and not the other returns an error.
-///
-/// [Reference](http://docs.developer.amazonservices.com/en_CA/orders-2013-09-01/Orders_ListOrders.html)
 str_enum! {
+  /// A list of OrderStatus values. Used to select orders with a current status that matches
+  /// one of the status values that you specify.
+  ///
+  /// Unshipped and PartiallyShipped must be used together in this version of the Orders API
+  /// section. Using one and not the other returns an error.
+  ///
+  /// [Reference](http://docs.developer.amazonservices.com/en_CA/orders-2013-09-01/Orders_ListOrders.html)
   pub enum OrderStatus {
     PendingAvailability,
     Pending,
@@ -154,21 +154,21 @@ str_enum! {
   }
 }
 
-///	A list that indicates how an order was fulfilled.
-///
-/// [Reference](http://docs.developer.amazonservices.com/en_CA/orders-2013-09-01/Orders_ListOrders.html)
 str_enum! {
+  ///	A list that indicates how an order was fulfilled.
+  ///
+  /// [Reference](http://docs.developer.amazonservices.com/en_CA/orders-2013-09-01/Orders_ListOrders.html)
   pub enum FulfillmentChannel {
     AFN,
     MFN,
   }
 }
 
-/// A list of PaymentMethod values. Used to select orders paid for with the payment methods
-/// that you specify.
-///
-/// Note: COD and CVS values are valid only in Japan (JP).
 str_enum! {
+  /// A list of PaymentMethod values. Used to select orders paid for with the payment methods
+  /// that you specify.
+  ///
+  /// Note: COD and CVS values are valid only in Japan (JP).
   pub enum PaymentMethod {
     COD,
     CVS,
@@ -176,12 +176,12 @@ str_enum! {
   }
 }
 
-/// A list of TFMShipmentStatus values. Used to select Amazon Transportation for Merchants (TFM)
-/// orders with a current status that matches one of the status values that you specify.
-/// If TFMShipmentStatus is specified, only TFM orders are returned.
-///
-/// Note: The TFMShipmentStatus request parameter is available only in China (CN).
 str_enum! {
+  /// A list of TFMShipmentStatus values. Used to select Amazon Transportation for Merchants (TFM)
+  /// orders with a current status that matches one of the status values that you specify.
+  /// If TFMShipmentStatus is specified, only TFM orders are returned.
+  ///
+  /// Note: The TFMShipmentStatus request parameter is available only in China (CN).
   pub enum TFMShipmentStatus {
     PendingPickUp,
     LabelCanceled,

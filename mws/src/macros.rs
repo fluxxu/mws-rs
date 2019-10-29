@@ -1,19 +1,33 @@
 macro_rules! str_enum {
   (
+    $(#[doc = $doc:expr])*
     pub enum $name:ident { $($item:tt)* }
   ) => {
-    str_enum!($name, $($item)*);
+    str_enum!(
+      $(#[doc = $doc])*
+      ~
+      $name, $($item)*
+    );
   };
 
   (
+    $(#[doc = $doc:expr])*
+    ~
     $name:ident, $($item:tt),*,
   ) => {
-    str_enum!($name, $($item)*);
+    str_enum!(
+      $(#[doc = $doc])*
+      ~
+      $name, $($item)*
+    );
   };
 
   (
+    $(#[doc = $doc:expr])*
+    ~
     $name:ident, $($item:tt)*
   ) => {
+    $(#[doc = $doc])*
     #[allow(non_camel_case_types)]
     #[derive(Clone, Debug, Serialize, Deserialize)]
     pub enum $name {
@@ -108,11 +122,13 @@ macro_rules! str_enum {
 
 macro_rules! string_map_enum {
   (
+    $(#[doc = $doc:expr])*
     pub enum $name:ident {
       $($variant:ident = $value:expr),+
       $(,)*
     }
   ) => (
+    $(#[doc = $doc])*
     #[allow(non_camel_case_types)]
     #[derive(Clone, Debug, Serialize)]
     pub enum $name {
@@ -211,7 +227,8 @@ macro_rules! response_envelope_type {
               Ok(())
             },
           )
-        }).map($name)
+        })
+        .map($name)
       }
     }
   };

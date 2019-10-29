@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 
-/// The condition of the item.
 str_enum! {
+  /// The condition of the item.
   pub enum Condition {
     NewItem,
     NewWithWarranty,
@@ -53,10 +53,10 @@ pub struct InventorySupply {
   pub SupplyDetail: Option<Vec<InventorySupplyDetail>>,
 }
 
-/// Indicates whether inventory is immediately available for picking,
-/// whether inventory availability is unknown, or whether inventory
-/// is expected to be available for picking by a specific date.
 str_enum! {
+  /// Indicates whether inventory is immediately available for picking,
+  /// whether inventory availability is unknown, or whether inventory
+  /// is expected to be available for picking by a specific date.
   pub enum TimepointType {
     Immediately,
     DateTime,
@@ -73,8 +73,8 @@ pub struct Timepoint {
   pub DateTime: Option<DateTime<Utc>>,
 }
 
-/// The current inventory status for a specific item.
 str_enum! {
+  /// The current inventory status for a specific item.
   pub enum SupplyType {
     InStock,
     Inbound,
