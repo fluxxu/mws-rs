@@ -17,8 +17,7 @@ pub const REGION_ID_NA: &'static str = "na";
 pub const REGION_ID_EU: &'static str = "eu";
 pub const REGION_ID_IN: &'static str = "in";
 pub const REGION_ID_CN: &'static str = "cn";
-pub const REGION_ID_JP: &'static str = "jp";
-pub const REGION_ID_AU: &'static str = "au";
+pub const REGION_ID_FE: &'static str = "fe";
 
 pub const MARKETPLACE_ID_CA: &'static str = "A2EUQ1WTGCTBG2";
 pub const MARKETPLACE_ID_MX: &'static str = "A1AM78C64UM0Y8";
@@ -32,6 +31,7 @@ pub const MARKETPLACE_ID_IN: &'static str = "A21TJRUUN4KGV";
 pub const MARKETPLACE_ID_JP: &'static str = "A1VC38T7YXB528";
 pub const MARKETPLACE_ID_CN: &'static str = "AAHKV2X7AFYLW";
 pub const MARKETPLACE_ID_AU: &'static str = "A39IBJ37TRP1C6";
+pub const MARKETPLACE_ID_SG: &'static str = "A19VAU5U5O7RUS";
 
 lazy_static! {
   pub static ref MARKETPLACES: Vec<AmazonMarketplace> = {
@@ -46,20 +46,23 @@ lazy_static! {
       };
     }
     let mut items = vec![];
-    items.push(item!("A2EUQ1WTGCTBG2", "na", "Canada", "CA"));
-    items.push(item!("A1AM78C64UM0Y8", "na", "Mexico", "MX"));
-    items.push(item!("ATVPDKIKX0DER", "na", "USA", "US"));
+    items.push(item!(MARKETPLACE_ID_CA, "na", "Canada", "CA"));
+    items.push(item!(MARKETPLACE_ID_MX, "na", "Mexico", "MX"));
+    items.push(item!(MARKETPLACE_ID_US, "na", "USA", "US"));
 
-    items.push(item!("A1PA6795UKMFR9", "eu", "Germany", "DE"));
-    items.push(item!("A1RKKUPIHCS9HS", "eu", "Spain", "ES"));
-    items.push(item!("A13V1IB3VIYZZH", "eu", "France", "FR"));
-    items.push(item!("APJ6JRA9NG5V4", "eu", "Italy", "IT"));
-    items.push(item!("A1F83G8C2ARO7P", "eu", "United Kingdom", "GB"));
+    items.push(item!(MARKETPLACE_ID_DE, "eu", "Germany", "DE"));
+    items.push(item!(MARKETPLACE_ID_ES, "eu", "Spain", "ES"));
+    items.push(item!(MARKETPLACE_ID_FR, "eu", "France", "FR"));
+    items.push(item!(MARKETPLACE_ID_IT, "eu", "Italy", "IT"));
+    items.push(item!(MARKETPLACE_ID_GB, "eu", "United Kingdom", "GB"));
 
-    items.push(item!("A21TJRUUN4KGV", "in", "India", "IN"));
-    items.push(item!("A1VC38T7YXB528", "jp", "Japan", "JP"));
-    items.push(item!("AAHKV2X7AFYLW", "cn", "China", "CN"));
-    items.push(item!("A39IBJ37TRP1C6", "au", "Australia", "AU"));
+    items.push(item!(MARKETPLACE_ID_IN, "in", "India", "IN"));
+
+    items.push(item!(MARKETPLACE_ID_JP, "fe", "Japan", "JP"));
+    items.push(item!(MARKETPLACE_ID_AU, "fe", "Australia", "AU"));
+    items.push(item!(MARKETPLACE_ID_SG, "fe", "Australia", "AU"));
+
+    items.push(item!(MARKETPLACE_ID_CN, "cn", "China", "CN"));
 
     items
   };
@@ -94,18 +97,11 @@ lazy_static! {
         marketplaces: get_region_marketplace_list("cn"),
       },
       AmazonRegion {
-        id: REGION_ID_JP,
-        name: "Japan (JP)",
-        endpoint: "mws.amazonservices.jp",
-        marketplace_id_list: get_region_marketplace_id_list("jp"),
-        marketplaces: get_region_marketplace_list("jp"),
-      },
-      AmazonRegion {
-        id: REGION_ID_AU,
-        name: "Australia (AU)",
+        id: REGION_ID_FE,
+        name: "Far East (FE)",
         endpoint: "mws.amazonservices.com.au",
-        marketplace_id_list: get_region_marketplace_id_list("au"),
-        marketplaces: get_region_marketplace_list("au"),
+        marketplace_id_list: get_region_marketplace_id_list("fe"),
+        marketplaces: get_region_marketplace_list("fe"),
       },
     ]
   };
@@ -124,7 +120,8 @@ pub fn get_region_marketplace_id_list(region_id: &str) -> Vec<&'static str> {
       } else {
         None
       }
-    }).collect()
+    })
+    .collect()
 }
 
 pub fn get_region_marketplace_list(region_id: &str) -> Vec<&'static AmazonMarketplace> {
@@ -136,7 +133,8 @@ pub fn get_region_marketplace_list(region_id: &str) -> Vec<&'static AmazonMarket
       } else {
         None
       }
-    }).collect()
+    })
+    .collect()
 }
 
 pub fn get_region(id: &str) -> Option<&'static AmazonRegion> {
@@ -418,15 +416,15 @@ fn test_resolve_usa_state_code() {
     "Wyoming",
     "WYOMING",
   ]
-    .iter()
-    .for_each(|v| {
-      assert!(
-        resolve_usa_state_code(v).is_some(),
-        "{}: {}",
-        v,
-        normalize(v)
-      )
-    })
+  .iter()
+  .for_each(|v| {
+    assert!(
+      resolve_usa_state_code(v).is_some(),
+      "{}: {}",
+      v,
+      normalize(v)
+    )
+  })
 }
 
 fn normalize(text: &str) -> String {

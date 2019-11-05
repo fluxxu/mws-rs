@@ -8,5 +8,5 @@
 Cargo.lock
 
 samples
-.env
+.env*
 .vscode

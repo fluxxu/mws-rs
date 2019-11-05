@@ -1,37 +1,63 @@
 extern crate mws;
+use chrono::offset::TimeZone;
+use chrono::{DateTime, NaiveDate, Utc};
+use std::path::PathBuf;
+use structopt::StructOpt;
 
-use clap::{App, Arg, SubCommand};
 use mws::client::Client;
 
 mod env;
 
 use self::env::Env;
 
+#[derive(Debug, StructOpt)]
+#[structopt(name = "mws-cli", about = "MWS CLI.")]
+struct Opt {
+  #[structopt(long = "env", parse(from_os_str))]
+  env: Option<PathBuf>,
+  #[structopt(subcommand)]
+  cmd: Command,
+}
+
+#[derive(Debug, StructOpt)]
+enum Command {
+  ReportRequest {
+    #[structopt(long = "report_type")]
+    report_type: String,
+    #[structopt(long = "start_date", parse(try_from_str))]
+    start_date: Option<NaiveDate>,
+    #[structopt(long = "end_date", parse(try_from_str))]
+    end_date: Option<NaiveDate>,
+    #[structopt(long = "report_options")]
+    report_options: Option<String>,
+    #[structopt(long = "marketplace")]
+    marketplace_id_list: Option<Vec<String>>,
+  },
+  ReportListRequestByIds {
+    #[structopt(long = "id")]
+    ids: Vec<String>,
+  },
+  ReportGet {
+    #[structopt(long = "id")]
+    id: String,
+    #[structopt(long = "out", parse(from_os_str))]
+    out: PathBuf,
+  },
+  EncodingConvJp {
+    #[structopt(long = "in", parse(from_os_str))]
+    input: PathBuf,
+    #[structopt(long = "out", parse(from_os_str))]
+    out: PathBuf,
+  },
+}
+
 fn main() {
-  let matches = App::new("MWS CLI")
-    .version("0.1")
-    .arg(
-      Arg::with_name("env")
-        .short("e")
-        .long("env")
-        .value_name("FILE")
-        .help("Sets a env file")
-        .takes_value(true),
-    )
-    .subcommand(SubCommand::with_name("test"))
-    .subcommand(
-      SubCommand::with_name("report").subcommand(
-        SubCommand::with_name("get")
-          .arg(Arg::with_name("id").index(1))
-          .arg(Arg::with_name("output").index(2)),
-      ),
-    )
-    .get_matches();
+  let opt = Opt::from_args();
 
-  let env_name = matches.value_of("env").unwrap_or(".env");
+  let env_path = opt.env.unwrap_or_else(|| PathBuf::from(".env"));
 
-  println!("env file name: {}", env_name);
-  ::dotenv::from_filename(env_name).ok();
+  println!("env path: {:?}", env_path);
+  ::dotenv::from_path(&env_path).ok();
 
   let env = Env::from_env();
 
@@ -40,22 +66,55 @@ fn main() {
 
   let client = get_client(&env);
 
-  if let Some(_) = matches.subcommand_matches("test") {
-    use mws::fulfillment_inventory;
-    let res = fulfillment_inventory::ListInventorySupply(&client, Default::default()).unwrap();
-    println!("{:#?}", res);
-  }
+  match opt.cmd {
+    Command::ReportRequest {
+      report_type,
+      start_date,
+      end_date,
+      report_options,
+      marketplace_id_list,
+    } => {
+      use mws::reports::*;
+      let res = RequestReport(
+        &client,
+        RequestReportParameters {
+          ReportType: report_type,
+          StartDate: start_date.map(get_utc_datetime),
+          EndDate: end_date.map(get_utc_datetime),
+          ReportOptions: report_options,
+          MarketplaceIdList: marketplace_id_list,
+        },
+      )
+      .unwrap();
+      println!("{:#?}", res)
+    }
+    Command::ReportListRequestByIds { ids } => {
+      use mws::reports::*;
+      let res = GetReportRequestList(
+        &client,
+        GetReportRequestListParameters {
+          ReportRequestIdList: Some(ids),
+          ..Default::default()
+        },
+      )
+      .unwrap();
 
-  if let Some(matches) = matches.subcommand_matches("report") {
-    use mws::reports;
-
-    if let Some(matches) = matches.subcommand_matches("get") {
-      use std::fs;
-      let report_id = matches.value_of("id").unwrap();
-      let output = matches.value_of("output").unwrap();
-      let mut out = fs::File::create(output).unwrap();
-      reports::GetReport(&client, report_id.to_string(), &mut out).unwrap();
-      println!("report {} saved to {}", report_id, output);
+      println!("{:#?}", res)
+    }
+    Command::ReportGet { id, out } => {
+      use mws::reports::*;
+      let mut out = std::fs::File::create(out).unwrap();
+      GetReport(&client, id, &mut out).unwrap();
+    }
+    Command::EncodingConvJp { input, out } => {
+      use encoding_rs::*;
+      let bytes = std::fs::read(input).unwrap();
+      let (cow, encoding_used, had_errors) = SHIFT_JIS.decode(&bytes);
+      if had_errors {
+        panic!("decode error.")
+      }
+      println!("encoding_used: {:?}", encoding_used);
+      std::fs::write(out, cow.as_ref()).unwrap();
     }
   }
 }
@@ -72,4 +131,8 @@ fn get_client(env: &Env) -> Client {
     secret_key: env.secret_key.clone(),
   };
   Client::new(opts).unwrap()
+}
+
+fn get_utc_datetime(date: NaiveDate) -> DateTime<Utc> {
+  Utc.from_utc_date(&date).and_hms(0, 0, 0)
 }
