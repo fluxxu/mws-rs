@@ -74,7 +74,8 @@ pub fn GetReportListByNextToken(
       VERSION,
       "GetReportListByNextToken",
       params,
-    ).map(|e: GetReportListByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: GetReportListByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -89,7 +90,7 @@ pub fn GetReport<W: Write>(
   let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
   let content_md5 = resp
     .headers()
-    .get_raw("Content-MD5")
+    .get_raw("content-md5")
     .ok_or_else(|| MwsError::ContentMD5HeaderMissing)
     .and_then(|data| ::std::str::from_utf8(&data[0]).map_err(Into::into))?
     .to_owned();
@@ -160,7 +161,8 @@ pub fn GetReportRequestListByNextToken(
       VERSION,
       "GetReportRequestListByNextToken",
       params,
-    ).map(|e: GetReportRequestListByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: GetReportRequestListByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
