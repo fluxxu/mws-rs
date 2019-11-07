@@ -90,7 +90,7 @@ pub fn GetReport<W: Write>(
   let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
   let content_md5 = resp
     .headers()
-    .get_raw("content-md5")
+    .get_raw("Content-MD5")
     .ok_or_else(|| MwsError::ContentMD5HeaderMissing)
     .and_then(|data| ::std::str::from_utf8(&data[0]).map_err(Into::into))?
     .to_owned();

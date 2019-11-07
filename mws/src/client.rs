@@ -1,5 +1,6 @@
 use reqwest;
 pub use reqwest::header::ContentType;
+use reqwest::Response;
 pub use reqwest::{Method, StatusCode};
 use result::{MwsError, MwsResult};
 use sign::SignatureV2;
@@ -146,7 +147,8 @@ impl Client {
       .http_client
       .request(method, &url)
       .send()
-      .map_err(Into::into)
+      .map_err(MwsError::from)
+      .and_then(handle_error_status)
   }
 
   pub fn request_with_body<P, R>(
@@ -187,7 +189,8 @@ impl Client {
       .header(content_type)
       .body(reqwest::Body::new(body))
       .send()
-      .map_err(Into::into)
+      .map_err(MwsError::from)
+      .and_then(handle_error_status)
   }
 
   pub fn request_xml<P, T>(
@@ -202,30 +205,10 @@ impl Client {
     P: SerializeMwsParams,
     T: FromXmlStream<Stream<reqwest::Response>>,
   {
-    let mut resp = self.request(method, path, version, action, parameters)?;
-    if resp.status().is_success() {
-      let mut stream = Stream::new(resp);
-      let v = T::from_xml(&mut stream)?;
-      Ok(v)
-    } else {
-      use std::io::Cursor;
-
-      let mut body = String::new();
-      resp.read_to_string(&mut body)?;
-      let mut s = Stream::new(Cursor::new(body.clone()));
-      match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: Some(info),
-        })),
-        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: None,
-        })),
-      }
-    }
+    let resp = self.request(method, path, version, action, parameters)?;
+    let mut stream = Stream::new(resp);
+    let v = T::from_xml(&mut stream)?;
+    Ok(v)
   }
 
   pub fn request_xml_with_body<P, R, T>(
@@ -244,7 +227,7 @@ impl Client {
     T: FromXmlStream<Stream<reqwest::Response>>,
     R: Read + Send + 'static,
   {
-    let mut resp = self.request_with_body(
+    let resp = self.request_with_body(
       method,
       path,
       version,
@@ -254,29 +237,9 @@ impl Client {
       content_md5,
       content_type,
     )?;
-    if resp.status().is_success() {
-      let mut stream = Stream::new(resp);
-      let v = T::from_xml(&mut stream)?;
-      Ok(v)
-    } else {
-      use std::io::Cursor;
-
-      let mut body = String::new();
-      resp.read_to_string(&mut body)?;
-      let mut s = Stream::new(Cursor::new(body.clone()));
-      match ErrorResponseInfo::from_xml(&mut s) {
-        Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: Some(info),
-        })),
-        Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
-          status: resp.status().clone(),
-          raw: body,
-          info: None,
-        })),
-      }
-    }
+    let mut stream = Stream::new(resp);
+    let v = T::from_xml(&mut stream)?;
+    Ok(v)
   }
 
   #[cfg(test)]
@@ -304,10 +267,40 @@ impl Client {
     let url = sign
       .generate_url(method.clone(), path, version, action)?
       .to_string();
-    let mut resp = self.http_client.request(method, &url).send()?;
+    let mut resp = self
+      .http_client
+      .request(method, &url)
+      .send()
+      .map_err(MwsError::from)
+      .and_then(handle_error_status)?;
     let mut s = String::new();
     resp.read_to_string(&mut s)?;
     Ok((resp.status().clone(), s))
+  }
+}
+
+fn handle_error_status(resp: Response) -> MwsResult<Response> {
+  if resp.status().is_success() {
+    Ok(resp)
+  } else {
+    use std::io::Cursor;
+
+    let mut resp = resp;
+    let mut body = String::new();
+    resp.read_to_string(&mut body)?;
+    let mut s = Stream::new(Cursor::new(body.clone()));
+    match ErrorResponseInfo::from_xml(&mut s) {
+      Ok(info) => Err(MwsError::ErrorResponse(ErrorResponse {
+        status: resp.status().clone(),
+        raw: body,
+        info: Some(info),
+      })),
+      Err(_) => Err(MwsError::ErrorResponse(ErrorResponse {
+        status: resp.status().clone(),
+        raw: body,
+        info: None,
+      })),
+    }
   }
 }
 
