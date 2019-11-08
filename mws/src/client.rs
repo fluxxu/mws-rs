@@ -242,7 +242,6 @@ impl Client {
     Ok(v)
   }
 
-  #[cfg(test)]
   pub fn request_raw<P>(
     &self,
     method: Method,
