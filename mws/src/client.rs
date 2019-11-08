@@ -249,7 +249,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> MwsResult<(StatusCode, String)>
+  ) -> MwsResult<(StatusCode, Vec<(String, String)>, Vec<u8>)>
   where
     P: SerializeMwsParams,
   {
@@ -271,9 +271,16 @@ impl Client {
       .send()
       .map_err(MwsError::from)
       .and_then(handle_error_status)?;
-    let mut s = String::new();
-    resp.read_to_string(&mut s)?;
-    Ok((resp.status().clone(), s))
+
+    let headers = resp
+      .headers()
+      .iter()
+      .map(|view| (view.name().to_string(), view.value_string()))
+      .collect();
+
+    let mut body = vec![];
+    resp.read_to_end(&mut body)?;
+    Ok((resp.status().clone(), headers, body))
   }
 }
 
@@ -325,7 +332,7 @@ mod tests {
   fn it_works() {
     dotenv().ok();
     let client = get_test_client();
-    let (status, body) = client
+    let (status, _, body) = client
       .request_raw(
         Method::Post,
         "/Orders/2013-09-01",
@@ -334,11 +341,12 @@ mod tests {
         (),
       )
       .expect("send request");
+    let body = String::from_utf8(body).unwrap();
     assert!(status.is_success());
     assert!(body.starts_with("<?xml"));
 
     use std::io::Cursor;
-    let (status, body) = client
+    let (status, _, body) = client
       .request_raw(
         Method::Post,
         "/Fake/2013-09-01",
@@ -347,6 +355,7 @@ mod tests {
         (),
       )
       .expect("send request");
+    let body = String::from_utf8(body).unwrap();
     assert!(!status.is_success());
     let source = Cursor::new(body);
     let mut s = Stream::new(source);
