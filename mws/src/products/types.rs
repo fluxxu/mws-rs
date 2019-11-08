@@ -1,5 +1,3 @@
-//! Types based on xsd files.
-
 mod default {
   //! [default.xsd](http://g-ecx.images-amazon.com/images/G/01/mwsportal/doc/en_US/products/default.xsd)
 
@@ -57,7 +55,6 @@ mod default {
     Title(String),
     Warranty(String),
   }
-
 }
 
 pub mod product {
@@ -127,5 +124,4 @@ pub mod product {
     pub relationships: Vec<Relationship>,
     pub sales_rankings: Vec<SalesRank>,
   }
-
 }

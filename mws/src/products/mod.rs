@@ -5,8 +5,19 @@
 use result::MwsResult;
 
 pub mod types;
+pub use self::types::*;
 
-use self::types::product::{Id, Product};
+static PATH: &'static str = "/Orders/2013-09-01";
+static VERSION: &'static str = "2011-10-01";
+
+#[allow(non_snake_case)]
+#[derive(Debug, Default, Serialize, FromXmlStream)]
+pub struct ListOrdersResponse {
+  pub Orders: Vec<Order>,
+  pub LastUpdatedBefore: Option<DateTime<Utc>>,
+  pub CreatedBefore: Option<DateTime<Utc>>,
+  pub NextToken: Option<String>,
+}
 
 /// Returns a list of products and their attributes, based on a list of ASIN, GCID, SellerSKU, UPC, EAN, ISBN, and JAN values.
 ///
