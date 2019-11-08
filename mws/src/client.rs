@@ -254,12 +254,11 @@ impl Client {
   where
     P: SerializeMwsParams,
   {
-    use std::io::Read;
-
     let mut sign = SignatureV2::new(
-      self.options.endpoint.clone(),
-      self.options.aws_access_key_id.clone(),
-      self.options.secret_key.clone(),
+      &self.options.endpoint,
+      &self.options.aws_access_key_id,
+      &self.options.secret_key,
+      self.options.mws_auth_token.as_ref().map(AsRef::as_ref),
     );
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
@@ -323,6 +322,7 @@ mod tests {
   use dotenv::dotenv;
 
   #[test]
+  #[ignore]
   fn it_works() {
     dotenv().ok();
     let client = get_test_client();

@@ -209,7 +209,7 @@ mod tests {
 
   #[test]
   fn test_signature() {
-    let mut s = SignatureV2::new("mws.amazonservices.ca", "3333", "0000");
+    let mut s = SignatureV2::new("mws.amazonservices.ca", "3333", "0000", None);
     let date: DateTime<Utc> = "2016-12-20T18:42:04Z".parse().expect("parse date");
     let url = s
       .add("Timestamp", date.to_iso8601())
