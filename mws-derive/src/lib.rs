@@ -119,13 +119,42 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
   let name = input.ident;
 
   let meta = if let Data::Struct(data) = input.data {
-    get_struct_meta(data, "from_xml_stream", &["no_list_wrapper"])
+    get_struct_meta(
+      data,
+      "from_xml_stream",
+      &["no_list_wrapper", "from_attr", "from_content"],
+    )
   } else {
     panic!("only struct is supported.");
   };
 
-  let fields: Vec<_> = meta
-    .fields
+  let (attr_fields, rest): (Vec<StructFieldMeta>, Vec<StructFieldMeta>) =
+    meta.fields.into_iter().partition(|f| {
+      f.config_list
+        .iter()
+        .find(|(k, _)| k == "from_attr")
+        .is_some()
+    });
+
+  let (content_fields, rest): (Vec<StructFieldMeta>, Vec<StructFieldMeta>) =
+    rest.into_iter().partition(|f| {
+      f.config_list
+        .iter()
+        .find(|(k, _)| k == "from_content")
+        .is_some()
+    });
+
+  let tag_fields = rest;
+
+  if content_fields.len() > 1 {
+    panic!("cannot have more than 1 `from_content` field.");
+  }
+
+  if content_fields.len() > 0 && tag_fields.len() > 0 {
+    panic!("`from_content` field found, other fields must be `from_attr`.");
+  }
+
+  let tag_fields: Vec<_> = tag_fields
     .iter()
     .map(|f| {
       let ident = &f.ident;
@@ -229,19 +258,94 @@ pub fn derive_from_xml_stream(input: TokenStream) -> TokenStream {
     })
     .collect();
 
+  let attr_fields: Vec<_> = attr_fields
+    .iter()
+    .map(|f| {
+      let ident = &f.ident;
+      let ident_str = format!("{}", ident);
+      let attr_name = f
+        .config_list
+        .iter()
+        .find(|(k, _)| k == "from_attr")
+        .and_then(|(_, v)| v.clone())
+        .unwrap_or_else(|| ident_str.clone());
+      if let Type::Path(TypePath {
+        path: Path { ref segments, .. },
+        ..
+      }) = f.ty
+      {
+        let last_node = segments.last().unwrap();
+
+        if last_node.ident == "Option" {
+          quote! {
+            if let Some(value) = elem.attributes.value(#attr_name) {
+              record.#ident = Some(::xmlhelper::decode::parse_str(&value)?);
+            }
+          }
+        } else {
+          quote! {
+            if let Some(value) = elem.attributes.value(#attr_name) {
+              record.#ident = ::xmlhelper::decode::parse_str(&value)?;
+            }
+          }
+        }
+      } else {
+        use quote::ToTokens;
+        panic!(
+          "unsupported field type: '{}'",
+          f.ty.clone().into_token_stream()
+        );
+      }
+    })
+    .collect();
+
+  let assign_attr_fields = if attr_fields.len() > 0 {
+    quote! {
+      if let Some(elem) = s.container_elem() {
+        #(#attr_fields)*
+      }
+    }
+  } else {
+    quote! {}
+  };
+
+  let content_field = if let Some(f) = content_fields.get(0) {
+    let ident = &f.ident;
+    quote! {
+      record.#ident = ::xmlhelper::decode::FromXmlStream::from_xml(s)?;
+    }
+  } else {
+    quote! {}
+  };
+
+  let assign_tag_fields = if tag_fields.len() > 0 {
+    quote! {
+      use ::xmlhelper::decode::fold_elements;
+
+      record = fold_elements(s, record, |s, record| {
+        match s.local_name() {
+          #(#tag_fields)*
+          _ => {}
+        }
+        Ok(())
+      })?;
+    }
+  } else {
+    quote! {}
+  };
+
   let expanded = quote! {
     impl<_S> ::xmlhelper::decode::FromXmlStream<_S> for #name
     where _S: ::xmlhelper::decode::XmlEventStream
     {
       fn from_xml(s: &mut _S) -> ::result::MwsResult<Self> {
-        use ::xmlhelper::decode::fold_elements;
-        fold_elements(s, Self::default(), |s, record| {
-          match s.local_name() {
-            #(#fields)*
-            _ => {}
-          }
-          Ok(())
-        })
+        let mut record = Self::default();
+
+        #assign_attr_fields
+        #content_field
+        #assign_tag_fields
+
+        Ok(record)
       }
     }
   };

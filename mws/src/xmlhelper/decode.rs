@@ -139,16 +139,15 @@ where
 pub trait XmlEventStream {
   fn next(&mut self) -> Option<XmlReaderResult<XmlEvent>>;
   fn peek(&mut self) -> Option<&XmlReaderResult<XmlEvent>>;
-}
-
-impl<R: Read> From<R> for Stream<R> {
-  fn from(source: R) -> Stream<R> {
-    Stream::new(source)
+  fn container_elem(&self) -> Option<&XmlElement> {
+    None
   }
 }
 
 /// Owned stream
-pub struct Stream<R: Read>(Peekable<Events<R>>);
+pub struct Stream<R: Read> {
+  inner: Peekable<Events<R>>,
+}
 
 impl<R: Read> Stream<R> {
   /// Construct a stream
@@ -156,21 +155,21 @@ impl<R: Read> Stream<R> {
     let config = ::xml::ParserConfig::new()
       .trim_whitespace(true)
       .ignore_comments(true);
-    Stream(
-      EventReader::new_with_config(read, config)
-        .into_iter()
-        .peekable(),
-    )
+    let inner = EventReader::new_with_config(read, config)
+      .into_iter()
+      .peekable();
+
+    Stream { inner }
   }
 }
 
 impl<R: Read> XmlEventStream for Stream<R> {
   fn next(&mut self) -> Option<XmlReaderResult<XmlEvent>> {
-    self.0.next()
+    self.inner.next()
   }
 
   fn peek(&mut self) -> Option<&XmlReaderResult<XmlEvent>> {
-    self.0.peek()
+    self.inner.peek()
   }
 }
 
@@ -184,19 +183,15 @@ pub struct ElementScopedStream<'a, S: XmlEventStream + 'a> {
 impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
   fn new(inner: &mut S) -> MwsResult<ElementScopedStream<S>> {
     let elem = try_consume_event!(inner,
-      XmlEvent::StartElement { name, attributes, .. } => XmlElement {
-        name: name,
-        attributes: XmlAttributeList(attributes),
-      });
+    XmlEvent::StartElement { name, attributes, .. } => XmlElement {
+      name: name,
+      attributes: XmlAttributeList(attributes),
+    });
     Ok(ElementScopedStream {
       inner: inner,
       level: 1,
       elem: elem,
     })
-  }
-
-  pub fn elem(&self) -> &XmlElement {
-    &self.elem
   }
 
   pub fn local_name(&self) -> &str {
@@ -225,6 +220,10 @@ impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
         Some(Err(err)) => return Err(err.into()),
       }
     }
+  }
+
+  fn elem(&self) -> &XmlElement {
+    &self.elem
   }
 }
 
@@ -261,6 +260,10 @@ impl<'a, S: XmlEventStream + 'a> XmlEventStream for ElementScopedStream<'a, S> {
       Some(result) => Some(result),
       None => None,
     }
+  }
+
+  fn container_elem(&self) -> Option<&XmlElement> {
+    Some(self.elem())
   }
 }
 
@@ -306,16 +309,16 @@ pub fn start_element<S: XmlEventStream, N: AsRef<str>>(
 ) -> MwsResult<XmlElement> {
   Ok(
     try_consume_event!(stream, XmlEvent::StartElement { name, attributes, .. } => {
-    if name.local_name != expected_name.as_ref() {
-      return Err(format!("unexpected element: expected '{}', found: '{}'",
-        expected_name.as_ref(), name.local_name).into()
-      )
-    }
-    XmlElement {
-      name: name,
-      attributes: XmlAttributeList(attributes),
-    }
-  }),
+      if name.local_name != expected_name.as_ref() {
+        return Err(format!("unexpected element: expected '{}', found: '{}'",
+          expected_name.as_ref(), name.local_name).into()
+        )
+      }
+      XmlElement {
+        name: name,
+        attributes: XmlAttributeList(attributes),
+      }
+    }),
   )
 }
 
@@ -330,15 +333,19 @@ where
   E: ::std::error::Error + Display,
 {
   if let None = stream.peek() {
-    return "".parse().map_err(|err| MwsError::ParseString {
-      what: "".to_owned(),
-      message: format!("{}", err),
-    });
+    return parse_str("");
   }
 
   let content = try_consume_event!(stream, XmlEvent::Characters(value) => value);
-  content.parse().map_err(|err| MwsError::ParseString {
-    what: content,
+  parse_str(&content)
+}
+
+pub fn parse_str<E, T: FromStr<Err = E>>(v: &str) -> MwsResult<T>
+where
+  E: ::std::error::Error + Display,
+{
+  v.parse().map_err(|err| MwsError::ParseString {
+    what: v.to_owned(),
     message: format!("{}", err),
   })
 }
@@ -399,7 +406,8 @@ where
         "unexpected element: expected '{:?}', found: '{}'",
         expected_name,
         ss.elem().name.local_name
-      ).into(),
+      )
+      .into(),
     );
   }
   let result = f(&mut ss)?;
@@ -504,7 +512,8 @@ mod tests {
     start_document(&mut s).expect("start document");
     let (name, content): (String, String) = element(&mut s, "test", |s| {
       Ok((s.elem().name.local_name.clone(), characters(s)?))
-    }).expect("element");
+    })
+    .expect("element");
     assert_eq!(name, "test");
     assert_eq!(content, "content");
   }
@@ -518,7 +527,8 @@ mod tests {
       let content: String = characters(ss)?;
       contents.push_str(&content);
       Ok(())
-    }).expect("fold_elements");
+    })
+    .expect("fold_elements");
     assert_eq!(contents, "123");
   }
 
@@ -565,7 +575,8 @@ mod tests {
         Ok(())
       })?;
       Ok(order)
-    }).expect("order");
+    })
+    .expect("order");
 
     assert_eq!(
       order,
@@ -586,7 +597,7 @@ mod tests {
       let v: String = characters(s)?;
       assert_eq!(v, "");
       Ok(())
-    }).expect("element");
+    })
+    .expect("element");
   }
-
 }

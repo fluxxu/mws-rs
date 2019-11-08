@@ -95,3 +95,54 @@ fn derive_struct_vec() {
     }
   );
 }
+
+#[test]
+#[allow(non_snake_case)]
+fn derive_from_elem_attr() {
+  #[derive(Debug, PartialEq, Default, FromXmlStream)]
+  struct Value {
+    #[from_xml_stream(from_attr)]
+    Units: String,
+    #[from_xml_stream(from_content)]
+    Value: String,
+  }
+
+  #[derive(Debug, PartialEq, Default, FromXmlStream)]
+  struct ItemDimensions {
+    Height: Value,
+    Length: Value,
+    Width: Value,
+  }
+
+  #[derive(Debug, PartialEq, Default, FromXmlStream)]
+  struct Products {
+    ItemDimensions: ItemDimensions,
+  }
+
+  test_decode!(
+    Products,
+    r#"
+        <ItemDimensions>
+          <Height Units="inches">2.2</Height>
+          <Length Units="inches">12.8</Length>
+          <Width Units="inches">5.8</Width>
+        </ItemDimensions>
+    "#,
+    Products {
+      ItemDimensions: ItemDimensions {
+        Height: Value {
+          Units: "inches".to_string(),
+          Value: "2.2".to_string(),
+        },
+        Length: Value {
+          Units: "inches".to_string(),
+          Value: "12.8".to_string(),
+        },
+        Width: Value {
+          Units: "inches".to_string(),
+          Value: "5.8".to_string(),
+        },
+      }
+    }
+  );
+}
