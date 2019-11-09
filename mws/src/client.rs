@@ -262,6 +262,7 @@ impl Client {
     for (k, v) in parameters.into_mws_params() {
       sign.add(&k, v);
     }
+    sign.add("SellerId", &self.options.seller_id);
     let url = sign
       .generate_url(method.clone(), path, version, action)?
       .to_string();
