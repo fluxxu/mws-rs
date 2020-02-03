@@ -49,5 +49,6 @@ pub mod merchant_fulfillment;
 pub mod orders;
 pub mod products;
 pub mod reports;
+pub mod subscriptions;
 
 pub use self::types::{ResponseEnvelope, SerializeMwsParams, SerializeMwsParamsContext};
