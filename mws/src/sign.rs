@@ -60,6 +60,7 @@ pub struct SignedUrl<'a> {
   pub path: String,
   pub query_string: String,
   pub signature: String,
+  pub pairs: Vec<(String, String)>,
 }
 
 impl<'a> Into<String> for SignedUrl<'a> {
@@ -69,6 +70,10 @@ impl<'a> Into<String> for SignedUrl<'a> {
 }
 
 impl<'a> SignedUrl<'a> {
+  pub fn get_url_without_query(&self) -> String {
+    format!("https://{host}{path}", host = &self.host, path = self.path,)
+  }
+
   pub fn to_string(self) -> String {
     let mut signature_encoded =
       String::with_capacity(((self.signature.len() as f32) * 1.4) as usize);
@@ -157,8 +162,9 @@ impl SignatureV2 {
       SignatureV2::set_param(&mut params, "Timestamp", ::chrono::Utc::now().to_iso8601());
     }
 
+    let mut pairs = vec![];
     params.sort();
-    for Param(ref key, ref value) in params {
+    for Param(key, value) in params {
       if qs.len() > 0 {
         qs.push_str("&");
       }
@@ -172,6 +178,8 @@ impl SignatureV2 {
       for part in percent_encode(value.as_bytes(), ParameterEncodeSet) {
         qs.push_str(part);
       }
+
+      pairs.push((key, value));
     }
 
     let path_str = path.as_ref().to_str().ok_or_else(|| {
@@ -197,7 +205,8 @@ impl SignatureV2 {
       method: method,
       path: path_str.to_string(),
       query_string: qs,
-      signature: signature,
+      signature,
+      pairs,
     })
   }
 }

@@ -10,3 +10,4 @@ Cargo.lock
 samples
 .env*
 .vscode
+.DS_Store

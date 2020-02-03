@@ -37,6 +37,10 @@ enum Command {
     #[structopt(long = "id")]
     ids: Vec<String>,
   },
+  ReportListRequestByTypes {
+    #[structopt(long = "type")]
+    types: Vec<String>,
+  },
   ReportGet {
     #[structopt(long = "id")]
     id: String,
@@ -48,6 +52,14 @@ enum Command {
     input: PathBuf,
     #[structopt(long = "out", parse(from_os_str))]
     out: PathBuf,
+  },
+  ProductGetLowestPricedOffersForSKU {
+    #[structopt(long = "marketplace")]
+    marketplace_id: String,
+    #[structopt(long = "seller_sku")]
+    seller_sku: String,
+    #[structopt(long = "condition")]
+    condition: String,
   },
 }
 
@@ -101,6 +113,19 @@ fn main() {
 
       println!("{:#?}", res)
     }
+    Command::ReportListRequestByTypes { types } => {
+      use mws::reports::*;
+      let res = GetReportRequestList(
+        &client,
+        GetReportRequestListParameters {
+          ReportTypeList: Some(types),
+          ..Default::default()
+        },
+      )
+      .unwrap();
+
+      println!("{:#?}", res)
+    }
     Command::ReportGet { id, out } => {
       use mws::reports::*;
       let mut out = std::fs::File::create(out).unwrap();
@@ -115,6 +140,23 @@ fn main() {
       }
       println!("encoding_used: {:?}", encoding_used);
       std::fs::write(out, cow.as_ref()).unwrap();
+    }
+    Command::ProductGetLowestPricedOffersForSKU {
+      marketplace_id,
+      seller_sku,
+      condition,
+    } => {
+      use mws::products::*;
+      let res = GetLowestPricedOffersForSKU(
+        &client,
+        GetLowestPricedOffersForSKUParameters {
+          MarketplaceId: marketplace_id,
+          SellerSKU: seller_sku,
+          ItemCondition: ItemCondition::from(&condition as &str),
+        },
+      )
+      .unwrap();
+      println!("{:#?}", res)
     }
   }
 }

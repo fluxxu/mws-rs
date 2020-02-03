@@ -41,13 +41,13 @@ pub mod client;
 pub mod constants;
 mod sign;
 
-// pub mod products;
 pub mod feeds;
 pub mod fulfillment_inbound_shipment;
 pub mod fulfillment_inventory;
 pub mod fulfillment_outbound;
 pub mod merchant_fulfillment;
 pub mod orders;
+pub mod products;
 pub mod reports;
 
 pub use self::types::{ResponseEnvelope, SerializeMwsParams, SerializeMwsParamsContext};

@@ -142,7 +142,7 @@ impl Client {
     let url = sign
       .generate_url(method.clone(), path, version, action)?
       .to_string();
-    //println!("request: {}", url);
+    // println!("request: {}", url);
     self
       .http_client
       .request(method, &url)
@@ -193,6 +193,48 @@ impl Client {
       .and_then(handle_error_status)
   }
 
+  pub fn request_with_form<P>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> MwsResult<reqwest::Response>
+  where
+    P: SerializeMwsParams,
+  {
+    use std::collections::HashMap;
+
+    let mut sign = SignatureV2::new(
+      &self.options.endpoint,
+      &self.options.aws_access_key_id,
+      &self.options.secret_key,
+      self.options.mws_auth_token.as_ref().map(AsRef::as_ref),
+    );
+    for (k, v) in parameters.into_mws_params() {
+      sign.add(&k, v);
+    }
+    sign.add("SellerId", &self.options.seller_id);
+    //sign.add("Merchant", self.options.seller_id.as_ref());
+    let url = sign.generate_url(method.clone(), path, version, action)?;
+    let post_url = url.get_url_without_query();
+
+    let mut form: HashMap<String, String> = url.pairs.into_iter().collect();
+    form.insert("Signature".to_string(), url.signature);
+
+    // println!("request url: {}", post_url);
+    // println!("request form: {:#?}", form);
+
+    self
+      .http_client
+      .request(method, &post_url)
+      .form(&form)
+      .send()
+      .map_err(MwsError::from)
+      .and_then(handle_error_status)
+  }
+
   pub fn request_xml<P, T>(
     &self,
     method: Method,
@@ -206,6 +248,24 @@ impl Client {
     T: FromXmlStream<Stream<reqwest::Response>>,
   {
     let resp = self.request(method, path, version, action, parameters)?;
+    let mut stream = Stream::new(resp);
+    let v = T::from_xml(&mut stream)?;
+    Ok(v)
+  }
+
+  pub fn request_xml_with_form<P, T>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> MwsResult<T>
+  where
+    P: SerializeMwsParams,
+    T: FromXmlStream<Stream<reqwest::Response>>,
+  {
+    let resp = self.request_with_form(method, path, version, action, parameters)?;
     let mut stream = Stream::new(resp);
     let v = T::from_xml(&mut stream)?;
     Ok(v)
