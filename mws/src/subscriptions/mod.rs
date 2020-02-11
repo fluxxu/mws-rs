@@ -7,6 +7,7 @@ use result::MwsResult;
 
 pub mod types;
 pub use self::types::*;
+pub mod notification;
 
 static PATH: &'static str = "/Subscriptions/2013-07-01";
 static VERSION: &'static str = "2013-07-01";
