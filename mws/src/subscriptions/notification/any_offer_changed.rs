@@ -4,6 +4,8 @@ pub use crate::products::{
 };
 use chrono::{DateTime, Utc};
 
+notification_envelope_type!(AnyOfferChangedNotificationEnvelope<AnyOfferChangedNotification>);
+
 #[allow(non_snake_case)]
 #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
 pub struct AnyOfferChangedNotification {

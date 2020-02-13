@@ -233,3 +233,48 @@ macro_rules! response_envelope_type {
     }
   };
 }
+
+macro_rules! notification_envelope_type {
+  ($name:ident < $payload_ty:ty >) => {
+    #[derive(Debug, Default)]
+    pub struct $name(::subscriptions::notification::NotificationEnvelope<$payload_ty>);
+
+    impl $name {
+      #[allow(unused)]
+      pub fn into_inner(self) -> ::subscriptions::notification::NotificationEnvelope<$payload_ty> {
+        self.0
+      }
+    }
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
+    where
+      S: ::xmlhelper::decode::XmlEventStream,
+    {
+      fn from_xml(s: &mut S) -> ::result::MwsResult<Self> {
+        use xmlhelper::decode::{element, fold_elements, start_document};
+        start_document(s)?;
+        element(s, "Notification", |s| {
+          fold_elements(
+            s,
+            ::subscriptions::notification::NotificationEnvelope::<$payload_ty>::default(),
+            |s, record| {
+              match s.local_name() {
+                "NotificationMetaData" => {
+                  record.NotificationMetaData = ::xmlhelper::decode::FromXmlStream::from_xml(s)?;
+                }
+                "NotificationPayload" => {
+                  record.NotificationPayload = element(s, stringify!($payload_ty), |s| {
+                    ::xmlhelper::decode::FromXmlStream::from_xml(s)
+                  })?;
+                }
+                _ => {}
+              }
+              Ok(())
+            },
+          )
+        })
+        .map($name)
+      }
+    }
+  };
+}

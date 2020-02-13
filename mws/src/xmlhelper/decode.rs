@@ -136,6 +136,14 @@ where
   }
 }
 
+pub fn decode_xml_string<'a, T>(xml: &'a str) -> MwsResult<T>
+where
+  T: FromXmlStream<Stream<std::io::Cursor<&'a [u8]>>>,
+{
+  let mut s = Stream::new(std::io::Cursor::new(xml.as_bytes()));
+  T::from_xml(&mut s)
+}
+
 pub trait XmlEventStream {
   fn next(&mut self) -> Option<XmlReaderResult<XmlEvent>>;
   fn peek(&mut self) -> Option<&XmlReaderResult<XmlEvent>>;
@@ -390,6 +398,15 @@ impl ElementNameSet for Vec<&'static str> {
   }
 }
 
+#[derive(Debug)]
+pub struct AnyElementName;
+
+impl ElementNameSet for AnyElementName {
+  fn contains_element_name(&self, _value: &str) -> bool {
+    true
+  }
+}
+
 /// Consume an element, apply a function to an element scoped stream, return the function result
 pub fn element<S: XmlEventStream, N: ElementNameSet, F, T>(
   stream: &mut S,
@@ -467,10 +484,8 @@ where
 #[macro_export]
 #[doc(hidden)]
 macro_rules! test_decode {
-  ($decoder:ident, $xml:expr, $result:expr) => {{
-    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
-    let result =
-      <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s).expect("decode");
+  ($decoder:ty, $xml:expr, $result:expr) => {{
+    let result: $decoder = $crate::decode_xml_string($xml).expect("decode");
     assert_eq!(result, $result);
   }};
 }
@@ -479,8 +494,7 @@ macro_rules! test_decode {
 #[doc(hidden)]
 macro_rules! test_decode_envelope {
   ($decoder:ident, $xml:expr, $result:expr) => {{
-    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
-    let result = <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s)
+    let result = $crate::decode_xml_string::<$decoder>($xml)
       .expect("decode")
       .into_inner();
     assert_eq!(result, $result);

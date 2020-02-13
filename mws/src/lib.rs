@@ -52,3 +52,4 @@ pub mod reports;
 pub mod subscriptions;
 
 pub use self::types::{ResponseEnvelope, SerializeMwsParams, SerializeMwsParamsContext};
+pub use self::xmlhelper::decode::decode_xml_string;
