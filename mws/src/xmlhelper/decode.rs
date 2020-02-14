@@ -84,6 +84,19 @@ pub trait FromXmlStream<S: XmlEventStream>: Sized + Default {
   fn from_xml(stream: &mut S) -> MwsResult<Self>;
 }
 
+type StrByteStream<'a> = Stream<std::io::Cursor<&'a [u8]>>;
+
+pub fn parse_xml_string<'a, T, N>(xml: &'a str, root_element_name: N) -> MwsResult<T>
+where
+  T: FromXmlStream<StrByteStream<'a>>
+    + for<'s> FromXmlStream<ElementScopedStream<'s, StrByteStream<'a>>>,
+  N: ElementNameSet,
+{
+  let mut s = Stream::new(std::io::Cursor::new(xml.as_bytes()));
+  start_document(&mut s)?;
+  element(&mut s, root_element_name, |s| T::from_xml(s))
+}
+
 macro_rules! impl_characters {
   ($ty:ty) => {
     impl<S> FromXmlStream<S> for $ty
@@ -134,14 +147,6 @@ where
   fn from_xml(s: &mut S) -> MwsResult<Self> {
     T::from_xml(s).map(Some)
   }
-}
-
-pub fn decode_xml_string<'a, T>(xml: &'a str) -> MwsResult<T>
-where
-  T: FromXmlStream<Stream<std::io::Cursor<&'a [u8]>>>,
-{
-  let mut s = Stream::new(std::io::Cursor::new(xml.as_bytes()));
-  T::from_xml(&mut s)
 }
 
 pub trait XmlEventStream {
@@ -484,8 +489,10 @@ where
 #[macro_export]
 #[doc(hidden)]
 macro_rules! test_decode {
-  ($decoder:ty, $xml:expr, $result:expr) => {{
-    let result: $decoder = $crate::decode_xml_string($xml).expect("decode");
+  ($decoder:ident, $xml:expr, $result:expr) => {{
+    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
+    let result =
+      <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s).expect("decode");
     assert_eq!(result, $result);
   }};
 }
@@ -494,7 +501,8 @@ macro_rules! test_decode {
 #[doc(hidden)]
 macro_rules! test_decode_envelope {
   ($decoder:ident, $xml:expr, $result:expr) => {{
-    let result = $crate::decode_xml_string::<$decoder>($xml)
+    let mut s = $crate::xmlhelper::decode::Stream::new(::std::io::Cursor::new($xml));
+    let result = <$decoder as $crate::xmlhelper::decode::FromXmlStream<_>>::from_xml(&mut s)
       .expect("decode")
       .into_inner();
     assert_eq!(result, $result);
