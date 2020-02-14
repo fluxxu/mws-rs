@@ -187,13 +187,13 @@ impl<R: Read> XmlEventStream for Stream<R> {
 }
 
 /// Element Scoped Stream
-pub struct ElementScopedStream<'a, S: XmlEventStream + 'a> {
+pub struct ElementScopedStream<'a, S: XmlEventStream> {
   inner: &'a mut S,
   level: i32,
   elem: XmlElement,
 }
 
-impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
+impl<'a, S: XmlEventStream> ElementScopedStream<'a, S> {
   fn new(inner: &mut S) -> MwsResult<ElementScopedStream<S>> {
     let elem = try_consume_event!(inner,
     XmlEvent::StartElement { name, attributes, .. } => XmlElement {
@@ -240,7 +240,7 @@ impl<'a, S: XmlEventStream + 'a> ElementScopedStream<'a, S> {
   }
 }
 
-impl<'a, S: XmlEventStream + 'a> XmlEventStream for ElementScopedStream<'a, S> {
+impl<'a, S: XmlEventStream> XmlEventStream for ElementScopedStream<'a, S> {
   fn next(&mut self) -> Option<XmlReaderResult<XmlEvent>> {
     if self.level < 1 {
       return None;

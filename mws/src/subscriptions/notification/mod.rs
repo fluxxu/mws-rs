@@ -59,196 +59,194 @@ mod tests {
 
   #[test]
   fn test_notification() {
-    let v: Notification = parse_xml_string(
-      r#"
-        <Notification>
-          <NotificationMetaData>
-              <NotificationType>Test</NotificationType>
-              <PayloadVersion>1.0</PayloadVersion>
-              <UniqueId>db05ce25-a2d6-49f7-bb39-5419b1a17a26</UniqueId>
-              <PublishTime>2020-02-03T21:50:30.000Z</PublishTime>
-              <SellerId>A23AS8PFN4IRUQ</SellerId>
-              <MarketplaceId>ATVPDKIKX0DER</MarketplaceId>
-          </NotificationMetaData>
-          <NotificationPayload>
-              <AnyOfferChangedNotification>
+    let xml = r#"
+    <Notification>
+      <NotificationMetaData>
+          <NotificationType>Test</NotificationType>
+          <PayloadVersion>1.0</PayloadVersion>
+          <UniqueId>db05ce25-a2d6-49f7-bb39-5419b1a17a26</UniqueId>
+          <PublishTime>2020-02-03T21:50:30.000Z</PublishTime>
+          <SellerId>A23AS8PFN4IRUQ</SellerId>
+          <MarketplaceId>ATVPDKIKX0DER</MarketplaceId>
+      </NotificationMetaData>
+      <NotificationPayload>
+          <AnyOfferChangedNotification>
 
-                <OfferChangeTrigger>
-                <MarketplaceId>ATVPDKIKX0DER</MarketplaceId>
-                <ASIN>B0000C000V</ASIN>
-                <ItemCondition>new</ItemCondition>
-                <TimeOfOfferChange>2020-02-03T21:50:09.000Z</TimeOfOfferChange>
-                <OfferChangeType>External</OfferChangeType>
-            </OfferChangeTrigger>
-            <Summary>
-                <NumberOfOffers>
-                    <OfferCount condition="new" fulfillmentChannel="Merchant">1</OfferCount>
-                    <OfferCount condition="new" fulfillmentChannel="Amazon">1</OfferCount>
-                    <OfferCount condition="used" fulfillmentChannel="Amazon">5</OfferCount>
-                </NumberOfOffers>
-                <LowestPrices>
-                    <LowestPrice condition="new" fulfillmentChannel="Merchant">
-                        <LandedPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </LandedPrice>
-                        <ListingPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </ListingPrice>
-                        <Shipping>
-                            <Amount>0.00</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </Shipping>
-                    </LowestPrice>
-                    <LowestPrice condition="new" fulfillmentChannel="Amazon">
-                        <LandedPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </LandedPrice>
-                        <ListingPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </ListingPrice>
-                        <Shipping>
-                            <Amount>0.00</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </Shipping>
-                    </LowestPrice>
-                    <LowestPrice condition="used" fulfillmentChannel="Amazon">
-                        <LandedPrice>
-                            <Amount>119.59</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </LandedPrice>
-                        <ListingPrice>
-                            <Amount>119.59</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </ListingPrice>
-                        <Shipping>
-                            <Amount>0.00</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </Shipping>
-                    </LowestPrice>
-                </LowestPrices>
-                <BuyBoxPrices>
-                    <BuyBoxPrice condition="new">
-                        <LandedPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </LandedPrice>
-                        <ListingPrice>
-                            <Amount>129.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </ListingPrice>
-                        <Shipping>
-                            <Amount>0.00</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </Shipping>
-                    </BuyBoxPrice>
-                    <BuyBoxPrice condition="Used">
-                        <LandedPrice>
-                            <Amount>125.58</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </LandedPrice>
-                        <ListingPrice>
-                            <Amount>119.59</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </ListingPrice>
-                        <Shipping>
-                            <Amount>5.99</Amount>
-                            <CurrencyCode>USD</CurrencyCode>
-                        </Shipping>
-                    </BuyBoxPrice>
-                </BuyBoxPrices>
-      
-      
-      
-                <SalesRankings>
-                    <SalesRank>
-                        <ProductCategoryId>ce_display_on_website</ProductCategoryId>
-                        <Rank>1346</Rank>
-                    </SalesRank>
-                    <SalesRank>
-                        <ProductCategoryId>3236451011</ProductCategoryId>
-                        <Rank>6</Rank>
-                    </SalesRank>
-                </SalesRankings>
-      
-                <BuyBoxEligibleOffers>
-                    <OfferCount condition="new" fulfillmentChannel="Merchant">1</OfferCount>
-                    <OfferCount condition="new" fulfillmentChannel="Amazon">1</OfferCount>
-                    <OfferCount condition="used" fulfillmentChannel="Amazon">5</OfferCount>
-                </BuyBoxEligibleOffers>
-                <CompetitivePriceThreshold>
+            <OfferChangeTrigger>
+            <MarketplaceId>ATVPDKIKX0DER</MarketplaceId>
+            <ASIN>B0000C000V</ASIN>
+            <ItemCondition>new</ItemCondition>
+            <TimeOfOfferChange>2020-02-03T21:50:09.000Z</TimeOfOfferChange>
+            <OfferChangeType>External</OfferChangeType>
+        </OfferChangeTrigger>
+        <Summary>
+            <NumberOfOffers>
+                <OfferCount condition="new" fulfillmentChannel="Merchant">1</OfferCount>
+                <OfferCount condition="new" fulfillmentChannel="Amazon">1</OfferCount>
+                <OfferCount condition="used" fulfillmentChannel="Amazon">5</OfferCount>
+            </NumberOfOffers>
+            <LowestPrices>
+                <LowestPrice condition="new" fulfillmentChannel="Merchant">
+                    <LandedPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </LandedPrice>
+                    <ListingPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </ListingPrice>
+                    <Shipping>
+                        <Amount>0.00</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </Shipping>
+                </LowestPrice>
+                <LowestPrice condition="new" fulfillmentChannel="Amazon">
+                    <LandedPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </LandedPrice>
+                    <ListingPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </ListingPrice>
+                    <Shipping>
+                        <Amount>0.00</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </Shipping>
+                </LowestPrice>
+                <LowestPrice condition="used" fulfillmentChannel="Amazon">
+                    <LandedPrice>
+                        <Amount>119.59</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </LandedPrice>
+                    <ListingPrice>
+                        <Amount>119.59</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </ListingPrice>
+                    <Shipping>
+                        <Amount>0.00</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </Shipping>
+                </LowestPrice>
+            </LowestPrices>
+            <BuyBoxPrices>
+                <BuyBoxPrice condition="new">
+                    <LandedPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </LandedPrice>
+                    <ListingPrice>
+                        <Amount>129.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </ListingPrice>
+                    <Shipping>
+                        <Amount>0.00</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </Shipping>
+                </BuyBoxPrice>
+                <BuyBoxPrice condition="Used">
+                    <LandedPrice>
+                        <Amount>125.58</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </LandedPrice>
+                    <ListingPrice>
+                        <Amount>119.59</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </ListingPrice>
+                    <Shipping>
+                        <Amount>5.99</Amount>
+                        <CurrencyCode>USD</CurrencyCode>
+                    </Shipping>
+                </BuyBoxPrice>
+            </BuyBoxPrices>
+  
+  
+  
+            <SalesRankings>
+                <SalesRank>
+                    <ProductCategoryId>ce_display_on_website</ProductCategoryId>
+                    <Rank>1346</Rank>
+                </SalesRank>
+                <SalesRank>
+                    <ProductCategoryId>3236451011</ProductCategoryId>
+                    <Rank>6</Rank>
+                </SalesRank>
+            </SalesRankings>
+  
+            <BuyBoxEligibleOffers>
+                <OfferCount condition="new" fulfillmentChannel="Merchant">1</OfferCount>
+                <OfferCount condition="new" fulfillmentChannel="Amazon">1</OfferCount>
+                <OfferCount condition="used" fulfillmentChannel="Amazon">5</OfferCount>
+            </BuyBoxEligibleOffers>
+            <CompetitivePriceThreshold>
+                <Amount>129.99</Amount>
+                <CurrencyCode>USD</CurrencyCode>
+            </CompetitivePriceThreshold>
+        </Summary>
+        <Offers>
+            <Offer>
+                <SellerId>A00AS0PFN0IRUQ</SellerId>
+                <SubCondition>new</SubCondition>
+                <SellerFeedbackRating>
+                    <SellerPositiveFeedbackRating>99</SellerPositiveFeedbackRating>
+                    <FeedbackCount>10536</FeedbackCount>
+                </SellerFeedbackRating>
+                <ShippingTime minimumHours="24" maximumHours="24" availabilityType="NOW"/>
+                <ListingPrice>
                     <Amount>129.99</Amount>
                     <CurrencyCode>USD</CurrencyCode>
-                </CompetitivePriceThreshold>
-            </Summary>
-            <Offers>
-                <Offer>
-                    <SellerId>A00AS0PFN0IRUQ</SellerId>
-                    <SubCondition>new</SubCondition>
-                    <SellerFeedbackRating>
-                        <SellerPositiveFeedbackRating>99</SellerPositiveFeedbackRating>
-                        <FeedbackCount>10536</FeedbackCount>
-                    </SellerFeedbackRating>
-                    <ShippingTime minimumHours="24" maximumHours="24" availabilityType="NOW"/>
-                    <ListingPrice>
-                        <Amount>129.99</Amount>
-                        <CurrencyCode>USD</CurrencyCode>
-                    </ListingPrice>
-                    <Shipping>
-                        <Amount>0.00</Amount>
-                        <CurrencyCode>USD</CurrencyCode>
-                    </Shipping>
-                    <ShipsFrom>
-                        <Country>US</Country>
-                        <State></State>
-                    </ShipsFrom>
-                    <IsFulfilledByAmazon>false</IsFulfilledByAmazon>
-                    <IsBuyBoxWinner>false</IsBuyBoxWinner>
-                    <PrimeInformation>
-                        <IsPrime>false</IsPrime>
-                        <IsNationalPrime>false</IsNationalPrime>
-                    </PrimeInformation>
-                    <IsFeaturedMerchant>true</IsFeaturedMerchant>
-                    <ShipsDomestically>true</ShipsDomestically>
-                </Offer>
-                <Offer>
-                    <SellerId>A00AS0PFN0IRUQ</SellerId>
-                    <SubCondition>new</SubCondition>
-                    <SellerFeedbackRating>
-                        <SellerPositiveFeedbackRating>99</SellerPositiveFeedbackRating>
-                        <FeedbackCount>10536</FeedbackCount>
-                    </SellerFeedbackRating>
-                    <ShippingTime minimumHours="0" maximumHours="0" availabilityType="NOW"/>
-                    <ListingPrice>
-                        <Amount>129.99</Amount>
-                        <CurrencyCode>USD</CurrencyCode>
-                    </ListingPrice>
-                    <Shipping>
-                        <Amount>0.00</Amount>
-                        <CurrencyCode>USD</CurrencyCode>
-                    </Shipping>
-                    <IsFulfilledByAmazon>true</IsFulfilledByAmazon>
-                    <IsBuyBoxWinner>true</IsBuyBoxWinner>
-                    <PrimeInformation>
-                        <IsPrime>true</IsPrime>
-                        <IsNationalPrime>true</IsNationalPrime>
-                    </PrimeInformation>
-                    <IsFeaturedMerchant>true</IsFeaturedMerchant>
-                    <ShipsDomestically>true</ShipsDomestically>
-                </Offer>
-            </Offers>
+                </ListingPrice>
+                <Shipping>
+                    <Amount>0.00</Amount>
+                    <CurrencyCode>USD</CurrencyCode>
+                </Shipping>
+                <ShipsFrom>
+                    <Country>US</Country>
+                    <State></State>
+                </ShipsFrom>
+                <IsFulfilledByAmazon>false</IsFulfilledByAmazon>
+                <IsBuyBoxWinner>false</IsBuyBoxWinner>
+                <PrimeInformation>
+                    <IsPrime>false</IsPrime>
+                    <IsNationalPrime>false</IsNationalPrime>
+                </PrimeInformation>
+                <IsFeaturedMerchant>true</IsFeaturedMerchant>
+                <ShipsDomestically>true</ShipsDomestically>
+            </Offer>
+            <Offer>
+                <SellerId>A00AS0PFN0IRUQ</SellerId>
+                <SubCondition>new</SubCondition>
+                <SellerFeedbackRating>
+                    <SellerPositiveFeedbackRating>99</SellerPositiveFeedbackRating>
+                    <FeedbackCount>10536</FeedbackCount>
+                </SellerFeedbackRating>
+                <ShippingTime minimumHours="0" maximumHours="0" availabilityType="NOW"/>
+                <ListingPrice>
+                    <Amount>129.99</Amount>
+                    <CurrencyCode>USD</CurrencyCode>
+                </ListingPrice>
+                <Shipping>
+                    <Amount>0.00</Amount>
+                    <CurrencyCode>USD</CurrencyCode>
+                </Shipping>
+                <IsFulfilledByAmazon>true</IsFulfilledByAmazon>
+                <IsBuyBoxWinner>true</IsBuyBoxWinner>
+                <PrimeInformation>
+                    <IsPrime>true</IsPrime>
+                    <IsNationalPrime>true</IsNationalPrime>
+                </PrimeInformation>
+                <IsFeaturedMerchant>true</IsFeaturedMerchant>
+                <ShipsDomestically>true</ShipsDomestically>
+            </Offer>
+        </Offers>
 
 
-              </AnyOfferChangedNotification>
-          </NotificationPayload>
-        </Notification>
-      "#,
-      "Notification",
-    )
-    .unwrap();
+          </AnyOfferChangedNotification>
+      </NotificationPayload>
+    </Notification>
+  "#
+    .to_string();
+    let v: Notification = parse_xml_string(&xml, "Notification").unwrap();
     let expected = Notification {
       NotificationMetaData: NotificationMetaData {
         NotificationType: "Test".to_string(),
