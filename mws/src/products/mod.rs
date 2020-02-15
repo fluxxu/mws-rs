@@ -62,6 +62,7 @@ pub struct GetMyPriceForASINParameters {
   pub MarketplaceId: String,
   #[mws_param(list_item_type_name = "ASIN")]
   pub ASINList: Vec<String>,
+  pub ItemCondition: Option<ItemCondition>,
 }
 
 #[derive(FromXmlStream, Default, Debug, PartialEq)]
