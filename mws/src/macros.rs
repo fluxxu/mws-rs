@@ -233,3 +233,43 @@ macro_rules! response_envelope_type {
     }
   };
 }
+
+macro_rules! response_envelope_batch_type {
+  ($name:ident < $payload_ty:ty > , $response_tag:expr, $result_tag:expr) => {
+    #[derive(Default)]
+    struct $name(::types::ResponseEnvelopeBatch<$payload_ty>);
+
+    impl $name {
+      fn into_inner(self) -> Vec<$payload_ty> {
+        self.0.payload
+      }
+    }
+
+    impl<S> ::xmlhelper::decode::FromXmlStream<S> for $name
+    where
+      S: ::xmlhelper::decode::XmlEventStream,
+    {
+      fn from_xml(s: &mut S) -> ::result::MwsResult<Self> {
+        use xmlhelper::decode::{characters, element, fold_elements, start_document};
+        start_document(s)?;
+        element(s, $response_tag, |s| {
+          fold_elements(
+            s,
+            ::types::ResponseEnvelopeBatch::<$payload_ty>::default(),
+            |s, response| {
+              if s.local_name() == $result_tag {
+                response
+                  .payload
+                  .push(::xmlhelper::decode::FromXmlStream::from_xml(s)?);
+              } else if s.local_name() == "ResponseMetadata" {
+                response.request_id = element(s, "RequestId", |s| characters(s))?;
+              }
+              Ok(())
+            },
+          )
+        })
+        .map($name)
+      }
+    }
+  };
+}

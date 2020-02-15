@@ -61,6 +61,12 @@ enum Command {
     #[structopt(long = "condition")]
     condition: String,
   },
+  ProductGetMyPriceForASIN {
+    #[structopt(long = "marketplace")]
+    marketplace_id: String,
+    #[structopt(long = "asin")]
+    asins: Vec<String>,
+  },
 }
 
 fn main() {
@@ -153,6 +159,21 @@ fn main() {
           MarketplaceId: marketplace_id,
           SellerSKU: seller_sku,
           ItemCondition: ItemCondition::from(&condition as &str),
+        },
+      )
+      .unwrap();
+      println!("{:#?}", res)
+    }
+    Command::ProductGetMyPriceForASIN {
+      marketplace_id,
+      asins,
+    } => {
+      use mws::products::*;
+      let res = GetMyPriceForASIN(
+        &client,
+        GetMyPriceForASINParameters {
+          MarketplaceId: marketplace_id,
+          ASINList: asins,
         },
       )
       .unwrap();

@@ -154,8 +154,14 @@ impl<Tz: TimeZone> SerializeMwsParams for DateTime<Tz> {
   }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ResponseEnvelope<T: Default> {
   pub payload: T,
+  pub request_id: String,
+}
+
+#[derive(Debug, Default)]
+pub struct ResponseEnvelopeBatch<T: Default> {
+  pub payload: Vec<T>,
   pub request_id: String,
 }

@@ -2,6 +2,59 @@
 
 use chrono::{DateTime, Utc};
 
+pub mod product {
+  use super::*;
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct Identifier {
+    pub MarketplaceASIN: Option<MarketplaceASIN>,
+    pub SKUIdentifier: Option<SKUIdentifier>,
+  }
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct MarketplaceASIN {
+    pub MarketplaceId: String,
+    pub ASIN: String,
+  }
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct SKUIdentifier {
+    pub MarketplaceId: String,
+    pub SellerId: String,
+    pub SellerSKU: String,
+  }
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct Price {
+    pub LandedPrice: MoneyType,
+    pub ListingPrice: MoneyType,
+    pub Shipping: MoneyType,
+  }
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct Offer {
+    pub BuyingPrice: Price,
+    pub RegularPrice: MoneyType,
+    pub FulfillmentChannel: String,
+    pub ItemCondition: ItemCondition,
+    pub ItemSubCondition: String,
+    pub SellerId: String,
+    pub SellerSKU: String,
+  }
+
+  #[allow(non_snake_case)]
+  #[derive(Debug, Default, PartialEq, Serialize, FromXmlStream)]
+  pub struct Product {
+    pub Identifiers: product::Identifier,
+    pub Offers: Vec<Offer>,
+  }
+}
+
 str_enum! {
   pub enum ItemCondition {
     New,
