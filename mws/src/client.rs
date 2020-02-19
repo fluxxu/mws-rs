@@ -57,7 +57,7 @@ impl ErrorResponseInfo {
             })?;
             resp.errors.push(err);
           }
-          "RequestID" => {
+          "RequestId" => {
             resp.request_id = characters(s)?;
           }
           _ => {}
