@@ -69,6 +69,16 @@ enum Command {
     #[structopt(long = "condition")]
     condition: Option<String>,
   },
+  SubmitFeed {
+    #[structopt(long = "feed_type")]
+    feed_type: String,
+    #[structopt(long = "contant_file", parse(from_os_str))]
+    content_file: PathBuf,
+    #[structopt(long = "marketplace")]
+    marketplace_id_list: Option<Vec<String>>,
+    #[structopt(long = "content_type")]
+    content_type: String,
+  },
 }
 
 fn main() {
@@ -181,6 +191,30 @@ fn main() {
         },
       )
       .unwrap();
+      println!("{:#?}", res)
+    },
+    Command::SubmitFeed {
+      feed_type,
+      content_file,
+      marketplace_id_list,
+      content_type
+    } => {
+      use mws::feeds::*;
+      use std::io::Cursor;
+      let content = std::fs::read(content_file).unwrap();
+      let digest = md5::compute(&content);
+      let b64 = base64::encode(&*digest);
+      let res = SubmitFeed(
+        &client,
+        SubmitFeedParameters {
+          FeedType: feed_type,
+          MarketplaceIdList: marketplace_id_list,
+          PurgeAndReplace: None,
+        },
+        Cursor::new(content),
+        b64,
+        content_type
+      ).unwrap();
       println!("{:#?}", res)
     }
   }
