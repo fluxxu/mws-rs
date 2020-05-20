@@ -5,18 +5,19 @@ use xmlhelper::encode;
 #[allow(non_snake_case)]
 #[derive(Debug, PartialEq, Serialize)]
 pub struct InventoryMessage {
+  pub message_id: String,
   /// Used to identify an individual product. Each product must have a SKU, and each SKU must
   /// be unique.
-  pub SKU: String,
+  pub sku: String,
 
   /// Indicates whether or not an item is available (any positive number = available; 0 = not
   /// available). Every time a quantity is sent for an item, the existing quantity is replaced by the
   /// new quantity in the feed.
-  pub Quantity: i32,
+  pub quantity: i32,
 
   /// The number of days between the order date and the ship date (a whole number between 1
   /// and 30)
-  pub FulfillmentLatency: i32,
+  pub fulfillment_latency: i32,
 }
 
 impl Message for InventoryMessage {
@@ -32,11 +33,14 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessag
         Messages[][
           [{
             for message in self.messages.iter() {
-              let sku: &str = message.data.SKU.as_ref();
-              let quantity = message.data.Quantity.to_string();
-              let fulfillment_latency = message.data.FulfillmentLatency.to_string();
+              let sku: &str = message.data.sku.as_ref();
+              let quantity = message.data.quantity.to_string();
+              let fulfillment_latency = message.data.fulfillment_latency.to_string();
               write_xml!(w,
                 Message[][
+                  MessageID[][
+                    (&message.data.message_id)
+                  ]
                   SKU[][sku]
                   Quantity[][(&quantity)]
                   FulfillmentLatency[][(&fulfillment_latency)]
