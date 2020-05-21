@@ -38,9 +38,14 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessag
             MessageID[][
               (&message.data.message_id)
             ]
-            SKU[][sku]
-            Quantity[][(&quantity)]
-            FulfillmentLatency[][(&fulfillment_latency)]
+            OperationType[][
+              ("Update")
+            ]
+            Inventory[][
+              SKU[][sku]
+              Quantity[][(&quantity)]
+              FulfillmentLatency[][(&fulfillment_latency)]
+            ]
           ]
         )?;
       }
@@ -97,15 +102,21 @@ mod tests {
   <MessageType>Inventory</MessageType>
   <Message>
     <MessageID>1</MessageID>
-    <SKU>p1</SKU>
-    <Quantity>100</Quantity>
-    <FulfillmentLatency>0</FulfillmentLatency>
+    <OperationType>Update</OperationType>
+    <Inventory>
+      <SKU>p1</SKU>
+      <Quantity>100</Quantity>
+      <FulfillmentLatency>0</FulfillmentLatency>
+    </Inventory>
   </Message>
   <Message>
     <MessageID>2</MessageID>
-    <SKU>p2</SKU>
-    <Quantity>200</Quantity>
-    <FulfillmentLatency>0</FulfillmentLatency>
+    <OperationType>Update</OperationType>
+    <Inventory>
+      <SKU>p2</SKU>
+      <Quantity>200</Quantity>
+      <FulfillmentLatency>0</FulfillmentLatency>
+    </Inventory>
   </Message>
 </AmazonEnvelope>"#
     );
