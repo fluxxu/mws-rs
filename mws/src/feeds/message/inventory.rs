@@ -29,28 +29,21 @@ impl Message for InventoryMessage {
 impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessage> {
   fn write_xml(&self, w: &mut W) -> encode::Result<()> {
     self.write_envelope_xml(w, |w: &mut W| {
-      write_xml!(w,
-        Messages[][
-          [{
-            for message in self.messages.iter() {
-              let sku: &str = message.data.sku.as_ref();
-              let quantity = message.data.quantity.to_string();
-              let fulfillment_latency = message.data.fulfillment_latency.to_string();
-              write_xml!(w,
-                Message[][
-                  MessageID[][
-                    (&message.data.message_id)
-                  ]
-                  SKU[][sku]
-                  Quantity[][(&quantity)]
-                  FulfillmentLatency[][(&fulfillment_latency)]
-                ]
-              )?;
-            }
-            Ok(())
-          }]
-        ]
-      )?;
+      for message in self.messages.iter() {
+        let sku: &str = message.data.sku.as_ref();
+        let quantity = message.data.quantity.to_string();
+        let fulfillment_latency = message.data.fulfillment_latency.to_string();
+        write_xml!(w,
+          Message[][
+            MessageID[][
+              (&message.data.message_id)
+            ]
+            SKU[][sku]
+            Quantity[][(&quantity)]
+            FulfillmentLatency[][(&fulfillment_latency)]
+          ]
+        )?;
+      }
       Ok(())
     })
   }
@@ -73,17 +66,19 @@ mod tests {
       let mut e = Envelope::<InventoryMessage>::new("1234567890".to_owned());
       e.add_message(
         InventoryMessage {
-          SKU: "p1".to_owned(),
-          Quantity: 100,
-          FulfillmentLatency: 0,
+          message_id: "1".to_owned(),
+          sku: "p1".to_owned(),
+          quantity: 100,
+          fulfillment_latency: 0,
         },
         Some(OperationType::PartialUpdate),
       )
       .add_message(
         InventoryMessage {
-          SKU: "p2".to_owned(),
-          Quantity: 200,
-          FulfillmentLatency: 0,
+          message_id: "2".to_owned(),
+          sku: "p2".to_owned(),
+          quantity: 200,
+          fulfillment_latency: 0,
         },
         Some(OperationType::PartialUpdate),
       );
@@ -100,18 +95,18 @@ mod tests {
     <MerchantIdentifier>1234567890</MerchantIdentifier>
   </Header>
   <MessageType>Inventory</MessageType>
-  <Messages>
-    <Message>
-      <SKU>p1</SKU>
-      <Quantity>100</Quantity>
-      <FulfillmentLatency>0</FulfillmentLatency>
-    </Message>
-    <Message>
-      <SKU>p2</SKU>
-      <Quantity>200</Quantity>
-      <FulfillmentLatency>0</FulfillmentLatency>
-    </Message>
-  </Messages>
+  <Message>
+    <MessageID>1</MessageID>
+    <SKU>p1</SKU>
+    <Quantity>100</Quantity>
+    <FulfillmentLatency>0</FulfillmentLatency>
+  </Message>
+  <Message>
+    <MessageID>2</MessageID>
+    <SKU>p2</SKU>
+    <Quantity>200</Quantity>
+    <FulfillmentLatency>0</FulfillmentLatency>
+  </Message>
 </AmazonEnvelope>"#
     );
   }
