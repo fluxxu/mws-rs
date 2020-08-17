@@ -18,6 +18,8 @@ pub struct InventoryMessage {
   /// The number of days between the order date and the ship date (a whole number between 1
   /// and 30)
   pub fulfillment_latency: i32,
+
+  pub switch_fulfillment_to: String,
 }
 
 impl Message for InventoryMessage {
@@ -45,6 +47,7 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessag
               SKU[][sku]
               Quantity[][(&quantity)]
               FulfillmentLatency[][(&fulfillment_latency)]
+              SwitchFulfillmentTo[][(&message.data.switch_fulfillment_to)]
             ]
           ]
         )?;
