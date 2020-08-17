@@ -79,6 +79,10 @@ enum Command {
     #[structopt(long = "content_type")]
     content_type: String,
   },
+  ListSubscriptions {
+    #[structopt(long = "marketplace")]
+    marketplace_id: String,
+  },
 }
 
 fn main() {
@@ -192,12 +196,12 @@ fn main() {
       )
       .unwrap();
       println!("{:#?}", res)
-    },
+    }
     Command::SubmitFeed {
       feed_type,
       content_file,
       marketplace_id_list,
-      content_type
+      content_type,
     } => {
       use mws::feeds::*;
       use std::io::Cursor;
@@ -213,8 +217,14 @@ fn main() {
         },
         Cursor::new(content),
         b64,
-        content_type
-      ).unwrap();
+        content_type,
+      )
+      .unwrap();
+      println!("{:#?}", res)
+    }
+    Command::ListSubscriptions { marketplace_id } => {
+      use mws::subscriptions::*;
+      let res = ListSubscriptions(&client, marketplace_id).unwrap();
       println!("{:#?}", res)
     }
   }
