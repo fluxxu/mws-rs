@@ -5,6 +5,7 @@ pub use reqwest::{Method, StatusCode};
 use result::{MwsError, MwsResult};
 use sign::SignatureV2;
 use std::io::Read;
+use types::{GenericXmlResponse, GenericXmlResponseParseError};
 use xmlhelper::decode::{FromXmlStream, Stream};
 use SerializeMwsParams;
 
@@ -342,6 +343,40 @@ impl Client {
     let mut body = vec![];
     resp.read_to_end(&mut body)?;
     Ok((resp.status().clone(), headers, body))
+  }
+
+  pub fn request_xml_generic<P>(
+    &self,
+    method: Method,
+    path: &str,
+    version: &str,
+    action: &str,
+    parameters: P,
+  ) -> MwsResult<GenericXmlResponse>
+  where
+    P: SerializeMwsParams,
+  {
+    let (_, _, body) = self.request_raw(method, path, version, action, parameters)?;
+    let mut elem = ::xmltree::Element::parse(body.as_slice())?;
+    let root_name = elem.name.clone();
+    let result_name = if root_name.ends_with("Response") {
+      format!(
+        "{}Result",
+        root_name.split_terminator("Response").next().unwrap()
+      )
+    } else {
+      return Err(GenericXmlResponseParseError::UnexpectedRootName(root_name).into());
+    };
+
+    let result_element = elem.take_child(result_name.as_str()).ok_or_else(|| {
+      MwsError::from(GenericXmlResponseParseError::ResultElementNotFound(
+        result_name,
+      ))
+    })?;
+    Ok(GenericXmlResponse {
+      root_name,
+      result_element,
+    })
   }
 }
 

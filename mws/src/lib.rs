@@ -18,6 +18,7 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate mws_derive;
+extern crate xmltree;
 
 pub use mws_derive::FromTdffRow;
 

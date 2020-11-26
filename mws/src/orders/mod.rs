@@ -138,7 +138,8 @@ pub fn ListOrderItemsByNextToken(
       VERSION,
       "ListOrderItemsByNextToken",
       params,
-    ).map(|e: ListOrderItemsByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: ListOrderItemsByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 

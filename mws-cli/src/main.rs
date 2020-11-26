@@ -4,7 +4,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use mws::client::Client;
+use mws::client::{Client, Method};
 
 mod env;
 
@@ -82,6 +82,14 @@ enum Command {
   ListSubscriptions {
     #[structopt(long = "marketplace")]
     marketplace_id: String,
+  },
+  ListFinancialEvents {
+    #[structopt(long = "posted_after", parse(try_from_str))]
+    posted_after: NaiveDate,
+    #[structopt(long = "posted_before", parse(try_from_str))]
+    posted_before: NaiveDate,
+    #[structopt(long = "out", parse(from_os_str))]
+    outdir: PathBuf,
   },
 }
 
@@ -226,6 +234,68 @@ fn main() {
       use mws::subscriptions::*;
       let res = ListSubscriptions(&client, marketplace_id).unwrap();
       println!("{:#?}", res)
+    }
+    Command::ListFinancialEvents {
+      posted_after,
+      posted_before,
+      outdir,
+    } => {
+      use std::thread::sleep;
+      use std::time::Duration;
+      let mut page = 1;
+      let mut next_token: Option<String> = None;
+      loop {
+        println!("loading page {} ...", page);
+
+        let res = if let Some(next_token) = next_token.take() {
+          client
+            .request_xml_generic(
+              Method::Post,
+              "/Finances",
+              "2015-05-01",
+              "ListFinancialEventsByNextToken",
+              vec![
+                (
+                  "NextToken".to_string(),
+                  next_token,
+                ),
+              ],
+            )
+            .unwrap()
+        } else {
+          client
+            .request_xml_generic(
+              Method::Post,
+              "/Finances",
+              "2015-05-01",
+              "ListFinancialEvents",
+              vec![
+                (
+                  "PostedAfter".to_string(),
+                  get_utc_datetime(posted_after).to_rfc3339(),
+                ),
+                (
+                  "PostedBefore".to_string(),
+                  get_utc_datetime(posted_before).to_rfc3339(),
+                ),
+              ],
+            )
+            .unwrap()
+        };
+
+        let filename = format!("financial_events_{}_{}_{}.xml", posted_after, posted_before, page);
+        let f = std::fs::File::create(outdir.join(filename)).unwrap();
+        res.result_element.write(f).unwrap();
+
+        next_token = res.next_token().clone().map(|v| v.to_string());
+        if next_token.is_none() {
+          break;
+        }
+
+        page += 1;
+
+        sleep(Duration::from_secs(1));
+      }
     }
   }
 }

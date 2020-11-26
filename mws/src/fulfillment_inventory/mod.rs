@@ -83,7 +83,8 @@ pub fn ListInventorySupply(
       VERSION,
       "ListInventorySupply",
       parameters,
-    ).map(|e: ListInventorySupplyResponseEnvelope| e.into_inner())
+    )
+    .map(|e: ListInventorySupplyResponseEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -101,7 +102,8 @@ pub fn ListInventorySupplyByNextToken(
       VERSION,
       "ListInventorySupplyByNextToken",
       params,
-    ).map(|e: ListInventorySupplyByNextTokenResponseEnvelope| e.into_inner())
+    )
+    .map(|e: ListInventorySupplyByNextTokenResponseEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 

@@ -46,7 +46,8 @@ pub fn GetEligibleShippingServices(
       VERSION,
       "GetEligibleShippingServices",
       params,
-    ).map(|e: GetEligibleShippingServicesEnvelope| e.into_inner())
+    )
+    .map(|e: GetEligibleShippingServicesEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -108,7 +109,8 @@ pub fn GetShipment(client: &Client, id: &str) -> MwsResult<GetShipmentResponse> 
       VERSION,
       "GetShipment",
       vec![("ShipmentId".to_string(), id.to_string())],
-    ).map(|e: GetShipmentEnvelope| e.into_inner())
+    )
+    .map(|e: GetShipmentEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -133,7 +135,8 @@ pub fn CancelShipment(client: &Client, id: &str) -> MwsResult<CancelShipmentResp
       VERSION,
       "CancelShipment",
       vec![("ShipmentId".to_string(), id.to_string())],
-    ).map(|e: CancelShipmentEnvelope| e.into_inner())
+    )
+    .map(|e: CancelShipmentEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -200,7 +203,8 @@ mod tests {
       GetEligibleShippingServicesParameters {
         ShipmentRequestDetails: details,
       },
-    ).expect("GetEligibleShippingServices");
+    )
+    .expect("GetEligibleShippingServices");
     println!("res = {:#?}", res);
   }
 

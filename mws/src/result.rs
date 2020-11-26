@@ -1,4 +1,5 @@
 pub use client::ErrorResponse as MwsErrorResponse;
+use types::GenericXmlResponseParseError;
 
 #[derive(Fail, Debug)]
 pub enum MwsError {
@@ -10,6 +11,10 @@ pub enum MwsError {
   XmlReader(#[cause] ::xml::reader::Error),
   #[fail(display = "xml writer error: {}", _0)]
   XmlWriter(#[cause] ::xml::writer::Error),
+  #[fail(display = "xml element parse error: {}", _0)]
+  XmlElementParse(#[cause] ::xmltree::ParseError),
+  #[fail(display = "generic xml response parse error: {}", _0)]
+  GenericXmlResponseParse(#[cause] GenericXmlResponseParseError),
   #[fail(display = "csv error: {}", _0)]
   Csv(#[cause] ::csv::Error),
   #[fail(display = "utf8 error: {}", _0)]
@@ -66,5 +71,7 @@ impl_from!(XmlWriter(::xml::writer::Error));
 impl_from!(Csv(::csv::Error));
 impl_from!(Utf8(::std::str::Utf8Error));
 impl_from!(Msg(String));
+impl_from!(XmlElementParse(::xmltree::ParseError));
+impl_from!(GenericXmlResponseParse(GenericXmlResponseParseError));
 
 pub type MwsResult<T> = Result<T, MwsError>;

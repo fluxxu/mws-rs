@@ -49,7 +49,8 @@ pub fn ListAllFulfillmentOrders(
         "QueryStartDateTime".to_string(),
         query_start_date_time.to_iso8601(),
       )],
-    ).map(|e: ListAllFulfillmentOrdersEnvelope| e.into_inner())
+    )
+    .map(|e: ListAllFulfillmentOrdersEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -69,7 +70,8 @@ pub fn ListAllFulfillmentOrdersByNextToken(
       VERSION,
       "ListAllFulfillmentOrdersByNextToken",
       params,
-    ).map(|e: ListAllFulfillmentOrdersByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: ListAllFulfillmentOrdersByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -131,7 +133,8 @@ pub fn GetPackageTrackingDetails(
       VERSION,
       "GetPackageTrackingDetails",
       params,
-    ).map(|e: GetPackageTrackingDetailsEnvelope| e.into_inner())
+    )
+    .map(|e: GetPackageTrackingDetailsEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -257,7 +260,8 @@ pub fn CreateFulfillmentOrder(
       VERSION,
       "CreateFulfillmentOrder",
       params,
-    ).map(|e: CreateFulfillmentOrderEnvelope| e.into_inner())
+    )
+    .map(|e: CreateFulfillmentOrderEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -282,7 +286,8 @@ pub fn CancelFulfillmentOrder(client: &Client, seller_fulfillment_order_id: &str
         "SellerFulfillmentOrderId".to_owned(),
         seller_fulfillment_order_id.to_owned(),
       )],
-    ).map(|e: CancelFulfillmentOrderEnvelope| e.into_inner())
+    )
+    .map(|e: CancelFulfillmentOrderEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -340,7 +345,8 @@ mod tests {
           ShippingSpeedCategory::Priority,
         ]),
       },
-    ).expect("GetFulfillmentPreview");
+    )
+    .expect("GetFulfillmentPreview");
     println!("res = {:#?}", res);
   }
 
@@ -388,7 +394,8 @@ mod tests {
         FulfillmentAction: Some(FulfillmentAction::Hold),
         NotificationEmailList: Some(vec!["a@gmail.com".to_owned(), "b@ventmere.com".to_owned()]),
       },
-    ).expect("CreateFulfillmentOrder");
+    )
+    .expect("CreateFulfillmentOrder");
     println!("res = {:#?}", res);
   }
 

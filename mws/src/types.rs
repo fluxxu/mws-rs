@@ -1,4 +1,6 @@
 use chrono::{DateTime, TimeZone};
+use std::borrow::Cow;
+pub use xmltree::Element;
 
 pub trait ToIso8601 {
   fn to_iso8601(&self) -> String;
@@ -164,4 +166,27 @@ pub struct ResponseEnvelope<T: Default> {
 pub struct ResponseEnvelopeBatch<T: Default> {
   pub payload: Vec<T>,
   pub request_id: String,
+}
+
+#[derive(Debug)]
+pub struct GenericXmlResponse {
+  pub root_name: String,
+  pub result_element: Element,
+}
+
+impl GenericXmlResponse {
+  pub fn next_token(&self) -> Option<Cow<str>> {
+    self
+      .result_element
+      .get_child("NextToken")
+      .and_then(|v| v.get_text())
+  }
+}
+
+#[derive(Fail, Debug)]
+pub enum GenericXmlResponseParseError {
+  #[fail(display = "unexpected root name: {}", _0)]
+  UnexpectedRootName(String),
+  #[fail(display = "result element not found: {}", _0)]
+  ResultElementNotFound(String),
 }

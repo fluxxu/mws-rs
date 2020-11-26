@@ -56,7 +56,8 @@ pub fn ListInboundShipments(
       VERSION,
       "ListInboundShipments",
       parameters,
-    ).map(|e: ListInboundShipmentsEnvelope| e.into_inner())
+    )
+    .map(|e: ListInboundShipmentsEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -76,7 +77,8 @@ pub fn ListInboundShipmentsByNextToken(
       VERSION,
       "ListInboundShipmentsByNextToken",
       params,
-    ).map(|e: ListInboundShipmentsByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: ListInboundShipmentsByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -123,7 +125,8 @@ pub fn ListInboundShipmentItems(
       VERSION,
       "ListInboundShipmentItems",
       parameters,
-    ).map(|e: ListInboundShipmentItemsEnvelope| e.into_inner())
+    )
+    .map(|e: ListInboundShipmentItemsEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -143,7 +146,8 @@ pub fn ListInboundShipmentItemsByNextToken(
       VERSION,
       "ListInboundShipmentItemsByNextToken",
       params,
-    ).map(|e: ListInboundShipmentItemsByNextTokenEnvelope| e.into_inner())
+    )
+    .map(|e: ListInboundShipmentItemsByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
 
@@ -275,5 +279,4 @@ mod tests {
       }
     );
   }
-
 }

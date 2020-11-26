@@ -15,7 +15,8 @@ fn derive_struct() {
   let pairs = S {
     a: "value of a".to_string(),
     b: 888,
-  }.into_mws_params();
+  }
+  .into_mws_params();
 
   assert_eq!(
     pairs,
@@ -62,7 +63,8 @@ fn derive_nested_struct() {
       c: "value of c".to_string(),
       d: 999,
     },
-  }.into_mws_params();
+  }
+  .into_mws_params();
 
   assert_eq!(
     pairs,
@@ -91,7 +93,8 @@ fn derive_vec() {
   let pairs = S {
     v: 1,
     items: vec![SS { v: 111 }, SS { v: 222 }, SS { v: 333 }, SS { v: 444 }],
-  }.into_mws_params();
+  }
+  .into_mws_params();
 
   assert_eq!(
     pairs,
@@ -123,7 +126,8 @@ fn derive_vec_config() {
   let pairs = S {
     v: 1,
     items: vec![SS { vv: vec![111] }],
-  }.into_mws_params();
+  }
+  .into_mws_params();
 
   assert_eq!(
     pairs,
