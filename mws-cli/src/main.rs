@@ -244,57 +244,74 @@ fn main() {
       use std::time::Duration;
       let mut page = 1;
       let mut next_token: Option<String> = None;
-      loop {
-        println!("loading page {} ...", page);
 
-        let res = if let Some(next_token) = next_token.take() {
-          client
-            .request_xml_generic(
-              Method::Post,
-              "/Finances",
-              "2015-05-01",
-              "ListFinancialEventsByNextToken",
-              vec![
-                (
-                  "NextToken".to_string(),
-                  next_token,
-                ),
-              ],
-            )
-            .unwrap()
-        } else {
-          client
-            .request_xml_generic(
-              Method::Post,
-              "/Finances",
-              "2015-05-01",
-              "ListFinancialEvents",
-              vec![
-                (
-                  "PostedAfter".to_string(),
-                  get_utc_datetime(posted_after).to_rfc3339(),
-                ),
-                (
-                  "PostedBefore".to_string(),
-                  get_utc_datetime(posted_before).to_rfc3339(),
-                ),
-              ],
-            )
-            .unwrap()
-        };
+      let duration = posted_before - posted_after;
+      let days = duration.num_days();
 
-        let filename = format!("financial_events_{}_{}_{}.xml", posted_after, posted_before, page);
-        let f = std::fs::File::create(outdir.join(filename)).unwrap();
-        res.result_element.write(f).unwrap();
+      if days < 0 {
+        panic!("invalid date range")
+      }
 
-        next_token = res.next_token().clone().map(|v| v.to_string());
-        if next_token.is_none() {
-          break;
+      let chunks = ((days as f64) / 180.0).ceil() as i64;
+      let ranges: Vec<[NaiveDate; 2]> = (0..chunks).into_iter().map(|chunk_idx| {
+        [posted_after + chrono::Duration::days(chunk_idx * 180), std::cmp::min(posted_before, posted_after + chrono::Duration::days((chunk_idx + 1) * 180))]
+      }).collect();
+
+      println!("ranges = {:?}", ranges);
+
+      for [posted_after, posted_before] in ranges {
+        loop {
+          println!("loading page {} ...", page);
+
+          let res = if let Some(next_token) = next_token.take() {
+            client
+              .request_xml_generic(
+                Method::Post,
+                "/Finances",
+                "2015-05-01",
+                "ListFinancialEventsByNextToken",
+                vec![
+                  (
+                    "NextToken".to_string(),
+                    next_token,
+                  ),
+                ],
+              )
+              .unwrap()
+          } else {
+            client
+              .request_xml_generic(
+                Method::Post,
+                "/Finances",
+                "2015-05-01",
+                "ListFinancialEvents",
+                vec![
+                  (
+                    "PostedAfter".to_string(),
+                    get_utc_datetime(posted_after).to_rfc3339(),
+                  ),
+                  (
+                    "PostedBefore".to_string(),
+                    get_utc_datetime(posted_before).to_rfc3339(),
+                  ),
+                ],
+              )
+              .unwrap()
+          };
+
+          let filename = format!("financial_events_{}_{}_{}.xml", posted_after, posted_before, page);
+          let f = std::fs::File::create(outdir.join(filename)).unwrap();
+          res.result_element.write(f).unwrap();
+
+          next_token = res.next_token().clone().map(|v| v.to_string());
+          if next_token.is_none() {
+            break;
+          }
+
+          page += 1;
+
+          sleep(Duration::from_secs(1));
         }
-
-        page += 1;
-
-        sleep(Duration::from_secs(1));
       }
     }
   }
