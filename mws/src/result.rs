@@ -49,7 +49,7 @@ impl MwsError {
         code >= 500 && code < 600
       }
       MwsError::Io(_) => true,
-      MwsError::Http(err) => {
+      MwsError::Http(ref err) => {
         if err.is_redirect() {
           return false
         }
