@@ -91,6 +91,14 @@ enum Command {
     #[structopt(long = "out", parse(from_os_str))]
     outdir: PathBuf,
   },
+  ListOrders {
+    #[structopt(long = "marketplace")]
+    marketplace_id_list: Vec<String>,
+    #[structopt(long = "created_after", parse(try_from_str))]
+    created_after: NaiveDate,
+    #[structopt(long = "out", parse(from_os_str))]
+    outdir: PathBuf,
+  }
 }
 
 fn main() {
@@ -312,6 +320,102 @@ fn main() {
 
           sleep(Duration::from_secs(1));
         }
+      }
+    }
+    Command::ListOrders {
+      marketplace_id_list,
+      created_after,
+      outdir
+    } => {
+      use std::thread::sleep;
+      use std::time::Duration;
+      use mws::orders::*;
+
+      let mut page = 1;
+      let mut next_token = None;
+
+      loop {
+        println!("loading page = {}", page);
+
+        let res = if let Some(next_token) = next_token.clone() {
+          ListOrdersByNextToken(&client, next_token)
+        } else {
+          ListOrders(&client, ListOrdersParameters {
+            MarketplaceId: marketplace_id_list.clone(),
+            CreatedAfter: Some(DateTime::<Utc>::from_utc(created_after.and_hms(0, 0, 0).into(), Utc)),
+            MaxResultsPerPage: Some(100),
+            ..Default::default()
+          })
+        };
+
+        match res {
+          Ok(res) =>{
+            next_token = res.NextToken;
+            let orders = res.Orders;
+            let mut json_orders = vec![];
+            println!("orders = {}", orders.len());
+
+            for order in orders {
+              println!("loading items: {} {:?}", order.AmazonOrderId, order.PurchaseDate);
+
+              let mut next_token = None;
+              let mut items = vec![];
+              loop {
+                let res = if let Some(next_token) = next_token.clone() {
+                  ListOrderItemsByNextToken(&client, next_token)
+                } else {
+                  ListOrderItems(&client, order.AmazonOrderId.clone())
+                };
+
+                match res {
+                  Ok(res) => {
+                    next_token = res.NextToken;
+                    println!("items = {}", res.OrderItems.len());
+                    items.extend(res.OrderItems);
+                  }
+                  Err(err) => {
+                    if err.should_try_again() {
+                      sleep(Duration::from_secs(10));
+                      continue;
+                    } else {
+                      Err(err).unwrap()
+                    }
+                  }
+                }
+
+                sleep(Duration::from_secs(1));
+
+                if next_token.is_none() {
+                  break;
+                }
+              }
+
+              json_orders.push(serde_json::json!({
+                "order": serde_json::to_value(&order).unwrap(),
+                "items": serde_json::to_value(&items).unwrap()
+              }));
+            }
+
+            let filename = format!("orders_{}.json", page);
+            let f = std::fs::File::create(outdir.join(filename)).unwrap();
+            serde_json::to_writer(f, &json_orders).unwrap();
+          },
+          Err(err) => {
+            if err.should_try_again() {
+              sleep(Duration::from_secs(10));
+              continue;
+            } else {
+              Err(err).unwrap()
+            }
+          }
+        }
+
+        if next_token.is_none() {
+          break;
+        }
+
+        page += 1;
+        sleep(Duration::from_secs(5));
       }
     }
   }

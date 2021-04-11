@@ -12,3 +12,4 @@ chrono = { version = "0.4" }
 encoding_rs = "0.8.20"
 md5 = "0.7.0"
 base64 = "0.12.0"
+serde_json = "1"
