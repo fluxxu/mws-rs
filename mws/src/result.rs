@@ -49,6 +49,19 @@ impl MwsError {
         code >= 500 && code < 600
       }
       MwsError::Io(_) => true,
+      MwsError::Http(err) => {
+        if err.is_redirect() {
+          return false
+        }
+
+        if let Some(status) = err.status() {
+          if status.is_client_error() {
+            return false
+          }
+        }
+
+        return true
+      }
       _ => false,
     }
   }
