@@ -212,6 +212,7 @@ pub struct OrderItem {
   pub ShippingPrice: Option<CurrencyAmount>,
   pub ShippingDiscount: Option<CurrencyAmount>,
   pub ShippingTax: Option<CurrencyAmount>,
+  pub IsTransparency: bool,
 }
 
 #[cfg(test)]
