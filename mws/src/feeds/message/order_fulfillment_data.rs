@@ -19,6 +19,7 @@ pub struct OrderFulfillmentMessage {
 pub struct OrderFulfillmentItem {
   pub amazon_order_item_code: String,
   pub quantity: i32,
+  pub transparency_code: Option<String>,
 }
 
 impl Message for OrderFulfillmentMessage {
@@ -61,16 +62,32 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<OrderFulfillmen
               [{
                 for item in &message.data.items {
                   let quantity = item.quantity.to_string();
-                  write_xml!(w,
-                    Item[][
-                      AmazonOrderItemCode[][
-                        (&item.amazon_order_item_code)
+                  if let Some(tcode) = item.transparency_code.as_ref() {
+                    write_xml!(w,
+                      Item[][
+                        AmazonOrderItemCode[][
+                          (&item.amazon_order_item_code)
+                        ]
+                        Quantity[][
+                          (&quantity)
+                        ]
+                        TransparencyCode[][
+                          (tcode.as_str())
+                        ]
                       ]
-                      Quantity[][
-                        (&quantity)
+                    )?;
+                  } else {
+                    write_xml!(w,
+                      Item[][
+                        AmazonOrderItemCode[][
+                          (&item.amazon_order_item_code)
+                        ]
+                        Quantity[][
+                          (&quantity)
+                        ]
                       ]
-                    ]
-                  )?;
+                    )?;
+                  }
                 }
                 Ok(())
               }]
@@ -114,6 +131,7 @@ mod tests {
           items: vec![OrderFulfillmentItem {
             amazon_order_item_code: "56323517235162".to_string(),
             quantity: 1,
+            transparency_code: None,
           }],
         },
         Some(OperationType::Update),
