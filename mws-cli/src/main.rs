@@ -274,7 +274,7 @@ fn main() {
           let res = if let Some(next_token) = next_token.take() {
             client
               .request_xml_generic(
-                Method::Post,
+                Method::POST,
                 "/Finances",
                 "2015-05-01",
                 "ListFinancialEventsByNextToken",
@@ -289,7 +289,7 @@ fn main() {
           } else {
             client
               .request_xml_generic(
-                Method::Post,
+                Method::POST,
                 "/Finances",
                 "2015-05-01",
                 "ListFinancialEvents",

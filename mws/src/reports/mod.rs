@@ -54,7 +54,7 @@ pub fn GetReportList(
   params: GetReportListParameters,
 ) -> MwsResult<GetReportListResponse> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "GetReportList", params)
+    .request_xml(Method::POST, PATH, VERSION, "GetReportList", params)
     .map(|e: GetReportListEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -69,7 +69,7 @@ pub fn GetReportListByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "GetReportListByNextToken",
@@ -87,12 +87,12 @@ pub fn GetReport<W: Write>(
   out: &mut W,
 ) -> MwsResult<(u64, String)> {
   let params = vec![("ReportId".to_string(), report_id)];
-  let mut resp = client.request(Method::Post, PATH, VERSION, "GetReport", params)?;
+  let mut resp = client.request(Method::POST, PATH, VERSION, "GetReport", params)?;
   let content_md5 = resp
     .headers()
-    .get_raw("Content-MD5")
+    .get("Content-MD5")
     .ok_or_else(|| MwsError::ContentMD5HeaderMissing)
-    .and_then(|data| ::std::str::from_utf8(&data[0]).map_err(Into::into))?
+    .and_then(|data| ::std::str::from_utf8(data.as_bytes()).map_err(Into::into))?
     .to_owned();
   let size = io::copy(&mut resp, out)?;
   Ok((size, content_md5))
@@ -141,7 +141,7 @@ pub fn GetReportRequestList(
   params: GetReportRequestListParameters,
 ) -> MwsResult<GetReportRequestListResponse> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "GetReportRequestList", params)
+    .request_xml(Method::POST, PATH, VERSION, "GetReportRequestList", params)
     .map(|e: GetReportRequestListEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -156,7 +156,7 @@ pub fn GetReportRequestListByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "GetReportRequestListByNextToken",
@@ -196,7 +196,7 @@ pub fn RequestReport(
   params: RequestReportParameters,
 ) -> MwsResult<RequestReportResponse> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "RequestReport", params)
+    .request_xml(Method::POST, PATH, VERSION, "RequestReport", params)
     .map(|e: RequestReportEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }

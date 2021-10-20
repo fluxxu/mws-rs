@@ -51,7 +51,7 @@ pub fn ListInboundShipments(
 ) -> MwsResult<ListInboundShipmentsResponse> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListInboundShipments",
@@ -72,7 +72,7 @@ pub fn ListInboundShipmentsByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListInboundShipmentsByNextToken",
@@ -120,7 +120,7 @@ pub fn ListInboundShipmentItems(
 ) -> MwsResult<ListInboundShipmentItemsResponse> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListInboundShipmentItems",
@@ -141,7 +141,7 @@ pub fn ListInboundShipmentItemsByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListInboundShipmentItemsByNextToken",

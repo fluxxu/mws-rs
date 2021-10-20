@@ -26,7 +26,7 @@ pub fn RegisterDestination(
   params: RegisterDestinationParameters,
 ) -> MwsResult<()> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "RegisterDestination", params)
+    .request_xml(Method::POST, PATH, VERSION, "RegisterDestination", params)
     .map_err(|err| err.into())
 }
 
@@ -37,7 +37,7 @@ pub fn DeregisterDestination(
   params: RegisterDestinationParameters,
 ) -> MwsResult<()> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "DeregisterDestination", params)
+    .request_xml(Method::POST, PATH, VERSION, "DeregisterDestination", params)
     .map_err(|err| err.into())
 }
 
@@ -61,7 +61,7 @@ pub fn ListRegisteredDestinations(
 ) -> MwsResult<ListRegisteredDestinationsResponse> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListRegisteredDestinations",
@@ -79,7 +79,7 @@ pub fn SendTestNotificationToDestination(
 ) -> MwsResult<()> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "SendTestNotificationToDestination",
@@ -99,7 +99,7 @@ pub struct CreateSubscriptionParameters {
 #[allow(non_snake_case)]
 pub fn CreateSubscription(client: &Client, params: CreateSubscriptionParameters) -> MwsResult<()> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "CreateSubscription", params)
+    .request_xml(Method::POST, PATH, VERSION, "CreateSubscription", params)
     .map_err(|err| err.into())
 }
 
@@ -130,7 +130,7 @@ pub fn GetSubscription(
   params: GetSubscriptionParameters,
 ) -> MwsResult<GetSubscriptionResponse> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "GetSubscription", params)
+    .request_xml(Method::POST, PATH, VERSION, "GetSubscription", params)
     .map(|e: GetSubscriptionResponseEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -155,7 +155,7 @@ pub fn ListSubscriptions(
 ) -> MwsResult<ListSubscriptionsResponse> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListSubscriptions",
@@ -169,6 +169,6 @@ pub fn ListSubscriptions(
 #[allow(non_snake_case)]
 pub fn UpdateSubscription(client: &Client, params: CreateSubscriptionParameters) -> MwsResult<()> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "UpdateSubscription", params)
+    .request_xml(Method::POST, PATH, VERSION, "UpdateSubscription", params)
     .map_err(|err| err.into())
 }

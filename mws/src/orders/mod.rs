@@ -72,7 +72,7 @@ pub fn ListOrders(
   parameters: ListOrdersParameters,
 ) -> MwsResult<ListOrdersResponse> {
   client
-    .request_xml(Method::Post, PATH, VERSION, "ListOrders", parameters)
+    .request_xml(Method::POST, PATH, VERSION, "ListOrders", parameters)
     .map(|e: ListOrdersEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -86,7 +86,7 @@ pub fn ListOrders(
 pub fn ListOrdersByNextToken(client: &Client, next_token: String) -> MwsResult<ListOrdersResponse> {
   let params = vec![("NextToken".to_string(), next_token)];
   client
-    .request_xml(Method::Post, PATH, VERSION, "ListOrdersByNextToken", params)
+    .request_xml(Method::POST, PATH, VERSION, "ListOrdersByNextToken", params)
     .map(|e: ListOrdersByNextTokenEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -119,7 +119,7 @@ pub fn ListOrderItems(
 ) -> MwsResult<ListOrderItemsResponse> {
   let params = vec![("AmazonOrderId".to_string(), amazon_order_id)];
   client
-    .request_xml(Method::Post, PATH, VERSION, "ListOrderItems", params)
+    .request_xml(Method::POST, PATH, VERSION, "ListOrderItems", params)
     .map(|e: ListOrderItemsEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
@@ -133,7 +133,7 @@ pub fn ListOrderItemsByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "ListOrderItemsByNextToken",

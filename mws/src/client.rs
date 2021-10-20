@@ -1,6 +1,5 @@
 use reqwest;
-pub use reqwest::header::ContentType;
-use reqwest::Response;
+use reqwest::blocking::{Client as ReqwestClient, Response};
 pub use reqwest::{Method, StatusCode};
 use result::{MwsError, MwsResult};
 use sign::SignatureV2;
@@ -70,8 +69,8 @@ impl ErrorResponseInfo {
   }
 }
 
-impl FromXmlStream<Stream<reqwest::Response>> for ErrorResponseInfo {
-  fn from_xml(s: &mut Stream<reqwest::Response>) -> MwsResult<ErrorResponseInfo> {
+impl FromXmlStream<Stream<Response>> for ErrorResponseInfo {
+  fn from_xml(s: &mut Stream<Response>) -> MwsResult<ErrorResponseInfo> {
     ErrorResponseInfo::from_xml_stream(s)
   }
 }
@@ -100,18 +99,18 @@ pub struct ClientOptions {
 
 pub struct Client {
   options: ClientOptions,
-  http_client: reqwest::Client,
+  http_client: ReqwestClient,
 }
 
 impl Client {
   pub fn new(options: ClientOptions) -> MwsResult<Client> {
     Ok(Client {
       options: options,
-      http_client: reqwest::Client::new(),
+      http_client: ReqwestClient::new(),
     })
   }
 
-  pub fn with_http_client(options: ClientOptions, http_client: reqwest::Client) -> Client {
+  pub fn with_http_client(options: ClientOptions, http_client: reqwest::blocking::Client) -> Client {
     Client {
       options: options,
       http_client: http_client,
@@ -125,7 +124,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> MwsResult<reqwest::Response>
+  ) -> MwsResult<Response>
   where
     P: SerializeMwsParams,
   {
@@ -161,8 +160,8 @@ impl Client {
     parameters: P,
     body: R,
     content_md5: String,
-    content_type: ContentType,
-  ) -> MwsResult<reqwest::Response>
+    content_type: String,
+  ) -> MwsResult<Response>
   where
     P: SerializeMwsParams,
     R: Read + Send + 'static,
@@ -187,8 +186,8 @@ impl Client {
     self
       .http_client
       .request(method, &url)
-      .header(content_type)
-      .body(reqwest::Body::new(body))
+      .header(reqwest::header::CONTENT_TYPE, content_type)
+      .body(reqwest::blocking::Body::new(body))
       .send()
       .map_err(MwsError::from)
       .and_then(handle_error_status)
@@ -201,7 +200,7 @@ impl Client {
     version: &str,
     action: &str,
     parameters: P,
-  ) -> MwsResult<reqwest::Response>
+  ) -> MwsResult<Response>
   where
     P: SerializeMwsParams,
   {
@@ -246,7 +245,7 @@ impl Client {
   ) -> MwsResult<T>
   where
     P: SerializeMwsParams,
-    T: FromXmlStream<Stream<reqwest::Response>>,
+    T: FromXmlStream<Stream<Response>>,
   {
     let resp = self.request(method, path, version, action, parameters)?;
     let mut stream = Stream::new(resp);
@@ -264,7 +263,7 @@ impl Client {
   ) -> MwsResult<T>
   where
     P: SerializeMwsParams,
-    T: FromXmlStream<Stream<reqwest::Response>>,
+    T: FromXmlStream<Stream<Response>>,
   {
     let resp = self.request_with_form(method, path, version, action, parameters)?;
     let mut stream = Stream::new(resp);
@@ -281,11 +280,11 @@ impl Client {
     parameters: P,
     body: R,
     content_md5: String,
-    content_type: ContentType,
+    content_type: String,
   ) -> MwsResult<T>
   where
     P: SerializeMwsParams,
-    T: FromXmlStream<Stream<reqwest::Response>>,
+    T: FromXmlStream<Stream<Response>>,
     R: Read + Send + 'static,
   {
     let resp = self.request_with_body(
@@ -337,7 +336,11 @@ impl Client {
     let headers = resp
       .headers()
       .iter()
-      .map(|view| (view.name().to_string(), view.value_string()))
+      .filter_map(|(name, value)| {
+        value.to_str().ok().map(|value| {
+          (name.to_string(), value.to_string())
+        })
+      })
       .collect();
 
     let mut body = vec![];
@@ -430,7 +433,7 @@ mod tests {
     let client = get_test_client();
     let (status, _, body) = client
       .request_raw(
-        Method::Post,
+        Method::POST,
         "/Orders/2013-09-01",
         "2013-09-01",
         "GetServiceStatus",
@@ -444,7 +447,7 @@ mod tests {
     use std::io::Cursor;
     let (status, _, body) = client
       .request_raw(
-        Method::Post,
+        Method::POST,
         "/Fake/2013-09-01",
         "2013-09-01",
         "GetServiceStatus",

@@ -3,7 +3,7 @@
 //! [Documentation](http://docs.developer.amazonservices.com/en_CA/feeds/Feeds_Overview.html)
 
 use chrono::{DateTime, Utc};
-use client::{Client, ContentType, Method};
+use client::{Client, Method};
 use result::MwsResult;
 use std::io::{Read, Write};
 use xmlhelper::encode;
@@ -160,14 +160,14 @@ where
 {
   client
     .request_xml_with_body(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "SubmitFeed",
       parameters,
       content,
       content_md5,
-      ContentType(content_type.parse().unwrap()),
+      content_type,
     )
     .map(|e: SubmitFeedEnvelope| e.into_inner())
     .map_err(Into::into)
@@ -181,7 +181,7 @@ pub fn GetFeedSubmissionResult<W: Write>(
 ) -> MwsResult<u64> {
   let params = vec![("FeedSubmissionId".to_string(), FeedSubmissionId)];
   let mut resp = client.request(
-    Method::Post,
+    Method::POST,
     PATH,
     VERSION,
     "GetFeedSubmissionResult",
@@ -242,7 +242,7 @@ pub fn GetFeedSubmissionList(
 ) -> MwsResult<GetFeedSubmissionListResponse> {
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "GetFeedSubmissionList",
@@ -260,7 +260,7 @@ pub fn GetFeedSubmissionListByNextToken(
   let params = vec![("NextToken".to_string(), next_token)];
   client
     .request_xml(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "GetFeedSubmissionListByNextToken",

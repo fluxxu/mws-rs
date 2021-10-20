@@ -9,7 +9,7 @@ description = "Client library for Amazon Marketplace Web Service (Amazon MWS)"
 [dependencies]
 base64 = "0.2.1"
 rust-crypto = "0.2.36"
-reqwest = "0.8.0"
+reqwest = { version = "0.11.0", features = ["blocking"] }
 url = "1.2.4"
 chrono = { version = "0.4", features = ["serde"] }
 failure = "0.1.2"

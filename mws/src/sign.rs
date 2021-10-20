@@ -226,7 +226,7 @@ mod tests {
       .add("ASINList.ASIN.1", "6666")
       .add("SellerId", "1111")
       .generate_url(
-        Method::Post,
+        Method::POST,
         "/Products/2011-10-01",
         "2011-10-01",
         "GetMatchingProduct",

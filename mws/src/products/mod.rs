@@ -40,7 +40,7 @@ pub fn GetLowestPricedOffersForSKU(
 ) -> MwsResult<GetLowestPricedOffersForSKUResponse> {
   client
     .request_xml_with_form(
-      Method::Post,
+      Method::POST,
       PATH,
       VERSION,
       "GetLowestPricedOffersForSKU",
@@ -81,7 +81,7 @@ pub fn GetMyPriceForASIN(
   params: GetMyPriceForASINParameters,
 ) -> MwsResult<Vec<GetMyPriceForASINResult>> {
   client
-    .request_xml_with_form(Method::Post, PATH, VERSION, "GetMyPriceForASIN", params)
+    .request_xml_with_form(Method::POST, PATH, VERSION, "GetMyPriceForASIN", params)
     .map(|e: GetMyPriceForASINResponseEnvelope| e.into_inner())
     .map_err(|err| err.into())
 }
