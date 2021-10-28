@@ -285,7 +285,6 @@ fn main() {
                   ),
                 ],
               )
-              .unwrap()
           } else {
             client
               .request_xml_generic(
@@ -304,7 +303,19 @@ fn main() {
                   ),
                 ],
               )
-              .unwrap()
+          };
+
+          
+          let res = match res {
+            Ok(res) => res,
+            Err(err) => {
+              if err.should_try_again() {
+                eprintln!("RetriableException: {:?}", err);
+                continue;
+              } else {
+                Err(err).unwrap()
+              }
+            }
           };
 
           let filename = format!("financial_events_{}_{}_{}.xml", posted_after, posted_before, page);
