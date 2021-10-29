@@ -271,7 +271,7 @@ fn main() {
         loop {
           println!("loading page {} ...", page);
 
-          let res = if let Some(next_token) = next_token.take() {
+          let res = if let Some(next_token) = next_token.clone() {
             client
               .request_xml_generic(
                 Method::POST,
