@@ -19,19 +19,30 @@ pub const REGION_ID_IN: &'static str = "in";
 pub const REGION_ID_CN: &'static str = "cn";
 pub const REGION_ID_FE: &'static str = "fe";
 
+pub const MARKETPLACE_ID_BR: &'static str = "A2Q3Y263D00KWC";
 pub const MARKETPLACE_ID_CA: &'static str = "A2EUQ1WTGCTBG2";
-pub const MARKETPLACE_ID_MX: &'static str = "A1AM78C64UM0Y8";
 pub const MARKETPLACE_ID_US: &'static str = "ATVPDKIKX0DER";
+pub const MARKETPLACE_ID_MX: &'static str = "A1AM78C64UM0Y8";
+
+pub const MARKETPLACE_ID_AE: &'static str = "A2VIGQ35RCS4UG";
 pub const MARKETPLACE_ID_DE: &'static str = "A1PA6795UKMFR9";
+pub const MARKETPLACE_ID_EG: &'static str = "ARBP9OOSHTCHU";
 pub const MARKETPLACE_ID_ES: &'static str = "A1RKKUPIHCS9HS";
 pub const MARKETPLACE_ID_FR: &'static str = "A13V1IB3VIYZZH";
-pub const MARKETPLACE_ID_IT: &'static str = "APJ6JRA9NG5V4";
 pub const MARKETPLACE_ID_GB: &'static str = "A1F83G8C2ARO7P";
 pub const MARKETPLACE_ID_IN: &'static str = "A21TJRUUN4KGV";
+pub const MARKETPLACE_ID_IT: &'static str = "APJ6JRA9NG5V4";
+pub const MARKETPLACE_ID_NL: &'static str = "A1805IZSGTT6HS";
+pub const MARKETPLACE_ID_PL: &'static str = "A1C3SOZRARQ6R3";
+pub const MARKETPLACE_ID_SA: &'static str = "A17E79C6D8DWNP";
+pub const MARKETPLACE_ID_SE: &'static str = "A2NODRKZP88ZB9";
+pub const MARKETPLACE_ID_TR: &'static str = "A33AVAJ2PDY3EV";
+
 pub const MARKETPLACE_ID_JP: &'static str = "A1VC38T7YXB528";
-pub const MARKETPLACE_ID_CN: &'static str = "AAHKV2X7AFYLW";
 pub const MARKETPLACE_ID_AU: &'static str = "A39IBJ37TRP1C6";
 pub const MARKETPLACE_ID_SG: &'static str = "A19VAU5U5O7RUS";
+
+pub const MARKETPLACE_ID_CN: &'static str = "AAHKV2X7AFYLW";
 
 lazy_static! {
   pub static ref MARKETPLACES: Vec<AmazonMarketplace> = {
@@ -46,21 +57,29 @@ lazy_static! {
       };
     }
     let mut items = vec![];
+    items.push(item!(MARKETPLACE_ID_CA, "na", "Brazil", "BR"));
     items.push(item!(MARKETPLACE_ID_CA, "na", "Canada", "CA"));
     items.push(item!(MARKETPLACE_ID_MX, "na", "Mexico", "MX"));
     items.push(item!(MARKETPLACE_ID_US, "na", "USA", "US"));
 
+    items.push(item!(MARKETPLACE_ID_AE, "eu", "United Arab Emirates (U.A.E.)", "AE"));
     items.push(item!(MARKETPLACE_ID_DE, "eu", "Germany", "DE"));
+    items.push(item!(MARKETPLACE_ID_EG, "eu", "Egypt", "EG"));
     items.push(item!(MARKETPLACE_ID_ES, "eu", "Spain", "ES"));
     items.push(item!(MARKETPLACE_ID_FR, "eu", "France", "FR"));
-    items.push(item!(MARKETPLACE_ID_IT, "eu", "Italy", "IT"));
     items.push(item!(MARKETPLACE_ID_GB, "eu", "United Kingdom", "GB"));
-
     items.push(item!(MARKETPLACE_ID_IN, "in", "India", "IN"));
+    items.push(item!(MARKETPLACE_ID_IT, "eu", "Italy", "IT"));
+    items.push(item!(MARKETPLACE_ID_NL, "eu", "Netherlands", "NL"));
+    items.push(item!(MARKETPLACE_ID_PL, "eu", "Poland", "PL"));
+    items.push(item!(MARKETPLACE_ID_SA, "eu", "Saudi Arabia", "SA"));
+    items.push(item!(MARKETPLACE_ID_SE, "eu", "Sweden", "SE"));
+    items.push(item!(MARKETPLACE_ID_TR, "eu", "Turkey", "TR"));
+
 
     items.push(item!(MARKETPLACE_ID_JP, "fe", "Japan", "JP"));
     items.push(item!(MARKETPLACE_ID_AU, "fe", "Australia", "AU"));
-    items.push(item!(MARKETPLACE_ID_SG, "fe", "Australia", "AU"));
+    items.push(item!(MARKETPLACE_ID_SG, "fe", "Singapore", "SG"));
 
     items.push(item!(MARKETPLACE_ID_CN, "cn", "China", "CN"));
 
