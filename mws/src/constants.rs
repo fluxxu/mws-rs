@@ -179,6 +179,7 @@ impl AmazonMarketplace {
   pub fn resolve_state_code(&self, country_id: &str, state: &str) -> Option<String> {
     match self.id {
       MARKETPLACE_ID_US if country_id == "US" => resolve_usa_state_code(state),
+      MARKETPLACE_ID_AU if country_id == "AU" => resolve_au_state_code(state),
       _ => Some(state.to_string()),
     }
   }
@@ -450,6 +451,83 @@ fn test_resolve_usa_state_code() {
   .for_each(|v| {
     assert!(
       resolve_usa_state_code(v).is_some(),
+      "{}: {}",
+      v,
+      normalize(v)
+    )
+  })
+}
+
+const AU_STATES: &'static [(&'static str, &'static str)] = &[
+  ("ACT", "australian capital territory"),
+  ("NSW", "new south wales"),
+  ("NT", "northern territory"),
+  ("QLD", "queensland"),
+  ("SA", "south australia"),
+  ("TAS", "tasmania"),
+  ("VIC", "victoria"),
+  ("WA", "western australia"),
+];
+
+fn resolve_au_state_code(state: &str) -> Option<String> {
+  let v = normalize(state);
+  if v.len() == 2 || v.len() == 3 {
+    let id_match = AU_STATES.iter().find(|(id, _)| id == &v.to_uppercase());
+    if let Some((id, _)) = id_match {
+      return Some(id.to_string());
+    }
+  }
+
+  let text_match = AU_STATES.iter().find(|(_, text)| text == &v);
+  if let Some((id, _)) = text_match {
+    return Some(id.to_string());
+  }
+
+  None
+}
+
+#[test]
+fn test_resolve_au_state_code() {
+  [
+    "ACT",
+    // "Australia",
+    "Australian Capital Territory",
+    // "Brisbane",
+    "New South Wales",
+    "Northern Territory",
+    "nsw",
+    "Nsw",
+    "NSW",
+    "N.S.W.",
+    "NT",
+    "Qld",
+    "QLD",
+    "QLD ",
+    "queensland",
+    "Queensland",
+    "SA",
+    "South Australia",
+    // "sydney",
+    "Tas",
+    "TAS",
+    "Tasmania",
+    "vic",
+    "Vic",
+    "VIC",
+    "victoria",
+    "Victoria",
+    "VICTORIA",
+    "w.a.",
+    "Wa",
+    "WA",
+    "W.A.",
+    "Western Australia",
+    "WESTERN AUSTRALIA",
+  ]
+  .iter()
+  .for_each(|v| {
+    assert!(
+      resolve_au_state_code(v).is_some(),
       "{}: {}",
       v,
       normalize(v)
