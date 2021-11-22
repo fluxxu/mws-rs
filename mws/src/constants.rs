@@ -68,7 +68,7 @@ lazy_static! {
       };
     }
     let mut items = vec![];
-    items.push(item!(MARKETPLACE_ID_CA, "na", "Brazil", "BR"));
+    items.push(item!(MARKETPLACE_ID_BR, "na", "Brazil", "BR"));
     items.push(item!(MARKETPLACE_ID_CA, "na", "Canada", "CA"));
     items.push(item!(MARKETPLACE_ID_MX, "na", "Mexico", "MX"));
     items.push(item!(MARKETPLACE_ID_US, "na", "USA", "US"));
