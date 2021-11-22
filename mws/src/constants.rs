@@ -11,6 +11,7 @@ pub struct AmazonMarketplace {
   pub name: &'static str,
   pub region_id: &'static str,
   pub country_id: &'static str,
+  pub fulfillment_countries: &'static [&'static str],
 }
 
 pub const REGION_ID_NA: &'static str = "na";
@@ -53,6 +54,16 @@ lazy_static! {
           name: $name,
           region_id: $region_id,
           country_id: $country_id,
+          fulfillment_countries: &[$country_id]
+        }
+      };
+      ($id:expr, $region_id:expr, $name:expr, $country_id:expr, [$($fulfillment_country:expr),*]) => {
+        AmazonMarketplace {
+          id: $id,
+          name: $name,
+          region_id: $region_id,
+          country_id: $country_id,
+          fulfillment_countries: &[$($fulfillment_country),*],
         }
       };
     }
@@ -63,7 +74,7 @@ lazy_static! {
     items.push(item!(MARKETPLACE_ID_US, "na", "USA", "US"));
 
     items.push(item!(MARKETPLACE_ID_AE, "eu", "United Arab Emirates (U.A.E.)", "AE"));
-    items.push(item!(MARKETPLACE_ID_DE, "eu", "Germany", "DE"));
+    items.push(item!(MARKETPLACE_ID_DE, "eu", "Germany", "DE", ["DE", "PL", "AT"]));
     items.push(item!(MARKETPLACE_ID_EG, "eu", "Egypt", "EG"));
     items.push(item!(MARKETPLACE_ID_ES, "eu", "Spain", "ES"));
     items.push(item!(MARKETPLACE_ID_FR, "eu", "France", "FR"));
