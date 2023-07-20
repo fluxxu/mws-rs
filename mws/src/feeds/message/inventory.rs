@@ -19,7 +19,7 @@ pub struct InventoryMessage {
   /// and 30)
   pub fulfillment_latency: i32,
 
-  pub switch_fulfillment_to: String,
+  pub switch_fulfillment_to: Option<String>,
 }
 
 impl Message for InventoryMessage {
@@ -47,7 +47,14 @@ impl<W: encode::XmlEventWriter> encode::XmlWrite<W> for Envelope<InventoryMessag
               SKU[][sku]
               Quantity[][(&quantity)]
               FulfillmentLatency[][(&fulfillment_latency)]
-              SwitchFulfillmentTo[][(&message.data.switch_fulfillment_to)]
+              [{
+                if let Some(ref switch_fulfillment_to) = message.data.switch_fulfillment_to {
+                  write_xml!(w,
+                    SwitchFulfillmentTo[][(switch_fulfillment_to.as_str())]
+                  )?;
+                }
+                Ok(())
+              }]
             ]
           ]
         )?;
@@ -78,6 +85,7 @@ mod tests {
           sku: "p1".to_owned(),
           quantity: 100,
           fulfillment_latency: 0,
+          switch_fulfillment_to: Some("MFN".to_owned()),
         },
         Some(OperationType::PartialUpdate),
       )
@@ -87,6 +95,7 @@ mod tests {
           sku: "p2".to_owned(),
           quantity: 200,
           fulfillment_latency: 0,
+          switch_fulfillment_to: None,
         },
         Some(OperationType::PartialUpdate),
       );
@@ -110,6 +119,7 @@ mod tests {
       <SKU>p1</SKU>
       <Quantity>100</Quantity>
       <FulfillmentLatency>0</FulfillmentLatency>
+      <SwitchFulfillmentTo>MFN</SwitchFulfillmentTo>
     </Inventory>
   </Message>
   <Message>

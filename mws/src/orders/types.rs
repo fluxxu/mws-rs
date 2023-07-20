@@ -371,6 +371,7 @@ mod tests {
         ShippingPrice: None,
         ShippingDiscount: None,
         ShippingTax: None,
+        IsTransparency: false,
       }
     );
   }
