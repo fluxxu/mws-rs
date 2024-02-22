@@ -5,7 +5,8 @@
 
 extern crate base64;
 extern crate chrono;
-extern crate crypto;
+extern crate sha2;
+extern crate hmac;
 extern crate failure;
 extern crate reqwest;
 extern crate url;

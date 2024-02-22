@@ -142,9 +142,9 @@ impl SignatureV2 {
     version: T,
     action: T,
   ) -> MwsResult<SignedUrl<'a>> {
-    use crypto::hmac::Hmac;
-    use crypto::mac::Mac;
-    use crypto::sha2::Sha256;
+    use sha2::Sha256;
+    use hmac::{Hmac, Mac};
+    type HmacSha256 = Hmac<Sha256>;
 
     let mut params = self.pairs.clone();
     let mut qs = String::with_capacity(255);
@@ -195,9 +195,9 @@ impl SignatureV2 {
         qs = qs
       );
       // println!("string to sign: {}", canonical_qs);
-      let mut hmac = Hmac::new(Sha256::new(), self.secret_key.as_bytes());
-      hmac.input(canonical_qs.as_bytes());
-      base64::encode(&hmac.result().code())
+      let mut hmac = HmacSha256::new_from_slice(self.secret_key.as_bytes()).map_err(|e| crate::result::MwsError::Msg(e.to_string()))?;
+      hmac.update(canonical_qs.as_bytes());
+      base64::encode(&hmac.finalize().into_bytes())
     };
 
     Ok(SignedUrl {
