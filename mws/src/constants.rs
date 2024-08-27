@@ -38,6 +38,7 @@ pub const MARKETPLACE_ID_PL: &'static str = "A1C3SOZRARQ6R3";
 pub const MARKETPLACE_ID_SA: &'static str = "A17E79C6D8DWNP";
 pub const MARKETPLACE_ID_SE: &'static str = "A2NODRKZP88ZB9";
 pub const MARKETPLACE_ID_TR: &'static str = "A33AVAJ2PDY3EV";
+pub const MARKETPLACE_ID_BE: &'static str = "AMEN7PMS3EDWL";
 
 pub const MARKETPLACE_ID_JP: &'static str = "A1VC38T7YXB528";
 pub const MARKETPLACE_ID_AU: &'static str = "A39IBJ37TRP1C6";
@@ -86,6 +87,7 @@ lazy_static! {
     items.push(item!(MARKETPLACE_ID_SA, "eu", "Saudi Arabia", "SA"));
     items.push(item!(MARKETPLACE_ID_SE, "eu", "Sweden", "SE"));
     items.push(item!(MARKETPLACE_ID_TR, "eu", "Turkey", "TR"));
+    items.push(item!(MARKETPLACE_ID_TR, "eu", "Belgium", "BE"));
 
 
     items.push(item!(MARKETPLACE_ID_JP, "fe", "Japan", "JP"));
